@@ -62,10 +62,10 @@ isaac51 = [
     "isaacsim[all,extscache]==5.1.0",
 ]
 isaac60 = [
-    "isaaclab[isaacsim]==6.1.14",
-    "isaaclab-physx==1.1.3",
-    "isaaclab-tasks==1.10.9",
-    "isaaclab-visualizers[kit]==0.1.0",
+    # Isaac Lab 3's published wheel bundles isaaclab_physx, isaaclab_tasks,
+    # isaaclab_visualizers, and the other Lab extensions. Its `isaacsim` extra
+    # selects the matching Isaac Sim 6.0.1 package stack.
+    "isaaclab[isaacsim]==3.0.0b2.post1; python_version >= '3.12'",
 ]
 analysis = ["sbi"]
 test = ["pytest"]
