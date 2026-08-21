@@ -44,6 +44,30 @@ translated on restore. Exact trajectory reproduction is still only expected
 on the simulator stack that created the recording because PhysX behavior
 changes between releases.
 
+## Isaac Sim 6 breaking-change audit
+
+The [6.0 breaking-change list](https://docs.isaacsim.omniverse.nvidia.com/latest/overview/release_notes.html#breaking-changes-and-deprecations)
+has been checked against RoboLab:
+
+- The removed `omni.isaac.*` shims are not used on the Isaac Sim 6 path.
+  Isaac Sim 5 compatibility branches use the renamed `isaacsim.*` modules.
+- The Isaac Sim 6 path avoids the deprecated `isaacsim.core.api`,
+  `isaacsim.core.prims`, and `isaacsim.core.utils` modules. It uses Isaac Lab
+  simulation/view APIs or `isaacsim.core.experimental` instead. The deprecated
+  imports that remain in the source are lazy Isaac Sim 5-only fallbacks.
+- RoboLab task cameras use Isaac Lab's camera abstraction. Standalone screenshot
+  utilities use the replacement `RtxCamera`/`CameraSensor` API from
+  `isaacsim.sensors.experimental.rtx`; they do not use RTX Camera prim JSON
+  configurations.
+- Contact and frame sensors are Isaac Lab sensors, not the deprecated direct
+  `isaacsim.sensors.physics`, `isaacsim.sensors.physx`, or
+  `isaacsim.sensors.rtx` APIs.
+- RoboLab has no ROS 2 OmniGraph nodes, Cortex, wheeled-robot, manipulator,
+  Lula/motion-generation, MobilityGen, domain-randomization, merge-mesh,
+  Replicator Agent, ML archive, app selector, benchmark examples, Scene Blox,
+  or asset-browser dependency. The `PushGraph` embedded in the tools-picking
+  scene is an `omni.anim.curve.core.AnimCurve`, not a ROS 2 node.
+
 ## Validation and known risk
 
 Run at least one rendered smoke test and one contact-rich task on the target

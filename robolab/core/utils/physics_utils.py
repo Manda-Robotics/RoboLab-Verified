@@ -408,7 +408,8 @@ def add_semantics_to_prim(semantic_labels: dict,
     try:
         from isaaclab.sim.utils.semantics import add_labels, get_labels
     except ImportError:
-        from omni.isaac.core.utils.semantics import add_update_semantics, get_semantics
+        # Isaac Sim 5 fallback. The omni.isaac compatibility shims are removed in 6.0.
+        from isaacsim.core.utils.semantics import add_update_semantics, get_semantics
 
     data_dict={}
 

@@ -12,9 +12,13 @@ try:
     import isaaclab.sim.utils as stage_utils  # type: ignore
 except ImportError:  # pragma: no cover -- running outside Isaac-Sim
     try:
-        import isaacsim.core.utils.stage as stage_utils  # type: ignore
+        import isaacsim.core.experimental.utils.stage as stage_utils  # type: ignore
     except ImportError:
-        stage_utils = None  # noqa: N816 – keep original style for clarity
+        try:
+            # Isaac Sim 5 fallback; deprecated in 6.0.
+            import isaacsim.core.utils.stage as stage_utils  # type: ignore
+        except ImportError:
+            stage_utils = None  # noqa: N816 – keep original style for clarity
 
 import copy
 import os
