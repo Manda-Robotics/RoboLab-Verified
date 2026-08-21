@@ -7,14 +7,12 @@ import isaaclab.envs.mdp as mdp
 import isaaclab.sim as sim_utils
 import numpy as np
 import torch
-import warp as wp
 from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets import ArticulationCfg
 from isaaclab.controllers.differential_ik_cfg import DifferentialIKControllerCfg
 from isaaclab.envs import ManagerBasedRLEnv
 from isaaclab.envs.mdp.actions.actions_cfg import (
     BinaryJointPositionActionCfg,
-    DifferentialInverseKinematicsActionCfg,
 )
 from isaaclab.envs.mdp.actions.binary_joint_actions import BinaryJointPositionAction
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
@@ -27,7 +25,11 @@ from isaaclab.utils import configclass, noise
 from isaaclab.utils.math import subtract_frame_transforms
 
 from robolab.constants import ROBOTS_DIR
+from robolab.core.actions.isaaclab_compat import (
+    RobolabDifferentialInverseKinematicsActionCfg as DifferentialInverseKinematicsActionCfg,
+)
 from robolab.core.environments.scene_fixture import FRANKA_TABLE_FIXTURE
+from robolab.core.utils.isaaclab_compat import as_torch, quat_isaaclab_to_wxyz
 
 # Offset of the end-effector control frame relative to base_link. Used by:
 #   - DroidCfg.frames "eef_frame" (FrameTransformer publishes this pose for downstream code)
@@ -188,19 +190,6 @@ contact_gripper = {"gripper": "{ENV_REGEX_NS}/robot/Gripper/Robotiq_2F_85/left_i
 ########################################################
 
 
-def _to_torch(value):
-    """Return robot/frame data as a torch tensor regardless of backend.
-
-    IsaacLab 2.2 / IsaacSim 5.0 return torch tensors directly. IsaacLab 2.3 /
-    IsaacSim 5.1 may return warp arrays for some data properties, which cannot
-    be indexed with torch-style fancy indexing. Convert warp -> torch; pass
-    torch tensors through unchanged.
-    """
-    if isinstance(value, torch.Tensor):
-        return value
-    return wp.to_torch(value)
-
-
 def arm_joint_pos(
     env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
 ):
@@ -218,7 +207,7 @@ def arm_joint_pos(
     joint_indices = [
         i for i, name in enumerate(robot.data.joint_names) if name in joint_names
     ]
-    joint_pos = _to_torch(robot.data.joint_pos)[:, joint_indices]
+    joint_pos = as_torch(robot.data.joint_pos)[:, joint_indices]
     return joint_pos
 
 
@@ -232,7 +221,7 @@ def gripper_pos(
     joint_indices = [
         i for i, name in enumerate(robot.data.joint_names) if name in joint_names
     ]
-    joint_pos = _to_torch(robot.data.joint_pos)[:, joint_indices]
+    joint_pos = as_torch(robot.data.joint_pos)[:, joint_indices]
 
     # rescale
     joint_pos = joint_pos / (np.pi / 4)
@@ -250,9 +239,9 @@ def ee_pos(
     body_idx = robot.data.body_names.index(ee_body_name)
     # Return position (shape: [num_envs, 3])
     pos, _ = subtract_frame_transforms(
-        _to_torch(robot.data.root_pos_w),
-        _to_torch(robot.data.root_quat_w),
-        _to_torch(robot.data.body_pos_w)[:, body_idx, :],
+        as_torch(robot.data.root_pos_w),
+        as_torch(robot.data.root_quat_w),
+        as_torch(robot.data.body_pos_w)[:, body_idx, :],
     )
     return pos
 
@@ -267,11 +256,11 @@ def ee_quat(
     body_idx = robot.data.body_names.index(ee_body_name)
     # Return quaternion (shape: [num_envs, 4])
     _, quat = subtract_frame_transforms(
-        _to_torch(robot.data.root_pos_w),
-        _to_torch(robot.data.root_quat_w),
-        q02=_to_torch(robot.data.body_quat_w)[:, body_idx, :],
+        as_torch(robot.data.root_pos_w),
+        as_torch(robot.data.root_quat_w),
+        q02=as_torch(robot.data.body_quat_w)[:, body_idx, :],
     )
-    return quat
+    return quat_isaaclab_to_wxyz(quat)
 
 
 def eef_pos(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("frames")):
@@ -280,9 +269,9 @@ def eef_pos(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("
     robot = env.scene["robot"]
     idx = frames.data.target_frame_names.index("eef_frame")
     pos, _ = subtract_frame_transforms(
-        _to_torch(robot.data.root_pos_w),
-        _to_torch(robot.data.root_quat_w),
-        _to_torch(frames.data.target_pos_w)[:, idx, :],
+        as_torch(robot.data.root_pos_w),
+        as_torch(robot.data.root_quat_w),
+        as_torch(frames.data.target_pos_w)[:, idx, :],
     )
     return pos
 
@@ -293,11 +282,11 @@ def eef_quat(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg(
     robot = env.scene["robot"]
     idx = frames.data.target_frame_names.index("eef_frame")
     _, quat = subtract_frame_transforms(
-        _to_torch(robot.data.root_pos_w),
-        _to_torch(robot.data.root_quat_w),
-        q02=_to_torch(frames.data.target_quat_w)[:, idx, :],
+        as_torch(robot.data.root_pos_w),
+        as_torch(robot.data.root_quat_w),
+        q02=as_torch(frames.data.target_quat_w)[:, idx, :],
     )
-    return quat
+    return quat_isaaclab_to_wxyz(quat)
 
 ########################################################
 # Actions

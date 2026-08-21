@@ -16,6 +16,10 @@ unaffected by the replication offset). One exception to the quaternion
 ordering: recorded camera extrinsics use IsaacLab's `quat_w_ros`, which is ROS
 order `(x, y, z, w)` — see the table below.
 
+Isaac Lab 3 uses `(x, y, z, w)` internally. RoboLab converts at simulator,
+math, action, and recording boundaries so this public contract and recordings
+remain unchanged across Isaac Sim 5 and 6.
+
 ## Robot placement
 
 Where a robot's root goes is part of the robot declaration, not an assumption:

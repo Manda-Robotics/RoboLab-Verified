@@ -9,6 +9,7 @@ from isaaclab.sensors import Camera
 from isaaclab.utils import configclass
 
 import robolab.constants
+from robolab.core.utils.isaaclab_compat import as_torch, quat_wxyz_to_isaaclab
 
 
 ########################################################
@@ -100,15 +101,16 @@ def sample_camera_pose_uniform(
     Returns:
         Tuple of (positions, orientations) tensors.
             - positions: Shape (num_envs, 3)
-            - orientations: Shape (num_envs, 4) in quaternion format (w, x, y, z)
+            - orientations: Shape (num_envs, 4) in the installed Isaac Lab's
+              internal convention; this value is passed directly to the camera setter.
     """
     num_envs = len(env_ids)
     device = camera.device
 
     # Get current camera poses as the base
     # Camera data provides pos_w and quat_w_ros (or quat_w depending on convention)
-    current_positions = camera.data.pos_w[env_ids].clone()
-    current_orientations = camera.data.quat_w_ros[env_ids].clone()
+    current_positions = as_torch(camera.data.pos_w)[env_ids].clone()
+    current_orientations = as_torch(camera.data.quat_w_ros)[env_ids].clone()
 
     # Create pose ranges tensor
     range_list = [pose_range.get(key, (0.0, 0.0)) for key in ["x", "y", "z", "roll", "pitch", "yaw"]]
@@ -258,8 +260,8 @@ def reset_camera_pose_absolute(
         device = camera.device
 
         # Get current poses
-        current_positions = camera.data.pos_w[env_ids].clone()
-        current_orientations = camera.data.quat_w_ros[env_ids].clone()
+        current_positions = as_torch(camera.data.pos_w)[env_ids].clone()
+        current_orientations = as_torch(camera.data.quat_w_ros)[env_ids].clone()
 
         # Override with specified values
         if position is not None:
@@ -268,6 +270,7 @@ def reset_camera_pose_absolute(
             positions = current_positions
 
         if orientation is not None:
+            orientation = quat_wxyz_to_isaaclab(orientation)
             orientations = torch.tensor([orientation], device=device).expand(num_envs, -1)
         else:
             orientations = current_orientations
