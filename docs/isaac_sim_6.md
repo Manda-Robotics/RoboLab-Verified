@@ -28,10 +28,10 @@ The default Docker base is `nvcr.io/nvidia/isaac-lab:3.0.0-beta2`.
 RoboLab keeps its existing external contracts while adapting the simulator
 boundary:
 
-- Configs, observations, Cartesian actions, `WorldState`, and HDF5 scene states
-  remain `(w, x, y, z)`. Isaac Lab 3's internal `(x, y, z, w)` values are
-  converted centrally. Camera extrinsics remain the documented ROS XYZW
-  exception.
+- Configs, observations, Cartesian actions, `WorldState`, and all HDF5
+  quaternion fields remain `(w, x, y, z)`. Isaac Lab 3's internal
+  `(x, y, z, w)` values are converted centrally. Camera extrinsics retain ROS
+  camera axes while using the same stable WXYZ component storage.
 - Isaac Lab 3 `ProxyArray` state is exposed to RoboLab as zero-copy torch views.
 - State writers use Isaac Lab 3's indexed APIs, with fallbacks for Isaac Lab 2.
 - `sim.physics`/`isaaclab_physx.physics.PhysxCfg` and the new `FrameView` API are

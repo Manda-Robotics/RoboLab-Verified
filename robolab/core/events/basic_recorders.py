@@ -10,6 +10,7 @@ from isaaclab.sensors import Camera
 from isaaclab.utils import configclass
 from isaaclab.utils.math import subtract_frame_transforms
 
+from robolab.core.sensors.camera_utils import is_camera
 from robolab.core.utils.isaaclab_compat import (
     as_torch,
     quat_isaaclab_to_wxyz,
@@ -42,7 +43,7 @@ class InitialStateRecorder(RecorderTerm):
         self._cameras_initialized = True
         # Get all cameras from scene sensors
         for name, sensor in self._env.scene.sensors.items():
-            if isinstance(sensor, Camera):
+            if is_camera(sensor):
                 # If camera_names is None or empty, record all cameras
                 # Otherwise, only record specified cameras
                 if not self._camera_names or name in self._camera_names:
@@ -61,13 +62,18 @@ class InitialStateRecorder(RecorderTerm):
             if env_ids is not None:
                 camera_poses[name] = {
                     "position": (as_torch(camera.data.pos_w)[env_ids] - origins[env_ids]).clone(),
-                    # Camera extrinsics intentionally use ROS XYZW (docs/frames.md).
-                    "orientation": as_torch(camera.data.quat_w_ros)[env_ids].clone(),
+                    # ``ros`` describes the camera axes, not a stable tensor
+                    # ordering. Isaac Lab 2 returns WXYZ and 3 returns XYZW.
+                    "orientation": quat_isaaclab_to_wxyz(
+                        as_torch(camera.data.quat_w_ros)[env_ids]
+                    ).clone(),
                 }
             else:
                 camera_poses[name] = {
                     "position": (as_torch(camera.data.pos_w) - origins).clone(),
-                    "orientation": as_torch(camera.data.quat_w_ros).clone(),
+                    "orientation": quat_isaaclab_to_wxyz(
+                        as_torch(camera.data.quat_w_ros)
+                    ).clone(),
                 }
         return camera_poses
 
@@ -228,7 +234,7 @@ class InitialCameraExtrinsicsRecorder(RecorderTerm):
     The camera pose consists of:
     - Position: env-local position of the camera (x, y, z), relative to each env's
       scene origin (consistent with the env-local object poses)
-    - Orientation (quat_w_ros): World orientation as quaternion in ROS convention (x, y, z, w)
+    - Orientation (quat_w_ros): World orientation using ROS camera axes, stored as (w, x, y, z)
 
     This is useful for recording camera viewpoint at the start of each episode,
     especially when camera pose randomization is enabled.
@@ -249,7 +255,7 @@ class InitialCameraExtrinsicsRecorder(RecorderTerm):
         self._initialized = True
         # Get all cameras from scene sensors
         for name, sensor in self._env.scene.sensors.items():
-            if isinstance(sensor, Camera):
+            if is_camera(sensor):
                 # If camera_names is None or empty, record all cameras
                 # Otherwise, only record specified cameras
                 if not self._camera_names or name in self._camera_names:
@@ -271,12 +277,16 @@ class InitialCameraExtrinsicsRecorder(RecorderTerm):
             if env_ids is not None:
                 camera_poses[name] = {
                     "position": (as_torch(camera.data.pos_w)[env_ids] - origins[env_ids]).clone(),
-                    "orientation": as_torch(camera.data.quat_w_ros)[env_ids].clone(),
+                    "orientation": quat_isaaclab_to_wxyz(
+                        as_torch(camera.data.quat_w_ros)[env_ids]
+                    ).clone(),
                 }
             else:
                 camera_poses[name] = {
                     "position": (as_torch(camera.data.pos_w) - origins).clone(),
-                    "orientation": as_torch(camera.data.quat_w_ros).clone(),
+                    "orientation": quat_isaaclab_to_wxyz(
+                        as_torch(camera.data.quat_w_ros)
+                    ).clone(),
                 }
         return camera_poses
 

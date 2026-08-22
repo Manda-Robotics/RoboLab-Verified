@@ -21,7 +21,7 @@ from typing import Any, Callable
 import isaaclab.sim.utils as sim_utils
 import numpy as np
 import torch
-from isaaclab.assets import Articulation, AssetBase, RigidObject
+from isaaclab.assets import Articulation, ArticulationCfg, AssetBase, AssetBaseCfg, RigidObject
 
 try:
     # IsaacLab 2.2 / IsaacSim 5.0
@@ -84,6 +84,16 @@ from robolab.core.utils.isaaclab_compat import (
 
 # Global factory instance for easy access
 _global_world = None
+
+
+def _is_articulation(body: Any) -> bool:
+    """Recognize public and backend-factory Isaac Lab articulations."""
+    return isinstance(body, Articulation) or isinstance(getattr(body, "cfg", None), ArticulationCfg)
+
+
+def _is_asset(body: Any) -> bool:
+    """Recognize public and backend-factory Isaac Lab assets."""
+    return isinstance(body, AssetBase) or isinstance(getattr(body, "cfg", None), AssetBaseCfg)
 
 def get_world(env: ManagerBasedRLEnv=None):
     """
@@ -307,7 +317,7 @@ class WorldState:
     def get_joint_names(self, body_name: str) -> list[str]:
         """Get joint names for articulated body"""
         body = self.get_body(body_name)
-        if not isinstance(body, Articulation):
+        if not _is_articulation(body):
             raise ValueError(f"Object {body_name} is not an articulation")
         return body.data.joint_names
 
@@ -318,7 +328,7 @@ class WorldState:
             env_id: None → (num_envs, num_joints), int → (num_joints,)
         """
         body = self.get_body(body_name)
-        if not isinstance(body, Articulation):
+        if not _is_articulation(body):
             raise ValueError(f"Object {body_name} is not an articulation")
         if env_id is None:
             return as_torch(body.data.joint_pos).clone().detach()
@@ -331,7 +341,7 @@ class WorldState:
             env_id: None → (num_envs, num_joints), int → (num_joints,)
         """
         body = self.get_body(body_name)
-        if not isinstance(body, Articulation):
+        if not _is_articulation(body):
             raise ValueError(f"Object {body_name} is not an articulation")
         if env_id is None:
             return as_torch(body.data.joint_vel).clone().detach()
@@ -423,7 +433,7 @@ class WorldState:
                     If as_matrix: None → (num_envs, 4, 4), int → (4, 4)
         """
         body = self.get_body(body_name)
-        if isinstance(body, AssetBase):
+        if _is_asset(body):
             if env_id is not None:
                 pos = as_torch(body.data.root_pos_w)[env_id].clone().detach()
                 quat = as_torch(body.data.root_quat_w)[env_id].clone().detach()

@@ -9,6 +9,7 @@ from isaaclab.sensors import Camera
 from isaaclab.utils import configclass
 
 import robolab.constants
+from robolab.core.sensors.camera_utils import is_camera
 from robolab.core.utils.isaaclab_compat import as_torch, quat_wxyz_to_isaaclab
 
 
@@ -71,7 +72,7 @@ def _get_all_camera_names(env: ManagerBasedEnv) -> set[str]:
     """Get all camera names in the scene."""
     camera_names = set()
     for name, sensor in env.scene.sensors.items():
-        if isinstance(sensor, Camera):
+        if is_camera(sensor):
             camera_names.add(name)
     return camera_names
 
@@ -168,7 +169,7 @@ def reset_camera_pose_uniform(
             continue
 
         camera = env.scene.sensors[camera_name]
-        if not isinstance(camera, Camera):
+        if not is_camera(camera):
             if robolab.constants.VERBOSE:
                 print(f"Warning: Sensor '{camera_name}' is not a Camera. Skipping.")
             continue
@@ -212,7 +213,7 @@ def reset_camera_pose_to_default(
             continue
 
         camera = env.scene.sensors[camera_name]
-        if not isinstance(camera, Camera):
+        if not is_camera(camera):
             if robolab.constants.VERBOSE:
                 print(f"Warning: Sensor '{camera_name}' is not a Camera. Skipping.")
             continue
@@ -251,7 +252,7 @@ def reset_camera_pose_absolute(
             continue
 
         camera = env.scene.sensors[camera_name]
-        if not isinstance(camera, Camera):
+        if not is_camera(camera):
             if robolab.constants.VERBOSE:
                 print(f"Warning: Sensor '{camera_name}' is not a Camera. Skipping.")
             continue
