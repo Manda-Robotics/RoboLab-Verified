@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Episode recordings now default to an inspection-oriented H.264 profile:
+  libx264 `veryfast`, CRF 30, yuv420p, fast-start metadata, and a 960-pixel
+  width cap. `VideoWriter` exposes keyword overrides for workflows that need
+  higher-fidelity source video.
+
 ## [0.3.1] - 2026-08-11
 
 ### Added

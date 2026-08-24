@@ -361,6 +361,20 @@ if __name__ == "__main__":
         sys.exit(1)
 ```
 
+`VideoWriter` defaults to a compact browser-inspection profile (CRF 30,
+`veryfast`, maximum width 960). Workflows that need archival visual fidelity
+can opt out explicitly:
+
+```python
+video_writer = VideoWriter(
+    os.path.join(output_dir, f"{cleaned}_{episode}.mp4"),
+    video_fps,
+    crf=23,
+    preset="medium",
+    max_width=None,
+)
+```
+
 ## `run_eval.py` CLI Reference
 
 The built-in `policies/pi0_family/run.py` supports the full set of evaluation features:
