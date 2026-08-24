@@ -36,9 +36,31 @@ from pxr import Gf, Usd, UsdGeom
 
 try:
     # Isaac Lab 3 / Isaac Sim 6 replaces XformPrimView with backend-agnostic FrameView.
-    from isaaclab.sim.views import BaseFrameView
+    from isaaclab.sim.views import BaseFrameView, UsdFrameView
 
     XFORM_PRIM_TYPES: tuple[type, ...] = (BaseFrameView,)
+
+    def _get_scales_usd_float3_safe(self, indices=None):
+        """Read authored USD scales without assuming double-precision attributes.
+
+        Isaac Lab 3.0's ``UsdFrameView.get_scales`` stores every authored scale
+        in a ``Vt.Vec3dArray``.  Many valid RoboLab assets author ``float3``
+        scales, so assigning their ``Gf.Vec3f`` values to that array raises a
+        Boost.Python conversion error during the first Fabric synchronization.
+        Converting through plain Python floats accepts both USD precisions.
+        """
+        import warp as wp
+
+        indices_list = self._resolve_indices(indices)
+        scales = []
+        for prim_idx in indices_list:
+            value = self._prims[prim_idx].GetAttribute("xformOp:scale").Get()
+            if value is None:
+                value = (1.0, 1.0, 1.0)
+            scales.append(tuple(float(component) for component in value))
+        return wp.array(np.asarray(scales, dtype=np.float32), dtype=wp.float32, device=self._device)
+
+    UsdFrameView.get_scales = _get_scales_usd_float3_safe
 except ImportError:
     from isaacsim.core.prims import XFormPrim
 
