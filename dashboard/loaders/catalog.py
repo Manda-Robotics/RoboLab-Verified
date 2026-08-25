@@ -98,6 +98,131 @@ def get_task(name: str) -> dict | None:
     return None
 
 
+def _lit(node):
+    import ast
+    try:
+        return ast.literal_eval(node)
+    except Exception:
+        return None
+
+
+def _names(v) -> list[str]:
+    if isinstance(v, str):
+        return [v]
+    if isinstance(v, (list, tuple)):
+        out = []
+        for x in v:
+            out.extend(_names(x))
+        return out
+    if isinstance(v, dict):
+        out = []
+        for k in ("object", "objects"):
+            out.extend(_names(v.get(k)))
+        return out
+    return []
+
+
+def _condition_text(call) -> str:
+    """`object_left_of(rubiks_cube, bowl)` from a `partial(object_left_of, object=..., reference_object=...)`."""
+    import ast
+    fn = getattr(call.func, "id", None) or getattr(call.func, "attr", None) or "?"
+    args = call.args
+    if fn == "partial" and args:
+        fn = getattr(args[0], "id", None) or getattr(args[0], "attr", None) or "?"
+    parts = []
+    for kw in call.keywords:
+        if kw.arg in ("object", "objects", "container", "containers", "surface", "reference_object", "groups"):
+            v = _lit(kw.value)
+            if v is not None:
+                parts.append(", ".join(_names(v)) if kw.arg != "container" and kw.arg != "surface" and kw.arg != "reference_object" else str(v))
+    return f"{fn}({', '.join(parts)})"
+
+
+def task_subtasks(name: str) -> list[dict] | None:
+    """The task's subtask ladder, in stage order, parsed statically from the task
+    file (importing it would pull in IsaacLab). Each entry:
+    ``{index, name, kind, objects, containers, logical, K, conditions: [str],
+    description}``. ``description`` is a short human line such as
+    ``put mustard, sugar_box in bin_b03``. None if the task or file is unknown."""
+    import ast
+    t = get_task(name)
+    if t is None:
+        # Embodiment-suffixed task names (BananaInBowlTaskAloha) share the
+        # base task's ladder.
+        for cand in load_tasks():
+            base = cand.get("task_name") or ""
+            if base and name.startswith(base) and name != base:
+                t = cand
+                break
+    if t is None or not t.get("filename"):
+        return None
+    path = task_dir() / t["filename"]
+    if not path.exists():
+        return None
+    try:
+        tree = ast.parse(path.read_text())
+    except SyntaxError:
+        return None
+    ladder = None
+    for cls in [n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]:
+        if not any((getattr(b, "id", None) or getattr(b, "attr", None)) == "Task" for b in cls.bases):
+            continue
+        for node in cls.body:
+            if isinstance(node, ast.Assign) and any(getattr(x, "id", None) == "subtasks" for x in node.targets):
+                ladder = node.value
+    if not isinstance(ladder, ast.List):
+        return None
+    out = []
+    for i, item in enumerate(ladder.elts):
+        if not isinstance(item, ast.Call):
+            continue
+        kind = getattr(item.func, "id", None) or getattr(item.func, "attr", None) or "?"
+        kw = {k.arg: k.value for k in item.keywords}
+        objects: list[str] = []
+        containers: list[str] = []
+        conditions: list[str] = []
+        logical = _lit(kw["logical"]) if "logical" in kw else "all"
+        K = _lit(kw["K"]) if "K" in kw else (_lit(kw["k"]) if "k" in kw else None)
+        sub_name = _lit(kw["name"]) if "name" in kw else kind
+        if kind == "Subtask":
+            conds = kw.get("conditions")
+            calls = [n for n in ast.walk(conds) if isinstance(n, ast.Call)] if conds is not None else []
+            for c in calls:
+                fn = getattr(c.func, "id", None) or getattr(c.func, "attr", None)
+                if fn == "partial" or fn not in (None, "partial"):
+                    conditions.append(_condition_text(c))
+                for k2 in c.keywords:
+                    v = _lit(k2.value)
+                    if k2.arg in ("object", "objects"):
+                        objects += _names(v)
+                    elif k2.arg in ("container", "containers", "surface"):
+                        containers += _names(v)
+            # partial(...) wrappers produce one text each; drop duplicates from nested walks
+            seen = set(); conditions = [c for c in conditions if not (c in seen or seen.add(c))]
+        else:  # pick_and_place / pick_and_place_on_surface / pick_and_place_grouped
+            for k2, v in kw.items():
+                lit = _lit(v)
+                if k2 in ("object", "objects", "groups"):
+                    objects += _names(lit)
+                elif k2 in ("container", "containers", "surface"):
+                    containers += _names(lit)
+            conditions = ["object_grabbed", "object_in_container" if kind != "pick_and_place_on_surface" else "object_on_surface"]
+        objects = list(dict.fromkeys(objects)); containers = list(dict.fromkeys(containers))
+        if kind.startswith("pick_and_place"):
+            where = f" in {', '.join(containers)}" if containers else ""
+            how = f" (any {K})" if logical == "choose" and K else (" (any)" if logical == "any" else "")
+            description = f"put {', '.join(objects) or '?'}{where}{how}"
+        else:
+            # An unnamed Subtask reads best as its condition chain
+            # (BlockStackingSpecifiedOrder: "stacked(red_block, blue_block)").
+            description = (sub_name or "").replace("_", " ") if sub_name and sub_name != kind else " → ".join(conditions)
+        out.append({
+            "index": i, "name": sub_name, "kind": kind, "objects": objects, "containers": containers,
+            "logical": logical, "K": K, "conditions": conditions, "description": description,
+        })
+    return out
+
+
 def task_dir() -> Path:
     """Absolute path to robolab/tasks/ (parent of the folders we list)."""
     import robolab.constants as rc

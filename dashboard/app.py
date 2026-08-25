@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from dashboard.loaders.catalog import (
+    task_subtasks,
     build_scene_index,
     default_task_folder,
     filter_scene_prims,
@@ -342,6 +343,14 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
     @app.get("/api/tasks")
     def api_tasks(folder: list[str] | None = Query(default=None)):
         return filter_tasks_by_folder(folder)
+
+    @app.get("/api/tasks/{name}/subtasks")
+    def api_task_subtasks(name: str):
+        """The task's subtask ladder in stage order (see catalog.task_subtasks)."""
+        st = task_subtasks(name)
+        if st is None:
+            raise HTTPException(status_code=404, detail=f"no subtask ladder for task {name!r}")
+        return {"task": name, "subtasks": st}
 
     @app.get("/api/tasks/{name}")
     def api_task(name: str):

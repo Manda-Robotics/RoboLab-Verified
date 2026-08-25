@@ -1571,6 +1571,7 @@ async function selectEpisode(runId, task, envId, runIndex) {
   renderEpisode(runId, task, envId, runIndex);
 }
 
+
 // ---- overview view ----------------------------------------------------------
 
 async function renderOverview() {
@@ -1873,9 +1874,17 @@ async function renderEpisode(runId, task, envId, runIndex) {
 
   // ---- LANGUAGE INSTRUCTION block (placed above the viewport so it reads
   // before the user starts watching the video) ----
-  pane.appendChild(el('div', { class: 'mb-5' },
+  pane.appendChild(el('div', { class: 'mb-3' },
     el('div', { class: 'lang-label mb-1' }, 'Language instruction'),
     el('div', { class: 'text-base', style: { color: 'var(--text-0)' } }, ep.instruction || '—')));
+
+  // ---- SUBGOALS: the task's subtask ladder, written out, with a box per
+  // stage that fills as the playhead passes the moment it was reached
+  // (review feedback: "I never really get what the subgoals are — I only
+  // see the bar progress after they are reached"; E5 / H-E30).
+  const subgoalsHost = el('div', { class: 'subgoals mb-5' });
+  pane.appendChild(subgoalsHost);
+  window.__subgoals = buildSubgoals(subgoalsHost, task);
 
   // ---- camera tile grid (lerobot-style, autoplay+muted+loop, mono labels) ----
   // Collect the <video> elements so we can sync seek/playhead with events below.
@@ -2036,6 +2045,7 @@ async function loadAndRenderEvents(host, runId, task, envId, runIndex, camVideos
   }
 
   host.appendChild(el('div', { class: 'lang-label mb-1' }, `Events (${events.length})`));
+  if (window.__subgoals) window.__subgoals.applyEvents(events);
 
   // strip — the transport under the camera grid owns the one timeline; we
   // add the event markers to it. Without a transport (no videos) render a
@@ -2141,6 +2151,7 @@ async function loadAndRenderEvents(host, runId, task, envId, runIndex, camVideos
     let activeIdx = -1;
     let lastScore = -1;  // -1 (not 0/1) so the first paint always fires
     const onTime = (t) => {
+      if (window.__subgoals) window.__subgoals.onTime(t);
       // playhead (the transport positions its own playhead by video duration;
       // here it is anchored to the recorded timebase, which is what the
       // markers use)
@@ -2228,6 +2239,74 @@ const ICON_LINKED = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden
   + '<path d="M6.5 9.5l3-3"/><path d="M7 4.5l1.2-1.2a2.5 2.5 0 013.5 3.5L10.5 8"/><path d="M9 11.5l-1.2 1.2a2.5 2.5 0 01-3.5-3.5L5.5 8"/></svg>';
 const ICON_UNLINKED = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">'
   + '<path d="M7 4.5l1.2-1.2a2.5 2.5 0 013.5 3.5L10.5 8"/><path d="M9 11.5l-1.2 1.2a2.5 2.5 0 01-3.5-3.5L5.5 8"/><path d="M3 3l10 10"/></svg>';
+
+// ---- subgoal checklist ---------------------------------------------------
+// Renders the task's stages (from /api/tasks/<task>/subtasks) under the
+// language instruction. `applyEvents(events)` marks when each stage was
+// reached (the recorder's "Completed subtask '<name>' k/N" event) and when
+// it was first *touched* (an "advanced … step" event inside that stage);
+// `onTime(t)` fills the boxes as the video passes those moments.
+function buildSubgoals(host, task) {
+  const api = { stages: [], reachedAt: [], touchedAt: [], onTime: () => {}, applyEvents: () => {} };
+  host.innerHTML = '';
+  fetchJSON(`/api/tasks/${encodeURIComponent(task)}/subtasks`).then((data) => {
+    const stages = data.subtasks || [];
+    api.stages = stages;
+    if (!stages.length) { host.remove(); return; }
+    host.appendChild(el('div', { class: 'lang-label mb-1' }, `Subgoals (${stages.length} stage${stages.length > 1 ? 's' : ''}, in order)`));
+    const list = el('div', { class: 'subgoal-list' });
+    const rows = stages.map((st, i) => {
+      const box = el('span', { class: 'subgoal-box', 'aria-hidden': 'true' });
+      const when = el('span', { class: 'subgoal-when font-mono' }, '');
+      const row = el('div', { class: 'subgoal-row', title: (st.conditions || []).join(' → ') || st.name },
+        box,
+        el('span', { class: 'subgoal-index font-mono' }, `${i + 1}.`),
+        el('span', { class: 'subgoal-text' },
+          st.description || st.name,
+          st.conditions && st.conditions.length
+            ? el('span', { class: 'subgoal-conds font-mono' }, ' · ' + st.conditions.join(' → '))
+            : null),
+        when);
+      list.appendChild(row);
+      return { row, box, when };
+    });
+    host.appendChild(list);
+
+    api.applyEvents = (events) => {
+      api.reachedAt = stages.map(() => null);
+      api.touchedAt = stages.map(() => null);
+      let stage = 0;
+      for (const ev of events) {
+        const info = ev.info || '';
+        const m = /Completed subtask '[^']*' (\d+)\/(\d+)/.exec(info);
+        if (m) {
+          const k = parseInt(m[1], 10) - 1;
+          if (k >= 0 && k < stages.length && api.reachedAt[k] == null) api.reachedAt[k] = ev.time_s ?? null;
+          stage = k + 1;
+          continue;
+        }
+        if (/advanced \d+ step/.test(info) && stage < stages.length && api.touchedAt[stage] == null) {
+          api.touchedAt[stage] = ev.time_s ?? null;
+        }
+      }
+      rows.forEach((r, i) => {
+        const reached = api.reachedAt[i], touched = api.touchedAt[i];
+        r.row.classList.toggle('never', reached == null);
+        r.when.textContent = reached != null ? `reached ${reached.toFixed(1)}s`
+          : touched != null ? `started ${touched.toFixed(1)}s, not completed` : 'not reached';
+      });
+      api.onTime(0);
+    };
+    api.onTime = (t) => {
+      rows.forEach((r, i) => {
+        const reached = api.reachedAt[i], touched = api.touchedAt[i];
+        r.box.classList.toggle('done', reached != null && t >= reached);
+        r.box.classList.toggle('partial', !(reached != null && t >= reached) && touched != null && t >= touched);
+      });
+    };
+  }).catch(() => { host.remove(); });
+  return api;
+}
 
 // ---- shared video transport ----------------------------------------------
 // One row under the camera grid: [play/pause] [time] [event timeline = scrubber]
