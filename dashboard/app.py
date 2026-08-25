@@ -122,9 +122,10 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
 
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request):
+        # Request-first signature (Starlette >= 0.29); the (name, context) form was
+        # removed in Starlette 0.40 and 500'd on fresh installs.
         return templates.TemplateResponse(
-            "index.html",
-            {"request": request, "asset_version": _asset_version()},
+            request, "index.html", {"asset_version": _asset_version()}
         )
 
     # ---- API: sources -------------------------------------------------------
