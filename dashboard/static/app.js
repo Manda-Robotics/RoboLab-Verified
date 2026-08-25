@@ -1880,18 +1880,40 @@ async function renderEpisode(runId, task, envId, runIndex) {
   // Collect the <video> elements so we can sync seek/playhead with events below.
   const camVideos = [];
   if (videos.length) {
-    const grid = el('div', { class: 'cam-grid mb-5' });
+    const grid = el('div', { class: 'cam-grid mb-2' });
     for (const v of videos) {
       const url = `/api/runs/${encodeURIComponent(runId)}/tasks/${encodeURIComponent(task)}/episodes/${envId}/run/${runIndex}/video?name=${encodeURIComponent(v.name)}`;
       const wrap = el('div', { class: 'cam-tile-video-wrap video-host' });
+      // No `autoplay` here: the shared transport below starts every *linked*
+      // view together once the master stream can play (E4 — two streams
+      // autoplaying independently could never be scrubbed in lockstep).
+      // Native controls stay on each tile (fullscreen, picture-in-picture, the
+      // familiar bar); a play/pause/seek on a linked tile is mirrored to the
+      // others. The playback rate is owned by the transport's speed select.
       const video = el('video', {
         src: url,
-        autoplay: '', muted: '', loop: '', playsinline: '', controls: '',
+        muted: '', loop: '', playsinline: '', preload: 'auto', controls: '',
       });
-      applyDefaultPlaybackRate(video);
+      video.dataset.linked = '1';
       attachVideoLoading(video, wrap);
       camVideos.push(video);
       wrap.appendChild(video);
+      // Link toggle: unlinked, this tile ignores the transport and plays on
+      // its own with its native controls (review feedback 2026-08-25: "be
+      // able to play a video independently"). Re-linking snaps it back to
+      // the master clock.
+      const linkBtn = el('button', { class: 'link-btn', title: 'Linked to the shared transport — click to play this view independently' });
+      linkBtn.innerHTML = ICON_LINKED;
+      linkBtn.addEventListener('click', () => {
+        const linked = video.dataset.linked === '1';
+        video.dataset.linked = linked ? '0' : '1';
+        linkBtn.innerHTML = linked ? ICON_UNLINKED : ICON_LINKED;
+        linkBtn.title = linked
+          ? 'Playing independently — click to link back to the shared transport'
+          : 'Linked to the shared transport — click to play this view independently';
+        linkBtn.closest('.cam-tile').classList.toggle('unlinked', linked);
+        video.dispatchEvent(new CustomEvent('linkchange', { detail: { linked: !linked } }));
+      });
       // The viewport is recorded from the front-facing mirrored camera in the
       // default registrations: the robot's right is on the viewer's left. Say
       // so on the tile (subtly) — a reviewer once called a left/right task
@@ -1909,10 +1931,16 @@ async function renderEpisode(runId, task, envId, runIndex) {
         el('div', { class: 'cam-tile-label' },
           el('span', { class: 'dot' }),
           v.name,
-          mirrorTag),
+          mirrorTag,
+          linkBtn),
         wrap));
     }
     pane.appendChild(grid);
+    // One transport for all views: play/pause · time · the event timeline as
+    // the scrubber · speed. The events loader (Episode tab) fills the
+    // timeline with markers; the strip itself lives here so it never leaves
+    // the screen when tabs change.
+    pane.appendChild(buildTransport(camVideos));
   }
 
   // Stash cam videos so subordinate renderers (events strip, time-series plots)
@@ -2008,32 +2036,46 @@ async function loadAndRenderEvents(host, runId, task, envId, runIndex, camVideos
 
   host.appendChild(el('div', { class: 'lang-label mb-1' }, `Events (${events.length})`));
 
-  // strip
+  // strip — the transport under the camera grid owns the one timeline; we
+  // add the event markers to it. Without a transport (no videos) render a
+  // local strip as before.
+  const transport = window.__transport && document.body.contains(window.__transport.strip) ? window.__transport : null;
   let strip = null;
   let playhead = null;
   let markers = [];
   if (dt) {
-    strip = el('div', { class: 'events-strip mb-2' });
-    strip.appendChild(el('div', { class: 'events-strip-track' }));
+    if (transport) {
+      strip = transport.strip;
+      for (const stale of strip.querySelectorAll('.events-strip-marker')) stale.remove();
+      playhead = transport.playhead;
+    } else {
+      strip = el('div', { class: 'events-strip mb-2' });
+      strip.appendChild(el('div', { class: 'events-strip-track' }));
+    }
     for (const ev of events) {
       const x = (ev.time_s / maxTime) * 100;
       const m = el('div', {
         class: `events-strip-marker ${ev.severity}`,
         style: { left: `${x}%` },
         title: `${(ev.time_s || 0).toFixed(2)}s · ${ev.name}\n${ev.info || ''}`,
-        onclick: (e) => { e.stopPropagation(); seekAll(camVideos, ev.time_s); },
+        onclick: (e) => { e.stopPropagation(); seekAll(linkedVideos(camVideos), ev.time_s); },
       });
       strip.appendChild(m);
       markers.push({ ev, node: m });
     }
-    playhead = el('div', { class: 'events-strip-playhead', style: { left: '0%' } });
-    strip.appendChild(playhead);
-    strip.addEventListener('click', (e) => {
-      const rect = strip.getBoundingClientRect();
-      const frac = (e.clientX - rect.left) / rect.width;
-      seekAll(camVideos, frac * maxTime);
-    });
-    host.appendChild(strip);
+    if (!transport) {
+      playhead = el('div', { class: 'events-strip-playhead', style: { left: '0%' } });
+      strip.appendChild(playhead);
+      strip.addEventListener('click', (e) => {
+        const rect = strip.getBoundingClientRect();
+        const frac = (e.clientX - rect.left) / rect.width;
+        seekAll(linkedVideos(camVideos), frac * maxTime);
+      });
+      host.appendChild(strip);
+    } else {
+      // keep the playhead above the markers we just appended
+      strip.appendChild(playhead);
+    }
   }
 
   // score progress bar — tracks cumulative subtask score as the video plays.
@@ -2083,7 +2125,7 @@ async function loadAndRenderEvents(host, runId, task, envId, runIndex, camVideos
   const rowEls = events.map((ev) =>
     el('div', {
       class: `events-row ${ev.severity}`,
-      onclick: () => { if (ev.time_s != null) seekAll(camVideos, ev.time_s); },
+      onclick: () => { if (ev.time_s != null) seekAll(linkedVideos(camVideos), ev.time_s); },
     },
       el('span', { class: 'ev-time' }, ev.time_s != null ? `${ev.time_s.toFixed(2)}s` : `step ${ev.step}`),
       el('span', { class: 'ev-info', title: ev.info || '' },
@@ -2095,12 +2137,12 @@ async function loadAndRenderEvents(host, runId, task, envId, runIndex, camVideos
 
   // Sync: highlight the most-recent passed event as the video plays.
   if (camVideos.length && dt) {
-    const driver = camVideos[0];
     let activeIdx = -1;
     let lastScore = -1;  // -1 (not 0/1) so the first paint always fires
-    const onTime = () => {
-      const t = driver.currentTime;
-      // playhead
+    const onTime = (t) => {
+      // playhead (the transport positions its own playhead by video duration;
+      // here it is anchored to the recorded timebase, which is what the
+      // markers use)
       if (playhead) playhead.style.left = `${Math.min(100, (t / maxTime) * 100)}%`;
       // find latest event with time_s <= t
       let idx = -1;
@@ -2116,8 +2158,9 @@ async function loadAndRenderEvents(host, runId, task, envId, runIndex, camVideos
         if (idx >= 0) {
           rowEls[idx].classList.add('active');
           markers[idx] && markers[idx].node.classList.add('active');
-          // keep the active row in view (only when user isn't scrolling)
-          rowEls[idx].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          // Keep the active row visible inside the events list ONLY — never
+          // scroll the page (see scrollRowWithinList).
+          scrollRowWithinList(listEl, rowEls[idx]);
         }
         activeIdx = idx;
       }
@@ -2136,18 +2179,198 @@ async function loadAndRenderEvents(host, runId, task, envId, runIndex, camVideos
         }
       }
     };
-    driver.addEventListener('timeupdate', onTime);
+    if (transport) transport.onTime = onTime;
+    else camVideos[0].addEventListener('timeupdate', () => onTime(camVideos[0].currentTime));
   }
 }
 
 function seekAll(videos, time_s) {
+  // Seek only — playing/paused state is the user's, not ours (clicking an
+  // event used to force playback, losing the frame under inspection: H-E29).
   if (time_s == null || !Number.isFinite(time_s)) return;
   for (const v of videos) {
     try {
       v.currentTime = Math.max(0, time_s);
-      if (v.paused) v.play().catch(() => {});
     } catch { /* readyState too low — ignore, video will catch up */ }
   }
+}
+
+// Views currently driven by the shared transport (see the link toggle on each
+// camera tile). Seeks from the event list / timeline apply to these only.
+function linkedVideos(videos) {
+  const l = (videos || []).filter((v) => v.dataset.linked !== '0');
+  return l.length ? l : (videos || []).slice(0, 1);
+}
+
+// Scroll `list` (an overflow-y:auto container) just enough that `row` is
+// visible, without touching any ancestor scroll position: Element.scrollIntoView
+// walks every scrollable ancestor including the document, so each new flag
+// used to yank the whole page down to the events panel while the reviewer was
+// watching the videos above it (review feedback 2026-08-24).
+function scrollRowWithinList(list, row) {
+  const lr = list.getBoundingClientRect();
+  const rr = row.getBoundingClientRect();
+  let delta = 0;
+  if (rr.top < lr.top) delta = rr.top - lr.top;
+  else if (rr.bottom > lr.bottom) delta = rr.bottom - lr.bottom;
+  if (delta) list.scrollTop += delta;
+}
+
+// Inline SVG icons rather than glyphs: U+23F8 (pause) is missing from several
+// system fonts and rendered as an empty button (review feedback 2026-08-24).
+const ICON_PLAY = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+  + '<path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+  + '<rect x="3.5" y="2.5" width="3.2" height="11" fill="currentColor"/>'
+  + '<rect x="9.3" y="2.5" width="3.2" height="11" fill="currentColor"/></svg>';
+const ICON_LINKED = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">'
+  + '<path d="M6.5 9.5l3-3"/><path d="M7 4.5l1.2-1.2a2.5 2.5 0 013.5 3.5L10.5 8"/><path d="M9 11.5l-1.2 1.2a2.5 2.5 0 01-3.5-3.5L5.5 8"/></svg>';
+const ICON_UNLINKED = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">'
+  + '<path d="M7 4.5l1.2-1.2a2.5 2.5 0 013.5 3.5L10.5 8"/><path d="M9 11.5l-1.2 1.2a2.5 2.5 0 01-3.5-3.5L5.5 8"/><path d="M3 3l10 10"/></svg>';
+
+// ---- shared video transport ----------------------------------------------
+// One row under the camera grid: [play/pause] [time] [event timeline = scrubber]
+// [speed]. Every *linked* view is driven together; the first linked view is the
+// master clock and the others are snapped to it whenever they drift more than
+// DRIFT_S. The timeline strip is exposed on window.__transport so the events
+// loader can add its markers to it (one timeline, not two — review feedback
+// 2026-08-25). Unlinked views are left alone entirely.
+function buildTransport(videos) {
+  const DRIFT_S = 0.2;
+  const linked = () => linkedVideos(videos);
+  const master = () => linked()[0];
+
+  const fmtT = (s) => {
+    if (!Number.isFinite(s)) return '0:00';
+    const m = Math.floor(s / 60), r = Math.floor(s % 60);
+    return `${m}:${String(r).padStart(2, '0')}`;
+  };
+
+  const playBtn = el('button', { class: 'transport-btn', title: 'Play/pause linked views (space)' });
+  const setPlayIcon = (playing) => {
+    playBtn.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    playBtn.dataset.state = playing ? 'playing' : 'paused';
+  };
+  setPlayIcon(false);
+  const timeLabel = el('span', { class: 'transport-time font-mono' }, '0:00 / 0:00');
+  const strip = el('div', { class: 'events-strip transport-strip', title: 'Seek linked views (←/→ step 2 s)' });
+  strip.appendChild(el('div', { class: 'events-strip-track' }));
+  const playhead = el('div', { class: 'events-strip-playhead', style: { left: '0%' } });
+  strip.appendChild(playhead);
+  const speed = el('select', { class: 'transport-speed', title: 'Playback speed' });
+  for (const r of [0.5, 1, 2, 3]) {
+    const opt = el('option', { value: String(r) }, `${r}×`);
+    if (r === DEFAULT_VIDEO_RATE) opt.selected = true;
+    speed.appendChild(opt);
+  }
+
+  const applyRate = () => {
+    const r = parseFloat(speed.value);
+    for (const v of videos) v.playbackRate = r;
+  };
+  applyRate();
+  // Some browsers reset playbackRate on load/play — re-apply from the select,
+  // which holds the user's choice.
+  for (const v of videos) {
+    v.addEventListener('loadedmetadata', applyRate);
+    v.addEventListener('play', applyRate);
+  }
+  speed.addEventListener('change', applyRate);
+
+  const playAll = () => { for (const v of linked()) v.play().catch(() => {}); };
+  const pauseAll = () => { for (const v of linked()) v.pause(); };
+  const toggle = () => { if (master().paused) playAll(); else pauseAll(); };
+  playBtn.addEventListener('click', toggle);
+
+  // Autostart: begin playing as soon as the master stream can, so opening an
+  // episode shows motion immediately — in lockstep (videos are muted, so
+  // browsers allow it).
+  const m0 = master();
+  const autostart = () => { m0.removeEventListener('canplay', autostart); playAll(); };
+  if (m0.readyState >= 3) autostart(); else m0.addEventListener('canplay', autostart);
+
+  // Bidirectional sync: a play / pause / seek performed on ANY linked tile
+  // (native controls) is mirrored to the other linked tiles. `syncing` guards
+  // against the echo of our own propagation re-triggering the handlers.
+  let syncing = false;
+  const mirror = (fn) => { if (syncing) return; syncing = true; try { fn(); } finally { setTimeout(() => { syncing = false; }, 0); } };
+  const isLinked = (v) => v.dataset.linked !== '0';
+  for (const v of videos) {
+    v.addEventListener('play', () => { if (v === master()) setPlayIcon(true); if (!isLinked(v)) return; mirror(() => { for (const o of linked()) if (o !== v && o.paused) o.play().catch(() => {}); }); });
+    v.addEventListener('pause', () => { if (v === master()) setPlayIcon(false); if (!isLinked(v)) return; mirror(() => { for (const o of linked()) if (o !== v && !o.paused) o.pause(); }); });
+    v.addEventListener('seeking', () => { if (!isLinked(v)) return; mirror(() => {
+      for (const o of linked()) if (o !== v && Math.abs(o.currentTime - v.currentTime) > 0.05) { try { o.currentTime = v.currentTime; } catch { /* not ready */ } }
+    }); });
+    // Re-linking snaps the view to the master clock and play state.
+    v.addEventListener('linkchange', (e) => {
+      if (!e.detail.linked) { setPlayIcon(!master().paused); return; }
+      const m = master();
+      if (m !== v) {
+        try { v.currentTime = m.currentTime; } catch { /* not ready */ }
+        if (m.paused) v.pause(); else v.play().catch(() => {});
+      }
+    });
+  }
+
+  // The timeline is the scrubber: click or drag anywhere on it.
+  let scrubbing = false;
+  const seekToPointer = (e) => {
+    const m = master();
+    if (!m.duration) return;
+    const rect = strip.getBoundingClientRect();
+    const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    seekAll(linked(), frac * m.duration);
+  };
+  strip.addEventListener('pointerdown', (e) => {
+    if (e.target.classList.contains('events-strip-marker')) return;   // marker has its own click
+    scrubbing = true; strip.setPointerCapture(e.pointerId); seekToPointer(e);
+  });
+  strip.addEventListener('pointermove', (e) => { if (scrubbing) seekToPointer(e); });
+  const endScrub = () => { scrubbing = false; };
+  strip.addEventListener('pointerup', endScrub);
+  strip.addEventListener('pointercancel', endScrub);
+
+  const transport = { strip, playhead, master, linked, onTime: null };
+  const onTimeUpdate = (v) => {
+    if (v !== master()) return;
+    const m = v;
+    if (m.duration) playhead.style.left = `${Math.min(100, (m.currentTime / m.duration) * 100)}%`;
+    timeLabel.textContent = `${fmtT(m.currentTime)} / ${fmtT(m.duration)}`;
+    for (const o of linked()) {
+      if (o === m || o.seeking) continue;                 // user is scrubbing that tile
+      if (Math.abs(o.currentTime - m.currentTime) > DRIFT_S) {
+        try { o.currentTime = m.currentTime; } catch { /* not ready */ }
+      }
+      // A linked view whose play/pause state diverged (e.g. one stream
+      // stalled) is pulled back in line with the master.
+      if (m.paused !== o.paused) { if (m.paused) o.pause(); else o.play().catch(() => {}); }
+    }
+    if (transport.onTime) transport.onTime(m.currentTime);
+  };
+  for (const v of videos) {
+    v.addEventListener('timeupdate', () => onTimeUpdate(v));
+    v.addEventListener('loadedmetadata', () => { if (v === master()) timeLabel.textContent = `${fmtT(v.currentTime)} / ${fmtT(v.duration)}`; });
+  }
+
+  // Keyboard: space toggles, arrows step ±2s. One handler per episode view —
+  // remove the previous one so re-renders don't stack them.
+  if (window.__transportKeyHandler) {
+    document.removeEventListener('keydown', window.__transportKeyHandler);
+  }
+  const keyHandler = (e) => {
+    const tag = (e.target && e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+    if (!document.body.contains(strip)) return;   // stale view
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.code === 'ArrowLeft') { e.preventDefault(); seekAll(linked(), master().currentTime - 2); }
+    else if (e.code === 'ArrowRight') { e.preventDefault(); seekAll(linked(), master().currentTime + 2); }
+  };
+  document.addEventListener('keydown', keyHandler);
+  window.__transportKeyHandler = keyHandler;
+
+  window.__transport = transport;
+  return el('div', { class: 'transport mb-5' }, playBtn, timeLabel, strip, speed);
 }
 
 // ---- episode tabs ---------------------------------------------------------
