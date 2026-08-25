@@ -1628,6 +1628,18 @@ async function selectEpisode(runId, task, envId, runIndex) {
   renderEpisode(runId, task, envId, runIndex);
 }
 
+// Seek the current episode's linked views to `t` and pause there — used by
+// ?t= review links. Waits for the master video's metadata if needed.
+function seekEpisodeTo(t) {
+  const tr = window.__transport;
+  if (!tr) return;
+  const m = tr.master();
+  const go = () => { for (const v of tr.linked()) v.pause(); seekAll(tr.linked(), t); setTimeout(() => { for (const v of tr.linked()) v.pause(); }, 250); };
+  if (m.readyState >= 1) go(); else m.addEventListener('loadedmetadata', go, { once: true });
+  // the autostart fires on canplay; make sure we end paused at t
+  m.addEventListener('canplay', () => setTimeout(go, 50), { once: true });
+}
+
 // ---- permalinks ------------------------------------------------------------
 // The URL hash mirrors the selection (#/results/run/<run>/task/<task>/ep/<env>/<runIndex>,
 // #/scenes, #/tasks, #/home) so an episode can be linked from a review
@@ -1635,13 +1647,18 @@ async function selectEpisode(runId, task, envId, runIndex) {
 // is a no-op while we are applying a hash, so navigation never echoes.
 let applyingHash = false;
 function writeHash(h) {
-  if (applyingHash || location.hash === h) return;
+  if (applyingHash || location.hash === h || location.hash.split('?')[0] === h) return;
   // The very first write (fresh load) replaces instead of pushing, so Back
   // from the landing page leaves the app rather than bouncing on it.
   if (!location.hash) history.replaceState(null, '', h); else history.pushState(null, '', h);
 }
 async function applyHash() {
-  const h = location.hash || '';
+  const h0 = location.hash || '';
+  // optional ?t=<seconds>: open the episode paused at that time (review links)
+  const qi = h0.indexOf('?');
+  const h = qi >= 0 ? h0.slice(0, qi) : h0;
+  const query = new URLSearchParams(qi >= 0 ? h0.slice(qi + 1) : '');
+  const seekTo = query.has('t') ? parseFloat(query.get('t')) : null;
   const parts = h.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
   applyingHash = true;
   try {
@@ -1658,6 +1675,7 @@ async function applyHash() {
         state.expanded.tasks.add(`${runId}::${task}`);
         if (parts[5] === 'ep' && parts[6] != null && parts[7] != null) {
           await selectEpisode(runId, task, parseInt(parts[6], 10), parseInt(parts[7], 10));
+          if (seekTo != null && Number.isFinite(seekTo)) seekEpisodeTo(seekTo);
         } else {
           await selectTask(runId, task);
         }
