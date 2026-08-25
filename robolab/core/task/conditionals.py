@@ -207,9 +207,9 @@ def object_in_contact(
         raise ValueError(f"Invalid logical: {logical}")
 
     world = get_world(env)
-    result = in_contact(world, object1, object2, force_threshold=0.1, env_id=env_id)
+    result = in_contact(world, object1, object2, force_threshold=0.1, logical=logical, K=K, env_id=env_id)
     if robolab.constants.DEBUG:
-        print(f"object_in_contact: {object1} and {object2} in contact (logical={logical}) -> {result}")
+        print(f"object_in_contact: {object1} and {object2} in contact (logical={logical}, K={K}) -> {result}")
     return result
 
 @atomic
