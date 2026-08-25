@@ -119,13 +119,21 @@ class EventTracker:
         ignore_objects: list[str] = None,
         upright_objects: list[str] = None,
         verbose: bool = False,
+        per_env_allowed: list[set[str]] | None = None,
+        per_env_containers: list[set[str]] | None = None,
     ) -> list[tuple[str, StatusCode, torch.Tensor]]:
         """
         Check for events across all envs using batched queries.
 
         Args:
             env: The environment object
-            per_env_intended: Per-env sets of intended target object names
+            per_env_intended: Per-env sets of the current stage's target object names
+                (drop tracking on, bump/move tracking off)
+            per_env_allowed: Per-env sets of objects the policy may grasp without a
+                WRONG_OBJECT_GRABBED — every stage's targets. Defaults to
+                ``per_env_intended``.
+            per_env_containers: Per-env destination objects; never reported as a
+                wrong grab (the hand touches the bin while releasing into it).
             frozen_mask: (num_envs,) bool tensor, True for frozen envs to skip
             ignore_objects: Objects to ignore (default: ["table"])
             upright_objects: Objects that should remain upright
@@ -146,14 +154,24 @@ class EventTracker:
 
         world = get_world(env)
 
+        if per_env_allowed is None:
+            per_env_allowed = per_env_intended
+        if per_env_containers is None:
+            per_env_containers = [set() for _ in range(self.num_envs)]
+
         # --- Wrong object grabbed (per-env loop, returns string) ---
         for eid in range(self.num_envs):
             if frozen_mask[eid]:
                 continue
-            wrong_obj = get_wrong_object_grabbed(env, list(per_env_intended[eid]), env_id=eid)
+            wrong_obj = get_wrong_object_grabbed(
+                env,
+                sorted(per_env_allowed[eid]),
+                ignore_objects=sorted(ignore_set | per_env_containers[eid]),
+                env_id=eid,
+            )
             if wrong_obj is not None:
                 if self._recorded_wrong_object_grab[eid] != wrong_obj:
-                    info = f"Wrong object grabbed: '{wrong_obj}' (target objects: {list(per_env_intended[eid])})"
+                    info = f"Wrong object grabbed: '{wrong_obj}' (target objects: {sorted(per_env_allowed[eid])})"
                     mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
                     mask[eid] = True
                     events.append((info, StatusCode.WRONG_OBJECT_GRABBED, mask))

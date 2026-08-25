@@ -11,6 +11,7 @@ from isaaclab.utils import configclass
 
 import robolab.constants
 from robolab.core.task.event_tracker import EventTracker
+from robolab.core.task.target_objects import subtask_targets, task_containers, task_targets
 from robolab.core.task.status import get_status_name
 from robolab.core.task.subtask_state_machine import SubtaskStateMachine
 
@@ -94,19 +95,36 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
         # For event tracking and SM stepping, treat newly-frozen envs as still active
         effective_frozen = frozen_mask & ~newly_frozen
 
-        # Compute per-env intended objects from each env's current CSM
+        # Per-env object roles for the tracker (robolab/core/task/target_objects.py):
+        #   intended   — the *current* stage's targets: drop tracking is on for
+        #                these and bump/move tracking is off (unchanged upstream
+        #                semantics, but read from the conditions' object kwargs
+        #                instead of the group names — list/keyword-form subtasks
+        #                name their groups ``group1``/``conditions``, which made
+        #                the target itself a "wrong object").
+        #   allowed    — every stage's targets: grasping a later stage's target,
+        #                or one whose stage just completed, is not a wrong grab.
+        #   containers — destinations named by the task: brushing the bin while
+        #                releasing into it is not a wrong grab either.
         per_env_intended: list[set[str]] = []
+        per_env_allowed: list[set[str]] = []
+        per_env_containers: list[set[str]] = []
         for eid in range(self._num_envs):
             sm = self.subtask_state_machines[eid]
+            scene_objects = sm.objects_in_scene
             if sm.conditionals_state_machine is not None:
-                per_env_intended.append(set(sm.conditionals_state_machine.subtask.group_names))
+                per_env_intended.append(subtask_targets(sm.conditionals_state_machine.subtask, scene_objects))
             else:
                 per_env_intended.append(set())
+            per_env_allowed.append(task_targets(sm.subtasks, scene_objects))
+            per_env_containers.append(task_containers(sm.subtasks))
 
         # Batch-check events across all envs (newly-frozen envs are still active for this step)
         all_events = self._event_tracker.check_events(
             env=self._env,
             per_env_intended=per_env_intended,
+            per_env_allowed=per_env_allowed,
+            per_env_containers=per_env_containers,
             frozen_mask=effective_frozen,
             verbose=robolab.constants.VERBOSE,
         )
