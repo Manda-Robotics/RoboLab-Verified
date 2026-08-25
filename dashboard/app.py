@@ -75,16 +75,26 @@ def _overview_bucket():
     return {"n": 0, "s": 0, "runs": set(), "tasks": set(), "score_means": []}
 
 
-def _event_severity(name: str) -> str:
-    """Map an event name to a severity bucket the frontend can color-code on.
-    Pure name-pattern routing — no hardcoded list of every event in the taxonomy."""
+def _event_severity(name: str, code: int | None = None) -> str:
+    """Map an event to a severity bucket the frontend can color-code on.
+
+    Name tokens first (whole ``_``-separated tokens, so ``WHITE_MUG`` is not a
+    ``HIT``), then the numeric ``StatusCode`` range as the fallback: codes below
+    200 are success-class, 200 and above are failure/warning-class
+    (``robolab/core/task/status.py``)."""
     u = (name or "").upper()
+    toks = set(u.split("_"))
     if u.endswith("_SUCCESS") or u == "OK":
         return "success"
     if u.endswith("_FAILURE"):
         return "failure"
-    if "DROPPED" in u or "WRONG" in u or "HIT" in u:
+    if toks & {"DROPPED", "WRONG", "HIT"}:
         return "failure"
+    if code is not None:
+        try:
+            return "success" if int(code) < 200 else "failure"
+        except (TypeError, ValueError):
+            pass
     return "neutral"
 
 
@@ -429,7 +439,7 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
                     "name": ev.get("name") or "",
                     "info": ev.get("info") or "",
                     "score": ev.get("score"),
-                    "severity": _event_severity(ev.get("name") or ""),
+                    "severity": _event_severity(ev.get("name") or "", ev.get("code")),
                 })
         elif isinstance(data, list):
             # legacy: list of per-step status dicts. derive events on status change.
