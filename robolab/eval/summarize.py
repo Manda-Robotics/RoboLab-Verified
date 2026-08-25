@@ -157,6 +157,8 @@ def build_run_summary(
         "success": env_result["success"],
         "episode_step": env_result["step"],
         "duration": env_result["step"] * dt if env_result["step"] else 0,
+        "early_resets": env_result.get("early_resets", 0),
+        "pre_satisfied": env_result.get("pre_satisfied", False),
         "dt": dt,
         "metrics": traj_metrics or {},
         "events": events or {},

@@ -20,6 +20,10 @@ from robolab.core.world.world_state import get_world
 
 logger = logging.getLogger(__name__)
 
+# A termination within the first 2 steps is re-reset this many times before
+# the episode is recorded as `pre_satisfied` (VERIFIED_PLAN H-B12).
+MAX_EARLY_RESETS = 3
+
 
 class RobolabEnv(ManagerBasedRLEnv):
     """Environment for RoboLab evaluation.
@@ -38,6 +42,7 @@ class RobolabEnv(ManagerBasedRLEnv):
         self._env_results: dict[int, bool] = {}      # env_id -> True (success) / False (truncated)
         self._env_term_step: dict[int, int] = {}      # env_id -> episode step when terminated
         self._has_stepped = False                     # tracks whether step() has been called
+        self._early_resets: dict[int, int] = {}       # env_id -> re-resets after a <=2-step termination
 
     def load_managers(self):
         """Load managers; replace upstream RecorderManager with the streaming-
@@ -92,9 +97,17 @@ class RobolabEnv(ManagerBasedRLEnv):
         for eid in env_ids.tolist():
             if not self._frozen_envs[eid]:
                 ep_len = int(self.episode_length_buf[eid].item())
-                if ep_len <= 2:
-                    # Physics artifact: terminated before the robot could act.
-                    # Reset this env normally so it gets a clean start.
+                if ep_len <= 2 and self._early_resets.get(eid, 0) < MAX_EARLY_RESETS:
+                    # Terminated before the robot could act — usually a physics
+                    # artifact at reset, sometimes a predicate that is already true
+                    # in the authored scene. Reset this env for a clean start, but
+                    # count it and give up after MAX_EARLY_RESETS so a pre-satisfied
+                    # task is recorded instead of silently re-run forever.
+                    n = self._early_resets[eid] = self._early_resets.get(eid, 0) + 1
+                    logger.warning(
+                        "env%d: terminated at step %d before the robot could act (early reset %d/%d)",
+                        eid, ep_len, n, MAX_EARLY_RESETS,
+                    )
                     artifact_ids = torch.tensor([eid], device=self.device, dtype=env_ids.dtype)
                     super()._reset_idx(artifact_ids)
                     get_world(self).reset_predicate_state(artifact_ids)
@@ -133,10 +146,16 @@ class RobolabEnv(ManagerBasedRLEnv):
         """Get per-env results after termination."""
         results = []
         for eid in range(self.num_envs):
+            step = self._env_term_step.get(eid)
             results.append({
                 'env_id': eid,
                 'success': self._env_results.get(eid),
-                'step': self._env_term_step.get(eid),
+                'step': step,
+                # How often this env terminated within 2 steps and was re-reset
+                # before this episode; `pre_satisfied` when it still did after
+                # the last allowed re-reset (the predicate holds at reset).
+                'early_resets': self._early_resets.get(eid, 0),
+                'pre_satisfied': bool(step is not None and step <= 2),
             })
         return results
 
@@ -146,4 +165,5 @@ class RobolabEnv(ManagerBasedRLEnv):
         self._pre_step_frozen[:] = False
         self._env_results.clear()
         self._env_term_step.clear()
+        self._early_resets.clear()
         self._has_stepped = False
