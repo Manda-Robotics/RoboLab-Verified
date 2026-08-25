@@ -156,8 +156,24 @@ class RobolabEnv(ManagerBasedRLEnv):
                 # the last allowed re-reset (the predicate holds at reset).
                 'early_resets': self._early_resets.get(eid, 0),
                 'pre_satisfied': bool(step is not None and step <= 2),
+                # A2 confirmed success: step the raw predicate first held / was confirmed
+                'success_first_hold_step': self._confirm_step(eid, 'first_hold_step'),
+                'success_confirmed_step': self._confirm_step(eid, 'confirmed_step'),
             })
         return results
+
+    def _confirm_step(self, eid: int, which: str):
+        """Per-env step from the success confirmer (None when not wrapped / not held)."""
+        try:
+            term = self.cfg.terminations.success
+            conf = getattr(term.func, "confirmer", None)
+            t = getattr(conf, which, None)
+            if t is None:
+                return None
+            v = int(t[eid].item())
+            return v if v >= 0 else None
+        except Exception:
+            return None
 
     def reset_eval_state(self):
         """Reset frozen state for next episode batch."""

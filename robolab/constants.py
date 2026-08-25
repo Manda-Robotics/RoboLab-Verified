@@ -76,6 +76,11 @@ DEBUG = False
 VERBOSE = False
 VISUALIZE = False
 ENABLE_SUBTASK_PROGRESS_CHECKING = True
+# Confirmed success (VERIFIED_PLAN A2): the success predicate must hold for
+# SUCCESS_HOLD_S seconds with every target object slower than SUCCESS_MAX_SPEED
+# (m/s) before an episode is scored. 0 restores upstream's first-frame termination.
+SUCCESS_HOLD_S = 1.0
+SUCCESS_MAX_SPEED = 0.02
 RECORD_IMAGE_DATA = False
 DEVICE = "cuda:0"
 

@@ -12,6 +12,7 @@ This module provides functions for:
 """
 
 import logging
+import robolab.constants
 from typing import Any, Type
 
 import gymnasium as gym
@@ -213,6 +214,15 @@ def generate_task_env_cfg(task_class: Task,
             self.gripper_closure_cfg = gripper_closure_cfg
             self.instruction = task_class.instruction
             self.terminations = task_class.terminations()
+            # A2: score success only after the predicate has held for a while
+            # with the targets at rest (robolab/core/task/confirm.py).
+            if getattr(self.terminations, "success", None) is not None and robolab.constants.SUCCESS_HOLD_S > 0:
+                from robolab.core.task.confirm import confirmed_success_term
+                self.terminations.success = confirmed_success_term(
+                    self.terminations.success,
+                    hold_s=robolab.constants.SUCCESS_HOLD_S,
+                    max_speed=robolab.constants.SUCCESS_MAX_SPEED,
+                )
             self.contact_object_list = task_class.contact_object_list
 
             # Set optional rewards if provided by the task

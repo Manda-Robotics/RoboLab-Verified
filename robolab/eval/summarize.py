@@ -159,6 +159,8 @@ def build_run_summary(
         "duration": env_result["step"] * dt if env_result["step"] else 0,
         "early_resets": env_result.get("early_resets", 0),
         "pre_satisfied": env_result.get("pre_satisfied", False),
+        "success_first_hold_s": (env_result["success_first_hold_step"] * dt) if env_result.get("success_first_hold_step") is not None else None,
+        "success_confirmed_s": (env_result["success_confirmed_step"] * dt) if env_result.get("success_confirmed_step") is not None else None,
         "dt": dt,
         "metrics": traj_metrics or {},
         "events": events or {},
