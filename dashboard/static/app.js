@@ -497,7 +497,6 @@ function renderSidebar() {
   }
   let collapsed;
   try { collapsed = new Set(JSON.parse(localStorage.getItem('sidebar.collapsedFamilies') || '[]')); } catch { collapsed = new Set(); }
-  const selectedRun = state.selection.run_id;
   const renderRun = (run) => {
     const isExpanded = state.expanded.runs.has(run.run_id);
     const isSelected = state.selection.view === 'run' && state.selection.run_id === run.run_id;
@@ -611,8 +610,11 @@ function renderSidebar() {
     const n = runs.reduce((a, r) => a + r.num_episodes, 0);
     const k = runs.reduce((a, r) => a + r.num_success, 0);
     const newest = Math.max(...runs.map((r) => r.modified_at || 0));
-    // a group containing the selected run never stays collapsed (deep links)
-    const isCollapsed = collapsed.has(fam) && !runs.some((r) => r.run_id === selectedRun);
+    // A deep link reveals its run's group once (applyHash sets revealRun);
+    // otherwise the user's collapse choice wins — even for the selected run.
+    const reveal = state.revealRun && runs.some((r) => r.run_id === state.revealRun);
+    if (reveal) { collapsed.delete(fam); try { localStorage.setItem('sidebar.collapsedFamilies', JSON.stringify([...collapsed])); } catch { /* private mode */ } }
+    const isCollapsed = collapsed.has(fam);
     const header = el('div', {
       class: 'family-row flex items-center gap-2 px-3 py-1.5',
       title: `${runs.length} run${runs.length === 1 ? '' : 's'} · ${k}/${n} episodes succeeded`,
@@ -630,6 +632,7 @@ function renderSidebar() {
     if (!isCollapsed) for (const run of runs) renderRun(run);
   }
   if (!groups.size) root.appendChild(el('div', { class: 'p-3 text-slate-500 text-xs' }, 'No runs match the filter.'));
+  state.revealRun = null;
 }
 
 // ---- compare bar / report ---------------------------------------------------
@@ -1649,6 +1652,7 @@ async function applyHash() {
     if (parts[1] === 'run' && parts[2]) {
       const runId = parts[2];
       state.expanded.runs.add(runId);
+      state.revealRun = runId;             // open its policy-family group once
       if (parts[3] === 'task' && parts[4]) {
         const task = parts[4];
         state.expanded.tasks.add(`${runId}::${task}`);
