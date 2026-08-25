@@ -1892,10 +1892,24 @@ async function renderEpisode(runId, task, envId, runIndex) {
       attachVideoLoading(video, wrap);
       camVideos.push(video);
       wrap.appendChild(video);
+      // The viewport is recorded from the front-facing mirrored camera in the
+      // default registrations: the robot's right is on the viewer's left. Say
+      // so on the tile (subtly) — a reviewer once called a left/right task
+      // "broken" because of this (VERIFIED_PLAN D3 / E8).
+      const cams = ep.viewport_cameras || [];
+      const mirroredIdx = v.name === 'viewport' ? cams.findIndex((n) => /mirror/i.test(n)) : -1;
+      const mirrorTag = mirroredIdx >= 0
+        ? el('span', {
+            class: 'mirror-tag',
+            title: `${cams[mirroredIdx]} faces the robot from the front, so the robot's right is on your left`
+              + (cams.length > 1 ? ` (panel ${mirroredIdx + 1} of ${cams.length})` : ''),
+          }, cams.length > 1 ? `panel ${mirroredIdx + 1} mirrored · robot R = your L` : 'mirrored · robot R = your L')
+        : null;
       grid.appendChild(el('div', { class: 'cam-tile' },
         el('div', { class: 'cam-tile-label' },
           el('span', { class: 'dot' }),
-          v.name),
+          v.name,
+          mirrorTag),
         wrap));
     }
     pane.appendChild(grid);

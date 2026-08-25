@@ -523,6 +523,14 @@ body.sidebar-resizing { cursor: col-resize; user-select: none; }
   opacity: 0.75;
   white-space: nowrap;
 }
+.mirror-tag {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-2);
+  opacity: 0.7;
+  white-space: nowrap;
+  cursor: help;
+}
 .cam-tile-label .dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--text-2);

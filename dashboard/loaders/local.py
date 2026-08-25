@@ -13,6 +13,7 @@ we fall back to those.
 """
 
 import functools
+import json
 import math
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -139,6 +140,7 @@ class EpisodeRow:
     last_frame_path: str | None = None   # absolute path, may be None
     has_hdf5: bool = False
     recorded_at: float | None = None     # unix time the episode's newest video was written
+    viewport_cameras: list[str] = field(default_factory=list)  # panels tiled into the viewport mp4, in order
 
 
 @dataclass
@@ -248,6 +250,26 @@ class LocalLoader:
             except OSError:
                 return None
         return max(times)
+
+    def _viewport_cameras(self, task_dir: Path) -> list[str]:
+        """Camera names tiled (left to right) into the ``*_viewport.mp4`` of this
+        task, from ``env_cfg.json``'s ``observations.viewport_cam`` group. Cached
+        per task dir. A name containing ``mirror`` is the front-facing
+        ``EgocentricMirroredCameraCfg`` (robot's right appears on the viewer's
+        left — VERIFIED_PLAN D3/E8)."""
+        cache = self.__dict__.setdefault("_viewport_cam_cache", {})
+        key = str(task_dir)
+        if key not in cache:
+            names: list[str] = []
+            cfg = task_dir / "env_cfg.json"
+            if cfg.exists():
+                try:
+                    group = json.loads(cfg.read_text()).get("observations", {}).get("viewport_cam", {})
+                    names = [k for k, v in group.items() if isinstance(v, dict)]
+                except Exception:
+                    names = []
+            cache[key] = names
+        return cache[key]
 
     @staticmethod
     def _looks_like_task_dir(d: Path) -> bool:
@@ -499,6 +521,7 @@ class LocalLoader:
             except OSError:
                 pass
         e.recorded_at = max(times) if times else None
+        e.viewport_cameras = self._viewport_cameras(task_dir)
         if has_hdf5_eps is None:
             has_hdf5_eps = self._hdf5_has_episodes(task_dir / "data.hdf5")
         e.has_hdf5 = has_hdf5_eps
