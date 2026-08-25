@@ -276,6 +276,16 @@ def object_picked_up(
 #
 
 @atomic
+def _object_above_container_base(world, obj: str, container: str, tol: float = 0.01, env_id: int | None = None):
+    """True where the object's root sits at or above the container's root (its base),
+    minus ``tol``. Scalar for ``env_id``, ``(N,)`` bool otherwise."""
+    po, _ = world.get_pose(obj, env_id=env_id)
+    pc, _ = world.get_pose(container, env_id=env_id)
+    if env_id is not None:
+        return bool(po[2] >= pc[2] - tol)
+    return po[:, 2] >= pc[:, 2] - tol
+
+
 def object_in_container(
     env,
     object: str | list[str],
@@ -303,11 +313,16 @@ def object_in_container(
     orientation — a flipped or tipped container correctly fails.
     """
     def condition(world, obj, env_id=None):
-        result = in_opentop_container(
+        # P37 (H-R7-5): the hull test is symmetric for two nested identical
+        # shapes — bowl_1's centroid sits inside bowl_2's cavity whether bowl_2 is
+        # on top or underneath, so "stack the right bowl on the left bowl" scored
+        # 4/4 successes for the inverted stack. An object is only *in* a container
+        # if it is also above the container's base.
+        result = _and(_object_above_container_base(world, obj, container, env_id=env_id), in_opentop_container(
             world, obj, container,
             tolerance=tolerance,
             env_id=env_id,
-        )
+        ))
         if require_contact_with is True:
             result = _and(result, in_contact(world, obj, container, env_id=env_id))
         elif require_contact_with:
