@@ -1823,14 +1823,74 @@ function renderTask(runId, task) {
       chip(`SR ${fmtPct(n ? s / n : 0)}`),
       chip(`Score ${fmtScore(meanScore)}`))));
 
+  // Where did the episodes get to? One bucket per outcome ("✓", "stuck at
+  // stage 2 (started)", "stage 1 not started"); the chips filter the grid
+  // (review feedback: the table shows SR/score but not which subgoals were
+  // reached — E6; failure `reason` was loaded but never shown — H-E17).
+  const filterKey = `${runId}::${task}`;
+  state.taskFilter = state.taskFilter || {};
+  const buckets = new Map();
+  for (const ep of eps) {
+    const b = progressBucket(ep);
+    if (!buckets.has(b.key)) buckets.set(b.key, { ...b, n: 0 });
+    buckets.get(b.key).n += 1;
+  }
+  const hasProgress = eps.some((e) => e.stages_total != null);
+  let grid;
+  const applyFilter = () => {
+    const active = state.taskFilter[filterKey] || null;
+    grid.innerHTML = '';
+    const shown = eps.filter((ep) => !active || progressBucket(ep).key === active);
+    for (const ep of shown) grid.appendChild(buildEpisodeCard(runId, task, ep));
+    if (!shown.length) grid.appendChild(el('div', { class: 'text-slate-500 col-span-full' }, eps.length ? 'No episodes in this bucket.' : 'No episodes.'));
+    for (const c of pane.querySelectorAll('.bucket-chip')) c.classList.toggle('active', (c.dataset.key || null) === active);
+  };
+  if (hasProgress && eps.length) {
+    const order = [...buckets.values()].sort((a, b) => a.order - b.order);
+    const row = el('div', { class: 'flex flex-wrap items-center gap-2 mb-3 text-xs' },
+      el('span', { class: 'lang-label', style: { margin: 0 } }, 'Progress'),
+      el('button', { class: 'chip bucket-chip', 'data-key': '', onclick: () => { delete state.taskFilter[filterKey]; applyFilter(); } }, `all ${eps.length}`),
+      ...order.map((b) => el('button', {
+        class: `chip bucket-chip ${b.cls}`, 'data-key': b.key, title: b.title,
+        onclick: () => { state.taskFilter[filterKey] = state.taskFilter[filterKey] === b.key ? undefined : b.key; if (!state.taskFilter[filterKey]) delete state.taskFilter[filterKey]; applyFilter(); },
+      }, `${b.label} ${b.n}`)));
+    pane.appendChild(row);
+  }
+
   // episode grid: each card auto-plays the viewport mp4 (or the first other
   // video) as a preview. Falls back to thumb png, then to a "no media" tile.
-  const grid = el('div', { class: 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3' });
-  for (const ep of eps) grid.appendChild(buildEpisodeCard(runId, task, ep));
-  if (!eps.length) {
-    grid.appendChild(el('div', { class: 'text-slate-500 col-span-full' }, 'No episodes.'));
-  }
+  grid = el('div', { class: 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3' });
   pane.appendChild(grid);
+  applyFilter();
+}
+
+// Outcome bucket of an episode from its subtask progress (see
+// LocalLoader._attach_progress): success · stuck at stage k (started) ·
+// stage k not started · no subtask tracking.
+function progressBucket(ep) {
+  if (ep.success) return { key: 'ok', label: '✓ success', cls: 'success', order: 0, title: 'Episode succeeded' };
+  if (ep.stages_total == null) return { key: 'na', label: 'no subtask tracking', cls: '', order: 99, title: 'No subtask events recorded' };
+  if ((ep.stages_reached || 0) >= ep.stages_total) {
+    // Every stage credited, yet the success predicate never held — the
+    // ladder and the termination disagree (dragged-not-lifted hammer,
+    // H-R6-9; contact-credited grab vs lift-required success, H-R8-21/25).
+    return { key: 'done-nosr', label: 'all stages, no success', cls: 'fail', order: 5, title: `All ${ep.stages_total} stage(s) were credited but the success condition was never satisfied` };
+  }
+  const k = (ep.stages_reached || 0) + 1;
+  if (ep.stage_started) return { key: `s${k}s`, label: `stuck at stage ${k}`, cls: 'fail', order: 10 + k, title: `Stage ${k} of ${ep.stages_total} was started (an object was grabbed) but never completed` };
+  return { key: `s${k}n`, label: `stage ${k} not started`, cls: 'fail', order: 30 + k, title: `Stage ${k} of ${ep.stages_total} was never started` };
+}
+
+// ▰▰▱ stage boxes for an episode card.
+function progressBoxes(ep) {
+  if (ep.stages_total == null) return null;
+  const wrap = el('span', { class: 'stage-boxes', title: `${ep.stages_reached || 0} of ${ep.stages_total} stage${ep.stages_total === 1 ? '' : 's'} reached${ep.stage_started ? ', next one started' : ''}` });
+  for (let i = 0; i < ep.stages_total; i++) {
+    const cls = i < (ep.stages_reached || 0) ? 'done' : (i === (ep.stages_reached || 0) && ep.stage_started ? 'partial' : '');
+    wrap.appendChild(el('span', { class: `stage-box ${cls}` }));
+  }
+  wrap.appendChild(el('span', { class: 'stage-count font-mono' }, `${ep.stages_reached || 0}/${ep.stages_total}`));
+  return wrap;
 }
 
 // Reusable episode card: autoplaying viewport preview + run/env caption +
@@ -1874,8 +1934,9 @@ function buildEpisodeCard(runId, task, ep) {
     onclick: () => { selectEpisode(runId, task, ep.env_id, ep.run_index); renderSidebar(); },
   },
     previewBlock,
-    el('div', { class: 'p-2 flex items-center justify-between' },
+    el('div', { class: 'p-2 flex items-center justify-between gap-2' },
       el('div', { class: 'text-xs' }, `run ${ep.run_index} · env ${ep.env_id}`),
+      progressBoxes(ep),
       badge(ep.success)));
 }
 

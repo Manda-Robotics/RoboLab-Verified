@@ -15,6 +15,7 @@ we fall back to those.
 import functools
 import json
 import math
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -140,6 +141,9 @@ class EpisodeRow:
     last_frame_path: str | None = None   # absolute path, may be None
     has_hdf5: bool = False
     recorded_at: float | None = None     # unix time the episode's newest video was written
+    stages_reached: int | None = None    # subtask stages completed (from "Completed subtask k/N" events)
+    stages_total: int | None = None      # N — from the events, else the task's ladder length
+    stage_started: bool = False          # the stage after the last completed one was at least started
     viewport_cameras: list[str] = field(default_factory=list)  # panels tiled into the viewport mp4, in order
 
 
@@ -232,6 +236,53 @@ class LocalLoader:
             success_rate=(success / len(eps)) if eps else 0.0,
             modified_at=self._run_modified_at(run_dir),
         )
+
+    def _attach_progress(self, task_dir: Path, e: EpisodeRow) -> None:
+        """How far the episode got through the task's subtask ladder, from the
+        recorder's events in ``log_<run>_env<env>.json``: ``Completed subtask
+        '<name>' k/N`` marks stage k reached; an ``advanced … step`` event in the
+        following stage marks it started. ``stages_total`` falls back to the
+        task's static ladder when no stage was completed (so 0/3 reads as 0/3,
+        not 0/?)."""
+        candidates = [task_dir / f"log_{e.run_index}_env{e.env_id}.json", task_dir / f"log_{e.env_id}.json"]
+        log_path = next((p for p in candidates if p.exists()), None)
+        if log_path is None:
+            return
+        try:
+            data = json.loads(log_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            return
+        events = data.get("events") if isinstance(data, dict) else None
+        if not isinstance(events, list):
+            return
+        reached, total, started = 0, None, False
+        for ev in events:
+            info = (ev.get("info") or "") if isinstance(ev, dict) else ""
+            m = re.search(r"Completed subtask '[^']*' (\d+)/(\d+)", info)
+            if m:
+                reached = max(reached, int(m.group(1)))
+                total = int(m.group(2))
+                started = False
+                continue
+            if "advanced" in info and " step" in info:
+                started = True
+        if total is None:
+            ladder = self._ladder_len(e.task)
+            total = ladder
+        e.stages_reached = reached
+        e.stages_total = total
+        e.stage_started = bool(started and (total is None or reached < total))
+
+    def _ladder_len(self, task: str) -> int | None:
+        cache = self.__dict__.setdefault("_ladder_len_cache", {})
+        if task not in cache:
+            try:
+                from dashboard.loaders.catalog import task_subtasks
+                st = task_subtasks(task)
+                cache[task] = len(st) if st else None
+            except Exception:
+                cache[task] = None
+        return cache[task]
 
     @staticmethod
     def _run_modified_at(run_dir: Path) -> float | None:
@@ -344,6 +395,7 @@ class LocalLoader:
         for e in eps:
             has_hdf5_eps = data_has or per_run_has.get(e.run_index, False)
             self._attach_media(task_dir, e, has_hdf5_eps=has_hdf5_eps)
+            self._attach_progress(task_dir, e)
         return eps
 
     @staticmethod
