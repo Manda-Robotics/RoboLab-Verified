@@ -127,7 +127,8 @@ class EpisodeRow:
     env_id: int
     run_index: int          # the "run" counter inside a multi-run eval (NOT the output dir)
     success: bool
-    score: float | None     # subtask completion ratio (0..1); None if not recorded
+    score: float | None     # subtask ladder judged on the final frame (0..1); None if not recorded
+    score_peak: float | None = None   # highest live ladder score (subgoals reached, kept or not)
     reason: str | None      # failure reason if success is False
     duration: float
     episode_step: int
@@ -508,6 +509,7 @@ class LocalLoader:
                 run_index=run_index,
                 success=bool(d.get("success", False)),
                 score=score,
+                score_peak=(float(d["score_peak"]) if d.get("score_peak") is not None else None),
                 reason=d.get("reason"),
                 duration=duration,
                 episode_step=int(d.get("episode_step") or 0),

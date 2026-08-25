@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import copy
+import logging
 from collections.abc import Sequence
 from typing import Any
 
@@ -13,7 +14,29 @@ import robolab.constants
 from robolab.core.task.event_tracker import EventTracker
 from robolab.core.task.target_objects import subtask_targets, task_containers, task_targets
 from robolab.core.task.status import get_status_name
+from robolab.core.task.conditionals_state_machine import ConditionalsStateMachine
 from robolab.core.task.subtask_state_machine import SubtaskStateMachine
+
+
+logger = logging.getLogger(__name__)
+
+
+def judge_ladder_final(subtasks, unnormalized_total: float, csm_factory) -> float:
+    """Score of a subtask ladder judged from one frame: each stage's machine is
+    built by ``csm_factory(i, subtask)`` and stepped once; stage scores are
+    weighted like ``SubtaskStateMachine.get_total_score``."""
+    if not subtasks:
+        return 1.0
+    total = float(unnormalized_total) if unnormalized_total else 1e-9
+    acc = 0.0
+    for i, st in enumerate(subtasks):
+        csm = csm_factory(i, st)
+        try:
+            csm.step()
+        except Exception:
+            pass
+        acc += float(csm.total_score) * float(st.score) / total
+    return max(0.0, min(1.0, acc))
 
 
 class SubtaskCompletionRecorderTerm(RecorderTerm):
@@ -248,10 +271,39 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
         # Return env 0's info for backward compat
         return self.infos[0]
 
+    def judge_final_score(self, eid: int) -> float:
+        """The subtask ladder re-judged on the *final* frame (VERIFIED_PLAN H-B3, A3/A4).
+
+        The live score only ever goes up: a stage that was credited stays credited
+        even if its object is later knocked away (PutTwoMugsOnShelf cosmos3_s2 env 2:
+        second mug placed at 70.2 s → score 1.0, first mug out of scene at 70.3 s,
+        episode fails at 180 s with score 1.0). Here every stage's state machine is
+        instantiated fresh and stepped once against the current (terminal) state, so
+        the result is "what the scene shows at the end". The live number is kept as
+        ``score_peak``.
+        """
+        sm = self.subtask_state_machines[eid]
+        if sm.is_complete():
+            return 1.0
+        return judge_ladder_final(sm.subtasks, sm.unnormalized_total_score,
+                                  lambda i, st: ConditionalsStateMachine(env=self._env, env_id=eid, subtask=st,
+                                                                          objects_in_scene=sm.objects_in_scene,
+                                                                          subtask_group_id=i))
+
     def record_final_status(self) -> tuple[str, dict] | tuple[None, None]:
         """Record final status for all envs when episode ends incomplete."""
         if not self.subtask_state_machines:
             return None, None
+        # Final-frame judgement for every env, published on the env for the
+        # results row (env.get_env_results → summarize: score / score_peak).
+        finals = getattr(self._env, "_subtask_final_scores", None)
+        if finals is None:
+            finals = self._env._subtask_final_scores = {}
+        for eid in range(self._num_envs):
+            try:
+                finals[eid] = float(self.judge_final_score(eid))
+            except Exception:
+                logger.exception("final-frame judgement failed for env %d; keeping the live score", eid)
 
         status_list = []
         completed_list = []

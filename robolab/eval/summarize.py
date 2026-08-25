@@ -175,6 +175,11 @@ def build_run_summary(
         # per-event score in the v2 events log).
         if final_score is not None:
             summary["score"] = final_score
+        # H-B3: `score` is the ladder judged on the final frame; the live (monotone)
+        # number is kept as `score_peak` — subgoals reached vs subgoals kept.
+        summary["score_peak"] = summary.get("score")
+        if env_result.get("score_final") is not None:
+            summary["score"] = float(env_result["score_final"])
         elif events_list:
             summary["score"] = events_list[-1].get("score")
         else:

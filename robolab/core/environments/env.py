@@ -159,6 +159,8 @@ class RobolabEnv(ManagerBasedRLEnv):
                 # A2 confirmed success: step the raw predicate first held / was confirmed
                 'success_first_hold_step': self._confirm_step(eid, 'first_hold_step'),
                 'success_confirmed_step': self._confirm_step(eid, 'confirmed_step'),
+                # H-B3: ladder re-judged on the final frame (None when no subtask tracking)
+                'score_final': (getattr(self, '_subtask_final_scores', {}) or {}).get(eid),
             })
         return results
 
@@ -182,4 +184,5 @@ class RobolabEnv(ManagerBasedRLEnv):
         self._env_results.clear()
         self._env_term_step.clear()
         self._early_resets.clear()
+        self._subtask_final_scores = {}
         self._has_stepped = False
