@@ -246,7 +246,7 @@ class EventTracker:
         closed_on_air = fully_closed & ~holding
         new_closed = closed_on_air & ~self._recorded_gripper_fully_closed & active_mask
         if new_closed.any():
-            events.append(("Gripper closed on nothing (failed grasp attempt)", StatusCode.GRIPPER_FULLY_CLOSED, new_closed.clone()))
+            events.append(("Gripper closed on nothing", StatusCode.GRIPPER_FULLY_CLOSED, new_closed.clone()))
             self._recorded_gripper_fully_closed |= new_closed
             if verbose:
                 envs = new_closed.nonzero(as_tuple=False).squeeze(-1).tolist()
