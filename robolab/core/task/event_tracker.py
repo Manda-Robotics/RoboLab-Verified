@@ -190,10 +190,18 @@ class EventTracker:
                 events.append((f"Grasp attempt on '{obj_name}' failed (contact lost before a carry was established)", StatusCode.GRASP_ATTEMPT_FAILED, mask))
             elif kind == "released":
                 events.append((f"'{obj_name}' released (hand opened)", StatusCode.OBJECT_RELEASED, mask))
+            elif kind == "towed":
+                events.append((f"'{obj_name}' towed without a grasp — moving with an OPEN hand (stuck to a finger; physics artifact, episode is not trustworthy)", StatusCode.TOWED_WITHOUT_GRASP, mask))
             else:
                 events.append((f"'{obj_name}' dropped (left the closed hand)", StatusCode.OBJECT_DROPPED, mask))
             if verbose:
                 print(f"[EventTracker] env{eid}: {events[-1][0]}")
+
+        # publish towed objects for the results row (episode is bogus if non-empty)
+        try:
+            env._towed_objects = {eid: sorted(v) for eid, v in tracker.towed_objects().items()}
+        except Exception:
+            pass
 
         # --- Off the table (P38): any object, one flag; TARGET_LOST when the task is unrecoverable ---
         try:

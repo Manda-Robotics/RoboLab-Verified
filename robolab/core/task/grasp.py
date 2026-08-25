@@ -11,8 +11,11 @@ Definition here (Finn, 2026-08-25): the object counts as grasped once it has bee
 in contact with the hand for ``GRASP_HOLD_S`` (0.2 s) while its offset to the
 hand changed by less than ``GRASP_COUPLING_M`` (0.5 cm) and the hand itself
 moved at least ``GRASP_HAND_MOVE_M`` (1 cm) — i.e. the hand is carrying it.
-Contact that ends before that, with the hand at least partly closed, is one
-``GRASP_ATTEMPT_FAILED``. After a grasp, losing contact is ``OBJECT_RELEASED``
+The hand must be at least ``GRASP_ATTEMPT_CLOSURE`` closed for the carry to be a
+grasp; the same carry with an open hand is ``TOWED_WITHOUT_GRASP`` — the object
+stuck to one finger and dragged along, a physics artifact that cannot happen in
+the real world (Finn: an episode with it is bogus). Contact that ends before a
+carry, with the hand at least partly closed, is one ``GRASP_ATTEMPT_FAILED``. After a grasp, losing contact is ``OBJECT_RELEASED``
 when the hand is opening and ``OBJECT_DROPPED`` when it is still closed.
 
 State lives in one :class:`GraspTracker` per env instance, updated at most once
@@ -95,6 +98,8 @@ class _PairState:
         self.prev_contact = torch.zeros(n, dtype=torch.bool, device=device)
         self.attempt_closed = torch.zeros(n, dtype=torch.bool, device=device)   # hand was closing during the contact
         self.last_grasped_step = torch.full((n,), -10**9, dtype=torch.long, device=device)
+        self.towed_flagged = torch.zeros(n, dtype=torch.bool, device=device)  # TOWED_WITHOUT_GRASP raised this episode
+        self.towed_now = torch.zeros(n, dtype=torch.bool, device=device)
         self.rel_hist: deque = deque(maxlen=k + 1)     # object - hand offsets, newest last
         self.hand_hist: deque = deque(maxlen=k + 1)
         self.last_step = -1
@@ -139,6 +144,8 @@ class GraspTracker:
             st.grasped[fresh] = False
             st.prev_contact[fresh] = False
             st.attempt_closed[fresh] = False
+            st.towed_flagged[fresh] = False
+            st.towed_now[fresh] = False
             if bool(fresh.all()):
                 st.rel_hist.clear(); st.hand_hist.clear()
 
@@ -161,7 +168,17 @@ class GraspTracker:
         else:
             rel_dev = torch.full((n,), float("inf"), device=env.device)
             hand_moved = torch.zeros(n, device=env.device)
-        newly = (~st.grasped) & contact & (st.contact_streak >= k) & (rel_dev < self.coupling_m) & (hand_moved >= self.hand_move_m)
+        carry = contact & (st.contact_streak >= k) & (rel_dev < self.coupling_m) & (hand_moved >= self.hand_move_m)
+        # A carry with an OPEN hand is not a grasp: it is the object stuck to one
+        # finger and towed (Finn, reviews 06/08 — "looks magnetic", impossible in
+        # the real world; a PhysX high-friction artifact). Flag it once per object
+        # and never credit it as a grasp; a real grasp always reads closed here.
+        towed = carry & ~closed_attempt & ~st.grasped & ~st.towed_flagged
+        for eid in towed.nonzero(as_tuple=False).flatten().tolist():
+            self._events.append((eid, obj, hand, "towed"))
+        st.towed_flagged |= towed
+        st.towed_now = carry & ~closed_attempt
+        newly = (~st.grasped) & carry & closed_attempt
 
         lost = st.grasped & ~contact
         ended_attempt = (~st.grasped) & st.prev_contact & ~contact & ~fresh
@@ -196,6 +213,14 @@ class GraspTracker:
         dt = float(getattr(self.env, "step_dt", 0.0) or 1 / 15)
         k = max(1, int(round(within_s / dt)))
         return (self.env.episode_length_buf - st.last_grasped_step) <= k
+
+    def towed_objects(self) -> dict[int, set[str]]:
+        """env_id -> objects that were towed without a grasp this episode."""
+        out: dict[int, set[str]] = {}
+        for (obj, hand), st in self._pairs.items():
+            for eid in st.towed_flagged.nonzero(as_tuple=False).flatten().tolist():
+                out.setdefault(eid, set()).add(obj)
+        return out
 
     def pop_events(self) -> list[tuple[int, str, str, str]]:
         ev, self._events = self._events, []

@@ -164,6 +164,7 @@ class StatusCode(IntEnum):
     OBJECT_FELL_OFF_TABLE = 272    # An object dropped well below its starting height (over the edge)
     TARGET_LOST = 273              # The success condition can no longer be met (required target off the table) — terminal
     PLACED_WITHOUT_LIFT = 274      # A placement was credited for an object that was never carried (dragged / pushed)
+    TOWED_WITHOUT_GRASP = 275      # Object moved with an OPEN hand (stuck to one finger) — physics artifact, episode is bogus
 
     # ============================================================
     # Legacy aliases for backward compatibility
@@ -213,4 +214,5 @@ EVENT_STATUS_CODES: set[StatusCode] = {
     StatusCode.OBJECT_FELL_OFF_TABLE,
     StatusCode.TARGET_LOST,
     StatusCode.PLACED_WITHOUT_LIFT,
+    StatusCode.TOWED_WITHOUT_GRASP,
 }

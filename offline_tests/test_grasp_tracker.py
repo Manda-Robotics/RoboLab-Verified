@@ -100,3 +100,18 @@ def test_reset_clears_state_and_update_is_once_per_step():
     assert t.grasped("banana", "gripper", env_id=0) is True          # same step, no extra update
     env.episode_length_buf[:] = 0; env.common_step_counter += 1      # reset
     assert t.grasped("banana", "gripper", env_id=0) is False
+
+
+def test_open_hand_carry_is_towed_not_grasped():
+    env = _Env(dt=0.1); s = _Script(); s.install(); t = G.GraspTracker(env)
+    env.episode_length_buf[:] = 1
+    evs = []
+    for x in (0.00, 0.01, 0.02, 0.03):
+        grasped, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0], closure=0.0)   # hand OPEN
+        evs += ev
+    assert grasped is False
+    assert evs == [(0, "banana", "gripper", "towed")]                 # flagged once
+    assert t.towed_objects() == {0: {"banana"}}
+    # closing the hand on the same carry → now a grasp
+    grasped, _ = _tick(env, t, s, True, hand=[0.04, 0, 0], obj=[0.09, 0, 0], closure=0.6)
+    assert grasped is True

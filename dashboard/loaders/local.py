@@ -141,6 +141,7 @@ class EpisodeRow:
     last_frame_path: str | None = None   # absolute path, may be None
     has_hdf5: bool = False
     score_peak: float | None = None      # highest live ladder score (subgoals reached, kept or not) — P34
+    physics_artifact: bool = False       # TOWED_WITHOUT_GRASP fired: an object moved with an open hand
     recorded_at: float | None = None     # unix time the episode's newest video was written
     stages_reached: int | None = None    # subtask stages completed (from "Completed subtask k/N" events)
     stages_total: int | None = None      # N — from the events, else the task's ladder length
@@ -538,6 +539,7 @@ class LocalLoader:
                 success=bool(d.get("success", False)),
                 score=score,
                 score_peak=(float(d["score_peak"]) if d.get("score_peak") is not None else None),
+                physics_artifact=bool(d.get("physics_artifact", False)),
                 reason=d.get("reason"),
                 duration=duration,
                 episode_step=int(d.get("episode_step") or 0),

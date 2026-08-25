@@ -1940,6 +1940,7 @@ function renderTask(runId, task) {
 // LocalLoader._attach_progress): success · stuck at stage k (started) ·
 // stage k not started · no subtask tracking.
 function progressBucket(ep) {
+  if (ep.physics_artifact) return { key: 'towed', label: '⚠ physics artifact', cls: 'fail', order: -1, title: 'An object moved with an open hand (stuck to a finger) — TOWED_WITHOUT_GRASP; the episode is not trustworthy' };
   if (ep.success) return { key: 'ok', label: '✓ success', cls: 'success', order: 0, title: 'Episode succeeded' };
   if (ep.stages_total == null) return { key: 'na', label: 'no subtask tracking', cls: '', order: 99, title: 'No subtask events recorded' };
   if ((ep.stages_reached || 0) >= ep.stages_total) {
@@ -2040,6 +2041,7 @@ async function renderEpisode(runId, task, envId, runIndex) {
   const header = el('div', { class: 'flex items-start gap-3 flex-wrap mb-4' },
     epChip,
     badge(ep.success),
+    ep.physics_artifact ? el('span', { class: 'chip fail', title: 'TOWED_WITHOUT_GRASP fired — an object moved with an open hand; physics artifact, do not trust this episode' }, '⚠ physics artifact') : null,
     chip(`${ep.episode_step} steps`),
     chip(fmtSec(ep.duration)),
     ep.score != null

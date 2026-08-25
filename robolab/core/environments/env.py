@@ -163,6 +163,8 @@ class RobolabEnv(ManagerBasedRLEnv):
                 'score_final': (getattr(self, '_subtask_final_scores', {}) or {}).get(eid),
                 # A1: distinct non-target objects that entered a goal container (None = no tracking)
                 'collateral_placed': (getattr(self, '_collateral_placed', {}) or {}).get(eid, 0),
+                # TOWED_WITHOUT_GRASP: objects that moved with an open hand — physics artifact, episode not trustworthy
+                'towed_objects': (getattr(self, '_towed_objects', {}) or {}).get(eid, []),
             })
         return results
 
@@ -197,4 +199,5 @@ class RobolabEnv(ManagerBasedRLEnv):
         self._early_resets.clear()
         self._subtask_final_scores = {}
         self._collateral_placed = {}
+        self._towed_objects = {}
         self._has_stepped = False
