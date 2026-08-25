@@ -5,10 +5,11 @@
 
 from collections import defaultdict
 from dataclasses import asdict
+import re
 from pathlib import Path
 
 from fastapi import Body, FastAPI, HTTPException, Query, Request
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -69,6 +70,56 @@ def _resolve_dt(task_dir: Path, env_id: int, run_index: int) -> float | None:
         if isinstance(d, dict) and d.get("dt"):
             return float(d["dt"])
     return None
+
+
+_RANGE_RE = re.compile(r"^bytes=(\d*)-(\d*)$")
+
+
+def _video_response(path: str | Path, request: Request):
+    """Serve an mp4 with HTTP Range support.
+
+    Starlette < 0.40's ``FileResponse`` ignores ``Range`` and always answers 200 with
+    the whole file. Chromium then treats the stream as non-seekable: scrubbing, event
+    clicks and arrow-key seeks silently snap back to the buffered position until the
+    entire file has downloaded, and Safari refuses to play at all. Browsers need a
+    206 + ``Content-Range`` (and ``Accept-Ranges: bytes`` on the full response).
+    """
+    path = Path(path)
+    size = path.stat().st_size
+    base_headers = {"Accept-Ranges": "bytes"}
+    m = _RANGE_RE.match(request.headers.get("range", "").strip())
+    if not m:
+        return FileResponse(str(path), media_type="video/mp4", headers=base_headers)
+    start_s, end_s = m.groups()
+    if start_s == "" and end_s == "":
+        return FileResponse(str(path), media_type="video/mp4", headers=base_headers)
+    if start_s == "":                      # suffix range: last N bytes
+        length = min(int(end_s), size)
+        start, end = size - length, size - 1
+    else:
+        start = int(start_s)
+        end = min(int(end_s), size - 1) if end_s else size - 1
+    if start >= size or start > end:
+        return Response(status_code=416, headers={"Content-Range": f"bytes */{size}"})
+    length = end - start + 1
+
+    def _iter(chunk: int = 1 << 20):
+        with open(path, "rb") as f:
+            f.seek(start)
+            remaining = length
+            while remaining > 0:
+                buf = f.read(min(chunk, remaining))
+                if not buf:
+                    break
+                remaining -= len(buf)
+                yield buf
+
+    headers = {
+        **base_headers,
+        "Content-Range": f"bytes {start}-{end}/{size}",
+        "Content-Length": str(length),
+    }
+    return StreamingResponse(_iter(), status_code=206, media_type="video/mp4", headers=headers)
 
 
 def _overview_bucket():
@@ -369,9 +420,9 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
         return [asdict(e) for e in eps]
 
     @app.get("/api/runs/{run_id}/tasks/{task}/episodes/{env_id}/run/{run_index}/video")
-    def episode_video(run_id: str, task: str, env_id: int, run_index: int, name: str | None = None):
+    def episode_video(request: Request, run_id: str, task: str, env_id: int, run_index: int, name: str | None = None):
         """Return the requested camera mp4. If ``name`` is omitted, return the first one
-        (prefers ``viewport``)."""
+        (prefers ``viewport``). Honours HTTP Range requests — see ``_video_response``."""
         ep = loader.get_episode(run_id, task, env_id, run_index)
         if ep is None or not ep.videos:
             raise HTTPException(status_code=404, detail="no video for episode")
@@ -379,8 +430,8 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
             match = next((v for v in ep.videos if v.name == name), None)
             if match is None:
                 raise HTTPException(status_code=404, detail=f"no camera named {name!r}")
-            return FileResponse(match.path, media_type="video/mp4")
-        return FileResponse(ep.videos[0].path, media_type="video/mp4")
+            return _video_response(match.path, request)
+        return _video_response(ep.videos[0].path, request)
 
     @app.get("/api/runs/{run_id}/tasks/{task}/episodes/{env_id}/run/{run_index}/thumb")
     def episode_thumb(run_id: str, task: str, env_id: int, run_index: int):
