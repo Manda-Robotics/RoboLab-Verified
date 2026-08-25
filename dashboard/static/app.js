@@ -1550,27 +1550,75 @@ function setBreadcrumb(...parts) {
 
 function selectOverview() {
   state.selection = { view: 'overview' };
+  writeHash('#/results');
   renderOverview();
 }
 
 async function selectRun(runId) {
   state.selection = { view: 'run', run_id: runId };
+  writeHash(`#/results/run/${encodeURIComponent(runId)}`);
   await ensureTasks(runId);
   renderRun(runId);
 }
 
 async function selectTask(runId, task) {
   state.selection = { view: 'task', run_id: runId, task };
+  writeHash(`#/results/run/${encodeURIComponent(runId)}/task/${encodeURIComponent(task)}`);
   await ensureEpisodes(runId, task);
   renderTask(runId, task);
 }
 
 async function selectEpisode(runId, task, envId, runIndex) {
   state.selection = { view: 'episode', run_id: runId, task, env_id: envId, run_index: runIndex };
+  writeHash(`#/results/run/${encodeURIComponent(runId)}/task/${encodeURIComponent(task)}/ep/${envId}/${runIndex}`);
   await ensureEpisodes(runId, task);
   renderEpisode(runId, task, envId, runIndex);
 }
 
+// ---- permalinks ------------------------------------------------------------
+// The URL hash mirrors the selection (#/results/run/<run>/task/<task>/ep/<env>/<runIndex>,
+// #/scenes, #/tasks, #/home) so an episode can be linked from a review
+// transcript, reload lands where you were, and Back works (H-E15). writeHash
+// is a no-op while we are applying a hash, so navigation never echoes.
+let applyingHash = false;
+function writeHash(h) {
+  if (applyingHash || location.hash === h) return;
+  // The very first write (fresh load) replaces instead of pushing, so Back
+  // from the landing page leaves the app rather than bouncing on it.
+  if (!location.hash) history.replaceState(null, '', h); else history.pushState(null, '', h);
+}
+async function applyHash() {
+  const h = location.hash || '';
+  const parts = h.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
+  applyingHash = true;
+  try {
+    if (parts[0] === 'scenes' || parts[0] === 'tasks' || parts[0] === 'home') { setRoute(parts[0]); return; }
+    if (parts[0] !== 'results') { if (h) setRoute('home'); return; }
+    if (state.route !== 'results') setRoute('results', false);
+    // results/run/<run>[/task/<task>[/ep/<env>/<runIndex>]]
+    if (parts[1] === 'run' && parts[2]) {
+      const runId = parts[2];
+      state.expanded.runs.add(runId);
+      if (parts[3] === 'task' && parts[4]) {
+        const task = parts[4];
+        state.expanded.tasks.add(`${runId}::${task}`);
+        if (parts[5] === 'ep' && parts[6] != null && parts[7] != null) {
+          await selectEpisode(runId, task, parseInt(parts[6], 10), parseInt(parts[7], 10));
+        } else {
+          await selectTask(runId, task);
+        }
+      } else {
+        await selectRun(runId);
+      }
+      renderSidebar();
+    } else {
+      selectOverview();
+    }
+  } finally {
+    applyingHash = false;
+  }
+}
+window.addEventListener('popstate', () => { applyHash(); });
 
 // ---- overview view ----------------------------------------------------------
 
@@ -2729,8 +2777,9 @@ function renderPlots(host, ts) {
 
 // ---- top-level router (Home / Scenes / Tasks / Results) -------------------
 
-function setRoute(route) {
+function setRoute(route, render = true) {
   state.route = route;
+  if (route !== 'results') writeHash(`#/${route}`);
   // Toggle the sidebar pane and swap its inner content per route. Home /
   // Scenes hide the sidebar entirely; Results and Tasks each show their
   // own sidebar body.
@@ -2748,6 +2797,7 @@ function setRoute(route) {
   // Clear breadcrumb + compare bar between routes.
   $('#breadcrumb').innerHTML = '';
   $('#compare-bar').innerHTML = '';
+  if (!render) { if (route === 'results') renderCompareBar(); return; }   // deep link renders its own view
   if (route === 'home') renderHome();
   else if (route === 'scenes') renderScenesIndex();
   else if (route === 'tasks') renderTasksIndex();
@@ -3636,6 +3686,8 @@ async function boot() {
   // Land on Home FIRST so the user never sees the Results sidebar flash
   // on a fresh page load. The Results-only state (sources, runs list) loads
   // in the background and is ready by the time they click into Results.
+  // A deep link (#/results/...) is remembered and applied once runs exist.
+  const initialHash = location.hash;
   setRoute('home');
   try {
     await renderSources();
@@ -3645,6 +3697,11 @@ async function boot() {
     return;
   }
   renderSidebar();
+  // Deep link: #/results/... (or #/scenes etc.) after the runs list exists.
+  if (initialHash && initialHash !== '#/home') {
+    history.replaceState(null, '', initialHash);
+    await applyHash();
+  }
 }
 
 boot();
