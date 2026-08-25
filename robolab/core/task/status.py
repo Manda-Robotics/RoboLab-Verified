@@ -158,6 +158,7 @@ class StatusCode(IntEnum):
     GRASP_ATTEMPT_FAILED = 266     # Hand closed on / touched the object but never established a carry
     OBJECT_RELEASED = 267          # A grasped object left the hand while it was opening (deliberate)
     OBJECT_DROPPED = 268           # A grasped object left the hand while it stayed closed (slip)
+    SCENE_SETTLING = 269           # Objects moved during the reset warm-up without the hand touching them
 
     # ============================================================
     # Legacy aliases for backward compatibility
@@ -201,4 +202,5 @@ EVENT_STATUS_CODES: set[StatusCode] = {
     StatusCode.GRASP_ATTEMPT_FAILED,
     StatusCode.OBJECT_RELEASED,
     StatusCode.OBJECT_DROPPED,
+    StatusCode.SCENE_SETTLING,
 }

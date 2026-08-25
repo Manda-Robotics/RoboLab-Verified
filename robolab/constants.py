@@ -94,6 +94,11 @@ GRASP_COUPLING_M = 0.005
 GRASP_HAND_MOVE_M = 0.01
 GRASP_ATTEMPT_CLOSURE = 0.3
 GRASP_RELEASE_CLOSURE = 0.1
+# Scene settling (VERIFIED_PLAN B12): object motion during the first
+# SETTLE_WARMUP_S of an episode, for objects the hand is not touching, is the
+# scene settling — reported once per env as SCENE_SETTLING, not as OBJECT_BUMPED
+# / OBJECT_MOVED on the robot's account.
+SETTLE_WARMUP_S = 1.0
 RECORD_IMAGE_DATA = False
 DEVICE = "cuda:0"
 

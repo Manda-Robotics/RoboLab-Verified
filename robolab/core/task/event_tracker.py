@@ -5,6 +5,8 @@ from typing import Any
 
 import torch
 
+import robolab.constants
+
 from robolab.core.task.conditionals import (
     get_wrong_object_grabbed,
     gripper_fully_closed,
@@ -71,6 +73,8 @@ class EventTracker:
         # Per-env bool tensors
         self._recorded_gripper_hit_table = torch.zeros(N, dtype=torch.bool, device=dev)
         self._recorded_gripper_fully_closed = torch.zeros(N, dtype=torch.bool, device=dev)
+        self._was_warm = torch.ones(N, dtype=torch.bool, device=dev)          # inside the reset warm-up window
+        self._settling: dict[int, dict[str, float]] = {}                     # env_id -> {object: displacement} seen during warm-up
         self._recorded_multiple_grab = torch.zeros(N, dtype=torch.bool, device=dev)
         self._target_was_grabbed = torch.zeros(N, dtype=torch.bool, device=dev)
         self._recorded_target_dropped = torch.zeros(N, dtype=torch.bool, device=dev)
@@ -90,6 +94,9 @@ class EventTracker:
         idx = torch.tensor(env_ids, dtype=torch.long, device=self.device)
         self._recorded_gripper_hit_table[idx] = False
         self._recorded_gripper_fully_closed[idx] = False
+        self._was_warm[idx] = True
+        for i in (idx.tolist() if hasattr(idx, "tolist") else list(idx)):
+            self._settling.pop(int(i), None)
         self._recorded_multiple_grab[idx] = False
         self._target_was_grabbed[idx] = False
         self._recorded_target_dropped[idx] = False
@@ -223,17 +230,43 @@ class EventTracker:
         cleared = ~hit_table & self._recorded_gripper_hit_table & active_mask
         self._recorded_gripper_hit_table &= ~cleared
 
-        # --- Gripper fully closed (batched) ---
+        # --- Gripper fully closed ON NOTHING (batched) ---
+        # Upstream flagged every full closure, including the one holding the
+        # object (25 % of the corpus flags — VERIFIED_PLAN B5, H-R5-9, H-R6-6).
+        # Now: closed AND no scene object in contact with the hand = an air grasp.
         fully_closed = gripper_fully_closed(env, env_id=None)  # (N,) bool
-        new_closed = fully_closed & ~self._recorded_gripper_fully_closed & active_mask
+        holding = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+        hand_candidates = [o for o in (getattr(env.cfg, "contact_object_list", None) or []) if o not in ignore_set]
+        for eid in fully_closed.nonzero(as_tuple=False).flatten().tolist():
+            try:
+                if world.get_objects_in_contact_with("gripper", hand_candidates, env_id=eid):
+                    holding[eid] = True
+            except Exception:
+                pass
+        closed_on_air = fully_closed & ~holding
+        new_closed = closed_on_air & ~self._recorded_gripper_fully_closed & active_mask
         if new_closed.any():
-            events.append(("Gripper fully closed", StatusCode.GRIPPER_FULLY_CLOSED, new_closed.clone()))
+            events.append(("Gripper closed on nothing (failed grasp attempt)", StatusCode.GRIPPER_FULLY_CLOSED, new_closed.clone()))
             self._recorded_gripper_fully_closed |= new_closed
             if verbose:
                 envs = new_closed.nonzero(as_tuple=False).squeeze(-1).tolist()
                 print(f"[EventTracker] envs {envs}: Gripper fully closed")
         cleared = ~fully_closed & self._recorded_gripper_fully_closed & active_mask
         self._recorded_gripper_fully_closed &= ~cleared
+
+        # --- Reset warm-up: motion in the first SETTLE_WARMUP_S with the hand not
+        # touching the object is the scene settling, not a robot bump (B12).
+        step_dt = float(getattr(env, "step_dt", 0.0) or 0.0)
+        warm = (env.episode_length_buf.float() * step_dt) < float(getattr(robolab.constants, "SETTLE_WARMUP_S", 0.0) or 0.0)
+        just_left_warmup = self._was_warm & ~warm & active_mask
+        for eid in just_left_warmup.nonzero(as_tuple=False).flatten().tolist():
+            moved = self._settling.pop(eid, None)
+            if moved:
+                desc = ", ".join(f"{o} {d:.3f}m" for o, d in sorted(moved.items(), key=lambda kv: -kv[1]))
+                mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device); mask[eid] = True
+                events.append((f"Scene settling at reset (no contact with the hand): {desc}", StatusCode.SCENE_SETTLING, mask))
+        self._was_warm = warm.clone()
+        self._warm_now = warm
 
         # --- Movement transitions (batched per object) ---
         movement_events = self._check_movement_transitions_batched(
@@ -324,6 +357,18 @@ class EventTracker:
                     start_pos = self._position_when_started_moving[obj_name]
                     displacement = torch.norm(current_pos - start_pos, dim=-1)  # (N,)
 
+                    # warm-up diversion: not touched by the hand → settling, not a bump
+                    warm_now = getattr(self, "_warm_now", None)
+                    if warm_now is not None and bool((stopped_with_start & warm_now).any()):
+                        try:
+                            touched = in_contact(world, obj_name, "gripper", env_id=None)
+                        except Exception:
+                            touched = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+                        settling = stopped_with_start & warm_now & ~touched & (displacement >= self.bump_threshold)
+                        for eid in settling.nonzero(as_tuple=False).flatten().tolist():
+                            prev = self._settling.get(eid, {}).get(obj_name, 0.0)
+                            self._settling.setdefault(eid, {})[obj_name] = max(prev, float(displacement[eid]))
+                        stopped_with_start = stopped_with_start & ~settling
                     moved_mask = stopped_with_start & (displacement >= self.move_threshold)
                     if moved_mask.any():
                         avg_disp = displacement[moved_mask].mean().item()
