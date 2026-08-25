@@ -165,7 +165,7 @@ class EventTracker:
                     info = f"Wrong object that was grabbed is now detached: '{self._recorded_wrong_object_grab[eid]}'"
                     mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
                     mask[eid] = True
-                    events.append((info, StatusCode.OK, mask))
+                    events.append((info, StatusCode.WRONG_OBJECT_DETACHED, mask))
                     if verbose:
                         print(f"[EventTracker] env{eid}: {info}")
                 self._recorded_wrong_object_grab[eid] = None
