@@ -28,14 +28,14 @@ def auto_register_droid_rel_ik_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, task=None
         contact_gripper,
     )
     from robolab.variations.backgrounds import HomeOfficeBackgroundCfg
-    from robolab.variations.camera import EgocentricMirroredCameraCfg
+    from robolab.variations.camera import EgocentricMirroredCameraCfg, OverShoulderReviewCameraCfg
     from robolab.variations.lighting import SphereLightCfg
 
     if cameras is None:
         cameras = WRIST_LEFT
 
     ImageObsCfg = generate_image_obs_from_cameras(cameras)
-    ViewportCameraCfg = generate_image_obs_from_cameras([EgocentricMirroredCameraCfg])
+    ViewportCameraCfg = generate_image_obs_from_cameras([OverShoulderReviewCameraCfg])
 
     ObservationCfg = generate_obs_cfg({
         "image_obs": ImageObsCfg(),
