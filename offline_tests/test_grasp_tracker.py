@@ -22,6 +22,8 @@ class _Script:
         self.contact = False; self.hand = torch.zeros(3); self.obj = torch.tensor([0.05, 0.0, 0.0]); self.closure = 0.0
 
     def install(self):
+        self.offset = 0.06                                      # 6 cm off-centre unless a test says otherwise
+        G.jaw_offset = lambda env, obj: torch.tensor([self.offset])
         G.hand_contact = lambda env, obj, hand: torch.tensor([self.contact])
         G.hand_position = lambda env, hand: self.hand.clone().unsqueeze(0)
         G.object_position = lambda env, obj: self.obj.clone().unsqueeze(0)
@@ -123,5 +125,16 @@ def test_wide_object_grip_at_low_closure_is_a_grasp_not_a_tow():
     evs = []
     for x in (0.00, 0.01, 0.02, 0.03):
         grasped, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0], closure=0.23)  # orange: 23 % closed
+        evs += ev
+    assert grasped is True and evs == []
+
+
+def test_centred_object_between_open_jaws_is_a_grip_not_a_tow():
+    """A can as wide as the aperture: closure 0.00 but centred → grasp."""
+    env = _Env(dt=0.1); s = _Script(); s.install(); s.offset = 0.0; t = G.GraspTracker(env)
+    env.episode_length_buf[:] = 1
+    evs = []
+    for x in (0.00, 0.01, 0.02, 0.03):
+        grasped, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0], closure=0.0)
         evs += ev
     assert grasped is True and evs == []

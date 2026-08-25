@@ -98,6 +98,11 @@ GRASP_RELEASE_CLOSURE = 0.1
 # calibration (Finn, 2026-08-25): real grips of wide objects (oranges, cans) sit at
 # 0.2-0.35 of the closure range, confirmed tows at 0.00; 0.1 separates them.
 GRASP_TOW_CLOSURE = 0.1
+# ...AND the object sits off-centre along the jaw axis by >= GRASP_TOW_OFFSET_M in the
+# hand frame (GRASP_JAW_BODY's +y): a centred object between fully open jaws (a can as
+# wide as the aperture) is a grip; one hanging 4-11 cm off-centre on one finger is a tow.
+GRASP_TOW_OFFSET_M = 0.03
+GRASP_JAW_BODY = "base_link"
 # Scene settling (VERIFIED_PLAN B12): object motion during the first
 # SETTLE_WARMUP_S of an episode, for objects the hand is not touching, is the
 # scene settling — reported once per env as SCENE_SETTLING, not as OBJECT_BUMPED

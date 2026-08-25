@@ -11,10 +11,13 @@ Definition here (Finn, 2026-08-25): the object counts as grasped once it has bee
 in contact with the hand for ``GRASP_HOLD_S`` (0.2 s) while its offset to the
 hand changed by less than ``GRASP_COUPLING_M`` (0.5 cm) and the hand itself
 moved at least ``GRASP_HAND_MOVE_M`` (1 cm) — i.e. the hand is carrying it.
-The hand must be at least ``GRASP_ATTEMPT_CLOSURE`` closed for the carry to be a
-grasp; the same carry with an open hand is ``TOWED_WITHOUT_GRASP`` — the object
-stuck to one finger and dragged along, a physics artifact that cannot happen in
-the real world (Finn: an episode with it is bogus). Contact that ends before a
+A carry with the hand essentially open (< ``GRASP_TOW_CLOSURE``) **and** the object
+off-centre along the jaw axis (>= ``GRASP_TOW_OFFSET_M``) is ``TOWED_WITHOUT_GRASP``
+— the object stuck to one finger and dragged along, a physics artifact that cannot
+happen in the real world (Finn: an episode with it is bogus). Calibrated on the
+corpus against Finn's verdicts: known tows sit 4-11 cm off-centre at closure 0.00;
+a can as wide as the aperture reads closure 0.00 but sits centred (a grip); an
+orange reads 0.23 (a grip). Any other carry is a grasp. Contact that ends before a
 carry, with the hand at least partly closed, is one ``GRASP_ATTEMPT_FAILED``. After a grasp, losing contact is ``OBJECT_RELEASED``
 when the hand is opening and ``OBJECT_DROPPED`` when it is still closed.
 
@@ -71,6 +74,27 @@ def hand_position(env, hand_label: str) -> torch.Tensor:
     return robot.data.body_pos_w[:, idx] - env.scene.env_origins
 
 
+def jaw_offset(env, obj: str) -> torch.Tensor:
+    """(N,) |offset| of the object along the jaw axis (+y of GRASP_JAW_BODY) in the
+    hand frame. Falls back to zeros (→ never a tow by geometry) when the body is
+    unknown, so the closure rule alone decides."""
+    try:
+        from robolab.core.world.world_state import get_world
+        body = getattr(robolab.constants, "GRASP_JAW_BODY", "base_link")
+        robot = env.scene["robot"]
+        idx = robot.body_names.index(body)
+        pos = robot.data.body_pos_w[:, idx] - env.scene.env_origins
+        q = robot.data.body_quat_w[:, idx]                       # (N, 4) wxyz
+        obj_pos, _ = get_world(env).get_pose(obj, env_id=None)
+        d = obj_pos - pos
+        w, x, y, z = q[:, 0], q[:, 1], q[:, 2], q[:, 3]
+        # y-axis of the body frame expressed in world coordinates (2nd column of R)
+        ay = torch.stack([2 * (x * y - z * w), 1 - 2 * (x * x + z * z), 2 * (y * z + x * w)], dim=-1)
+        return (d * ay).sum(dim=-1).abs()
+    except Exception:
+        return torch.zeros(env.num_envs, device=env.device)
+
+
 def hand_contact(env, obj: str, hand_label: str) -> torch.Tensor:
     from robolab.core.task.predicate_logic import in_contact
     from robolab.core.world.world_state import get_world
@@ -114,6 +138,7 @@ class GraspTracker:
         self.attempt_closure = float(getattr(robolab.constants, "GRASP_ATTEMPT_CLOSURE", 0.3))
         self.release_closure = float(getattr(robolab.constants, "GRASP_RELEASE_CLOSURE", 0.1))
         self.tow_closure = float(getattr(robolab.constants, "GRASP_TOW_CLOSURE", 0.1))
+        self.tow_offset = float(getattr(robolab.constants, "GRASP_TOW_OFFSET_M", 0.03))
         self._pairs: dict[tuple[str, str], _PairState] = {}
         self._events: list[tuple[int, str, str, str]] = []      # (env_id, object, hand, kind)
 
@@ -175,13 +200,15 @@ class GraspTracker:
         # finger and towed (Finn, reviews 06/08 — "looks magnetic", impossible in
         # the real world; a PhysX high-friction artifact). Flag it once per object
         # and never credit it as a grasp; a real grasp always reads closed here.
-        towed = carry & hand_open & ~st.grasped & ~st.towed_flagged
+        off_centre = jaw_offset(env, obj) >= self.tow_offset
+        towed = carry & hand_open & off_centre & ~st.grasped & ~st.towed_flagged
         for eid in towed.nonzero(as_tuple=False).flatten().tolist():
             self._events.append((eid, obj, hand, "towed"))
         st.towed_flagged |= towed
-        st.towed_now = carry & hand_open
-        # a carry that is not a tow is a grasp — wide objects read only 0.2-0.35 closed
-        newly = (~st.grasped) & carry & ~hand_open
+        st.towed_now = carry & hand_open & off_centre
+        # a carry that is not a tow is a grasp — wide objects read only 0.2-0.35 closed,
+        # and a can as wide as the open jaws reads 0.0 but sits centred
+        newly = (~st.grasped) & carry & ~st.towed_now
 
         lost = st.grasped & ~contact
         ended_attempt = (~st.grasped) & st.prev_contact & ~contact & ~fresh
