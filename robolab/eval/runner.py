@@ -23,6 +23,10 @@ the simulation app.
 from __future__ import annotations
 
 import argparse
+import json
+import os
+import sys
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Callable
 
 from robolab.constants import DEFAULT_TASK_SUBFOLDERS
@@ -112,6 +116,26 @@ def add_common_eval_args(parser: argparse.ArgumentParser) -> None:
                               "--renderer pathtracing."))
 
 
+def write_run_complete_marker(output_dir: str, episode_results: list[dict]) -> str:
+    """Write ``<output_dir>/run_complete.json`` once every task/run has finished.
+
+    Per-episode rows are already flushed to ``episode_results.jsonl`` as they
+    happen; this marker is the only durable signal that the run reached its end
+    (as opposed to Isaac dying at shutdown, a pod being stopped, or the process
+    being killed). Tooling should treat a run directory without it as partial.
+    """
+    tasks = sorted({r.get("env_name") or r.get("task_name") or "" for r in episode_results if r})
+    payload = {
+        "tasks": len([t for t in tasks if t]),
+        "episodes": len(episode_results),
+        "finished_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    path = os.path.join(output_dir, "run_complete.json")
+    with open(path, "w") as f:
+        json.dump(payload, f, indent=2)
+    return path
+
+
 def run_evaluation(
     args: argparse.Namespace,
     *,
@@ -137,6 +161,13 @@ def run_evaluation(
 
     import robolab.constants
     from robolab.constants import PACKAGE_DIR, get_timestamp, set_output_dir
+
+    # Line-buffer stdout: with output redirected to a file Python block-buffers,
+    # and Isaac often exits before the buffer is flushed, losing the run summary.
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except (AttributeError, ValueError):
+        pass
     from robolab.core.environments.factory import get_envs
     from robolab.core.environments.runtime import create_env
     from robolab.core.logging.results import (
@@ -289,3 +320,4 @@ def run_evaluation(
         env.close()
 
     summarize_experiment_results(episode_results, show_timing=True)
+    write_run_complete_marker(output_dir, episode_results)
