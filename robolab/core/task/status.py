@@ -59,6 +59,12 @@ class StatusCode(IntEnum):
     OBJECT_AT_SUCCESS = 123
     OBJECT_INSIDE_SUCCESS = 124
     OBJECT_IN_CONTAINER_SUCCESS = 125
+    OBJECT_ON_TOP_SUCCESS = 176
+    OBJECT_ON_BOTTOM_SUCCESS = 177
+    OBJECT_ON_CENTER_SUCCESS = 178
+    OBJECT_PICKED_UP_SUCCESS = 179
+    OBJECTS_PLACED_IN_CONTAINER_IN_ORDER_SUCCESS = 180
+    OBJECT_GROUPS_IN_CONTAINERS_SUCCESS = 181
     OBJECT_OUTSIDE_OF_SUCCESS = 126
     OBJECT_ENCLOSED_SUCCESS = 127
     OBJECT_ABOVE_SUCCESS = 128
@@ -165,6 +171,12 @@ class StatusCode(IntEnum):
     TARGET_LOST = 273              # The success condition can no longer be met (required target off the table) — terminal
     PLACED_WITHOUT_LIFT = 274      # A placement was credited for an object that was never carried (dragged / pushed)
     TOWED_WITHOUT_GRASP = 275      # Object moved with an OPEN hand (stuck to one finger) — physics artifact, episode is bogus
+    OBJECT_ON_TOP_FAILURE = 276
+    OBJECT_ON_BOTTOM_FAILURE = 277
+    OBJECT_ON_CENTER_FAILURE = 278
+    OBJECT_PICKED_UP_FAILURE = 279
+    OBJECTS_PLACED_IN_CONTAINER_IN_ORDER_FAILURE = 280
+    OBJECT_GROUPS_IN_CONTAINERS_FAILURE = 281
 
     # ============================================================
     # Legacy aliases for backward compatibility

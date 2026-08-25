@@ -12,6 +12,7 @@ from isaaclab.managers.recorder_manager import RecorderManagerBaseCfg, RecorderT
 from isaaclab.utils import configclass
 
 import robolab.constants
+from robolab.core.events.event_lines import dedupe_tick
 from robolab.core.task.event_tracker import EventTracker
 from robolab.core.task.target_objects import subtask_targets, task_containers, task_targets
 from robolab.core.task.status import StatusCode, get_status_name
@@ -200,10 +201,11 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
             except Exception:
                 logger.exception("placed-without-lift check failed")
 
+            tracker_lines = []
             for tracker_info, tracker_code, env_mask in all_events:
                 if env_mask[eid]:
                     code_int = int(tracker_code)
-                    self._events[eid].append({
+                    tracker_lines.append({
                         "step": step_idx,
                         "code": code_int,
                         "name": get_status_name(code_int),
@@ -211,6 +213,7 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
                         "score": current_score,
                     })
 
+            ladder_line = None
             cur_sm_state = (int(status_code), info or "")
             if (
                 cur_sm_state != self._prev_sm_state[eid]
@@ -218,14 +221,20 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
                 and int(status_code) != 0
             ):
                 code_int = int(status_code)
-                self._events[eid].append({
+                ladder_line = {
                     "step": step_idx,
                     "code": code_int,
                     "name": get_status_name(code_int),
                     "info": info,
                     "score": current_score,
-                })
+                }
             self._prev_sm_state[eid] = cur_sm_state
+            # P45: one line per transition — drop same-tick twins, name ladder lines
+            # after their predicate (robolab/core/events/event_lines.py)
+            tracker_lines, ladder_line = dedupe_tick(tracker_lines, ladder_line)
+            self._events[eid].extend(tracker_lines)
+            if ladder_line is not None:
+                self._events[eid].append(ladder_line)
 
             # Capture error info before auto-reset can cause regression
             if not sm.is_complete():
