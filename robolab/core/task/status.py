@@ -161,6 +161,9 @@ class StatusCode(IntEnum):
     SCENE_SETTLING = 269           # Objects moved during the reset warm-up without the hand touching them
     WRONG_OBJECT_PLACED = 270      # A non-target object the hand had held was released inside a goal container
     WRONG_OBJECT_PUSHED_IN = 271   # A non-target object entered a goal container without having been held
+    OBJECT_FELL_OFF_TABLE = 272    # An object dropped well below its starting height (over the edge)
+    TARGET_LOST = 273              # The success condition can no longer be met (required target off the table) — terminal
+    PLACED_WITHOUT_LIFT = 274      # A placement was credited for an object that was never carried (dragged / pushed)
 
     # ============================================================
     # Legacy aliases for backward compatibility
@@ -207,4 +210,7 @@ EVENT_STATUS_CODES: set[StatusCode] = {
     StatusCode.SCENE_SETTLING,
     StatusCode.WRONG_OBJECT_PLACED,
     StatusCode.WRONG_OBJECT_PUSHED_IN,
+    StatusCode.OBJECT_FELL_OFF_TABLE,
+    StatusCode.TARGET_LOST,
+    StatusCode.PLACED_WITHOUT_LIFT,
 }

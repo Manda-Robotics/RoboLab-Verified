@@ -215,6 +215,14 @@ def generate_task_env_cfg(task_class: Task,
             self.instruction = task_class.instruction
             self.terminations = task_class.terminations()
             # A2: score success only once the targets are at rest (robolab/core/task/confirm.py).
+            # P38: end the episode as a failure once a required target has left the
+            # table (robolab/core/task/off_table.py); a non-required one is a flag only.
+            if getattr(self.terminations, "success", None) is not None and robolab.constants.OFF_TABLE_DROP_M > 0:
+                from isaaclab.managers import TerminationTermCfg as _DoneTerm
+                from robolab.core.task.off_table import required_groups, targets_lost
+                _groups = required_groups(dict(getattr(self.terminations.success, "params", {}) or {}))
+                if _groups:
+                    self.terminations.target_lost = _DoneTerm(func=targets_lost, params={"groups": _groups})
             if getattr(self.terminations, "success", None) is not None and robolab.constants.SUCCESS_REST_S > 0:
                 from robolab.core.task.confirm import confirmed_success_term
                 self.terminations.success = confirmed_success_term(

@@ -195,6 +195,12 @@ class EventTracker:
             if verbose:
                 print(f"[EventTracker] env{eid}: {events[-1][0]}")
 
+        # --- Off the table (P38): any object, one flag; TARGET_LOST when the task is unrecoverable ---
+        try:
+            events.extend(self._check_off_table_batched(env, ignore_set, active_mask, verbose))
+        except Exception:
+            logger.exception("off-table check failed")
+
         # --- Collateral placement: a non-target enters a goal container (A1, B7) ---
         try:
             events.extend(self._check_collateral_batched(env, tracker, per_env_allowed, per_env_containers, ignore_set, active_mask, verbose))
@@ -318,6 +324,31 @@ class EventTracker:
         )
         events.extend(multi_events)
 
+        return events
+
+    def _check_off_table_batched(self, env, ignore_set, active_mask, verbose):
+        from robolab.core.task.off_table import get_monitor, required_groups, task_lost
+        mon = get_monitor(env)
+        objs = [o for o in (getattr(env.cfg, "contact_object_list", None) or []) if o not in ignore_set]
+        fallen = mon.fallen_masks(objs)
+        events = []
+        for o, f in fallen.items():
+            flagged = mon.flagged.setdefault(o, torch.zeros(self.num_envs, dtype=torch.bool, device=self.device))
+            new = f & ~flagged & active_mask
+            if new.any():
+                events.append((f"'{o}' fell off the table", StatusCode.OBJECT_FELL_OFF_TABLE, new.clone()))
+                flagged |= new
+        try:
+            groups = required_groups(dict(getattr(env.cfg.terminations.success, "params", {}) or {}))
+        except Exception:
+            groups = []
+        if groups:
+            lost = task_lost(fallen, groups, self.num_envs, self.device) & ~mon.lost_flagged & active_mask
+            for eid in lost.nonzero(as_tuple=False).flatten().tolist():
+                gone = [o for o, f in fallen.items() if bool(f[eid])]
+                mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device); mask[eid] = True
+                events.append((f"Target lost: {', '.join(gone)} off the table — the task can no longer succeed", StatusCode.TARGET_LOST, mask))
+            mon.lost_flagged |= lost
         return events
 
     def _check_collateral_batched(self, env, tracker, per_env_allowed, per_env_containers, ignore_set, active_mask, verbose):

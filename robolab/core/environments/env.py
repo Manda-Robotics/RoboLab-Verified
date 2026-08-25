@@ -113,7 +113,7 @@ class RobolabEnv(ManagerBasedRLEnv):
                     get_world(self).reset_predicate_state(artifact_ids)
                     continue
                 self._frozen_envs[eid] = True
-                self._env_results[eid] = bool(self.termination_manager.terminated[eid])
+                self._env_results[eid] = self._success_of(eid)
                 self._env_term_step[eid] = ep_len
                 # Auto-export recording for this env
                 if self.recorder_manager is not None:
@@ -165,6 +165,15 @@ class RobolabEnv(ManagerBasedRLEnv):
                 'collateral_placed': (getattr(self, '_collateral_placed', {}) or {}).get(eid, 0),
             })
         return results
+
+    def _success_of(self, eid: int) -> bool:
+        """Success = the `success` termination term, not "any non-timeout term"
+        (H-B11) — P38 adds a `target_lost` failure term that must not count."""
+        tm = self.termination_manager
+        try:
+            return bool(tm.get_term("success")[eid])
+        except Exception:
+            return bool(tm.terminated[eid])
 
     def _confirm_step(self, eid: int, which: str):
         """Per-env step from the success confirmer (None when not wrapped / not held)."""

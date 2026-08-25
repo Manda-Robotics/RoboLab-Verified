@@ -99,6 +99,10 @@ GRASP_RELEASE_CLOSURE = 0.1
 # scene settling — reported once per env as SCENE_SETTLING, not as OBJECT_BUMPED
 # / OBJECT_MOVED on the robot's account.
 SETTLE_WARMUP_S = 1.0
+# An object OFF_TABLE_DROP_M below its starting height has left the table:
+# OBJECT_FELL_OFF_TABLE flag; TARGET_LOST terminal failure when the success
+# condition can no longer be met (robolab/core/task/off_table.py).
+OFF_TABLE_DROP_M = 0.15
 RECORD_IMAGE_DATA = False
 DEVICE = "cuda:0"
 
