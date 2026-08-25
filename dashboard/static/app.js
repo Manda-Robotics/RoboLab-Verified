@@ -1861,13 +1861,14 @@ async function renderEpisode(runId, task, envId, runIndex) {
     chip(`${ep.episode_step} steps`),
     chip(fmtSec(ep.duration)),
     ep.instruction_type ? chip(`instr: ${ep.instruction_type}`) : null,
-    // When this episode was recorded (newest video mtime) — subtle, full
-    // timestamp on hover.
+    ...(ep.attributes || []).map((a) => chip(a)),
+    // When this episode was recorded (newest video mtime) — last in the row,
+    // subtle, full timestamp on hover (Finn: "to the very right after the
+    // last flag").
     ep.recorded_at
       ? el('span', { class: 'run-date font-mono self-center', title: new Date(ep.recorded_at * 1000).toLocaleString() },
           `${fmtRelativeDay(ep.recorded_at)} ${fmtClock(ep.recorded_at)}`)
-      : null,
-    ...(ep.attributes || []).map((a) => chip(a)));
+      : null);
   pane.appendChild(header);
 
   // ---- LANGUAGE INSTRUCTION block (placed above the viewport so it reads
