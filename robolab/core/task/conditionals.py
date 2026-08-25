@@ -219,11 +219,25 @@ def object_grabbed(
     gripper_name: str | list[str] = "gripper",
     env_id: int | None = None,
 ):
-    """Check if an object is currently being grabbed by the gripper (in contact with gripper)."""
+    """Check if an object is currently being grabbed by the gripper.
+
+    Grabbed = the object is in contact with the gripper AND the gripper is at
+    least ``robolab.constants.GRAB_MIN_CLOSURE`` closed (per the robot's
+    ``gripper_closure_cfg``; Droid's ``finger_joint`` by default). Upstream used
+    contact alone, so brushing an object with an open hand, resting one finger on
+    it, or dragging it counted as a grasp — the source of most event spam and of
+    "grabbed" credit for objects that never left the table (VERIFIED_PLAN B1,
+    F§1, R02/R03, H-R6-2/3/4, H-R8-12). ``GRAB_MIN_CLOSURE = 0`` restores the
+    contact-only definition.
+    """
     world = get_world(env)
     result = in_contact(world, object, gripper_name, env_id=env_id)
+    min_closure = getattr(robolab.constants, "GRAB_MIN_CLOSURE", 0.0) or 0.0
+    if min_closure > 0:
+        closed = gripper_slightly_closed(env, closed_threshold=min_closure, env_id=env_id, gripper_name=gripper_name)
+        result = _and(result, closed)
     if robolab.constants.DEBUG:
-        print(f"object_grabbed: '{object}' in contact with '{gripper_name}' -> {result}")
+        print(f"object_grabbed: '{object}' in contact with '{gripper_name}' (closure >= {min_closure}) -> {result}")
     return result
 
 @atomic

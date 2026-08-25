@@ -81,6 +81,12 @@ ENABLE_SUBTASK_PROGRESS_CHECKING = True
 # (m/s) before an episode is scored. 0 restores upstream's first-frame termination.
 SUCCESS_HOLD_S = 1.0
 SUCCESS_MAX_SPEED = 0.02
+# A grasp is contact AND a closed hand (VERIFIED_PLAN B1): `object_grabbed` requires
+# the gripper to be at least GRAB_MIN_CLOSURE closed (0 = open, 1 = fully closed,
+# per the robot's gripper_closure_cfg). Set to 0 to restore upstream's
+# contact-only definition. On the Verified corpus 64 % of recorded "grabs" had an
+# open hand and 77 % never moved the object.
+GRAB_MIN_CLOSURE = 0.30
 RECORD_IMAGE_DATA = False
 DEVICE = "cuda:0"
 
