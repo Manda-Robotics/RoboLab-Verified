@@ -5,9 +5,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-KNOWN_CONFLICTS = {
-    "food_packing_by_color_task.py",  # H-R8-2: ladder inverts the success bins
-}
+KNOWN_CONFLICTS: set[str] = set()  # food_packing_by_color (H-R8-2) fixed in P19
 
 
 def test_task_definitions_consistent():
