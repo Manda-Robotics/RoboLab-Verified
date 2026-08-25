@@ -94,6 +94,10 @@ GRASP_COUPLING_M = 0.005
 GRASP_HAND_MOVE_M = 0.01
 GRASP_ATTEMPT_CLOSURE = 0.3
 GRASP_RELEASE_CLOSURE = 0.1
+# TOWED_WITHOUT_GRASP: a carry with the hand below GRASP_TOW_CLOSURE closed. Corpus
+# calibration (Finn, 2026-08-25): real grips of wide objects (oranges, cans) sit at
+# 0.2-0.35 of the closure range, confirmed tows at 0.00; 0.1 separates them.
+GRASP_TOW_CLOSURE = 0.1
 # Scene settling (VERIFIED_PLAN B12): object motion during the first
 # SETTLE_WARMUP_S of an episode, for objects the hand is not touching, is the
 # scene settling — reported once per env as SCENE_SETTLING, not as OBJECT_BUMPED

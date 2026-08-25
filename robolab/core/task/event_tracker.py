@@ -215,16 +215,24 @@ class EventTracker:
         except Exception:
             logger.exception("collateral placement check failed")
 
-        # --- Wrong object grabbed (per-env loop, returns string) ---
+        # --- Wrong object grabbed (P44): a *carry* (GraspTracker) of an object that is
+        # not a target. Upstream used contact + a closure gate, which fired on every
+        # touch of a decoy (FruitsGreenLimesOnPlate cosmos3_s2 env 0: six flags on the
+        # lemon in 13 s, five of them touches). ---
+        scene_objs = [o for o in (getattr(env.cfg, "contact_object_list", None) or []) if o not in ignore_set]
         for eid in range(self.num_envs):
             if frozen_mask[eid]:
                 continue
-            wrong_obj = get_wrong_object_grabbed(
-                env,
-                sorted(per_env_allowed[eid]),
-                ignore_objects=sorted(ignore_set | per_env_containers[eid]),
-                env_id=eid,
-            )
+            wrong_obj = None
+            for o in scene_objs:
+                if o in per_env_allowed[eid] or o in per_env_containers[eid]:
+                    continue
+                try:
+                    if tracker.grasped(o, "gripper", env_id=eid):
+                        wrong_obj = o
+                        break
+                except Exception:
+                    continue
             if wrong_obj is not None:
                 if self._recorded_wrong_object_grab[eid] != wrong_obj:
                     info = f"Wrong object grabbed: '{wrong_obj}' (target objects: {sorted(per_env_allowed[eid])})"

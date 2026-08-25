@@ -113,6 +113,7 @@ class GraspTracker:
         self.hand_move_m = float(getattr(robolab.constants, "GRASP_HAND_MOVE_M", 0.01))
         self.attempt_closure = float(getattr(robolab.constants, "GRASP_ATTEMPT_CLOSURE", 0.3))
         self.release_closure = float(getattr(robolab.constants, "GRASP_RELEASE_CLOSURE", 0.1))
+        self.tow_closure = float(getattr(robolab.constants, "GRASP_TOW_CLOSURE", 0.1))
         self._pairs: dict[tuple[str, str], _PairState] = {}
         self._events: list[tuple[int, str, str, str]] = []      # (env_id, object, hand, kind)
 
@@ -157,6 +158,7 @@ class GraspTracker:
 
         closed_attempt = hand_closed(env, hand, self.attempt_closure)
         still_closed = hand_closed(env, hand, self.release_closure)
+        hand_open = ~hand_closed(env, hand, self.tow_closure)      # essentially fully open
 
         st.contact_streak = torch.where(contact, st.contact_streak + 1, torch.zeros_like(st.contact_streak))
         st.attempt_closed = (st.attempt_closed | closed_attempt) & contact
@@ -173,12 +175,13 @@ class GraspTracker:
         # finger and towed (Finn, reviews 06/08 — "looks magnetic", impossible in
         # the real world; a PhysX high-friction artifact). Flag it once per object
         # and never credit it as a grasp; a real grasp always reads closed here.
-        towed = carry & ~closed_attempt & ~st.grasped & ~st.towed_flagged
+        towed = carry & hand_open & ~st.grasped & ~st.towed_flagged
         for eid in towed.nonzero(as_tuple=False).flatten().tolist():
             self._events.append((eid, obj, hand, "towed"))
         st.towed_flagged |= towed
-        st.towed_now = carry & ~closed_attempt
-        newly = (~st.grasped) & carry & closed_attempt
+        st.towed_now = carry & hand_open
+        # a carry that is not a tow is a grasp — wide objects read only 0.2-0.35 closed
+        newly = (~st.grasped) & carry & ~hand_open
 
         lost = st.grasped & ~contact
         ended_attempt = (~st.grasped) & st.prev_contact & ~contact & ~fresh
