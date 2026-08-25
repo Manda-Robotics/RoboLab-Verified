@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Find scene objects that are authored above their resting height.
+"""Find scene objects that are not at rest when the episode starts (authored above, below, or into something).
 
 Data-driven, no simulator: for every recorded episode under ``--output``, take
 each rigid object's height at step 0 and at ``--after`` seconds, and report
@@ -88,14 +88,17 @@ def main() -> int:
                         pos = g[obj]["root_pose"][:, :3]
                         if len(pos) <= k:
                             continue
-                        drops[(scene, obj)].append(float(pos[0, 2] - pos[k, 2]))
+                        dz = float(pos[0, 2] - pos[k, 2])
+                        dxy = float(((pos[k, :2] - pos[0, :2]) ** 2).sum() ** 0.5)
+                        drops[(scene, obj)].append((dz, dxy))
         except (OSError, KeyError):
             continue
-    rows = [(s, o, statistics.median(v), len(v)) for (s, o), v in drops.items()]
-    bad = sorted((r for r in rows if r[2] > args.threshold), key=lambda r: -r[2])
-    print(f"{len(rows)} scene objects observed in {args.output}; {len(bad)} drop more than {args.threshold*1000:.0f} mm within {args.after:.1f} s of reset")
-    for s, o, d, n in bad:
-        print(f"  {s:40s} {o:22s} drops {d*100:5.1f} cm  (median over {n} episodes)")
+    rows = [(s, o, statistics.median([a for a, _ in v]), statistics.median([b for _, b in v]), len(v)) for (s, o), v in drops.items()]
+    bad = sorted((r for r in rows if abs(r[2]) > args.threshold or r[3] > 2 * args.threshold), key=lambda r: -(abs(r[2]) + r[3]))
+    print(f"{len(rows)} scene objects observed in {args.output}; {len(bad)} move more than {args.threshold*1000:.0f} mm vertically (or {2*args.threshold*1000:.0f} mm sideways) within {args.after:.1f} s of reset")
+    for s, o, dz, dxy, n in bad:
+        what = "drops" if dz > 0 else "RISES"
+        print(f"  {s:40s} {o:22s} {what} {abs(dz)*100:5.1f} cm, rolls {dxy*100:4.1f} cm  (median over {n} episodes)")
     return 1 if bad else 0
 
 
