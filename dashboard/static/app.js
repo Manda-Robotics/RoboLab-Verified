@@ -160,7 +160,7 @@ function sortRows(rows, tableId, accessors) {
     if (!as && !bs) return 0;
     if (!as) return 1;
     if (!bs) return -1;
-    return as < bs ? -1 * dir : 1 * dir;
+    return as.localeCompare(bs) * dir;  // equal strings → 0 (the old ternary returned 1*dir on ties)
   });
 }
 // Mean and across-task std of `timing.policy_inference_avg_ms`.
@@ -2926,7 +2926,7 @@ function _applyTaskSort(tasks, s) {
     if (as === bs) return 0;
     if (!as) return 1;
     if (!bs) return -1;
-    return as < bs ? -1 * dir : 1 * dir;
+    return as.localeCompare(bs) * dir;  // equal strings → 0 (the old ternary returned 1*dir on ties)
   });
 }
 
