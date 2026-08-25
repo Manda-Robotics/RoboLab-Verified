@@ -93,32 +93,50 @@ Subtask(
 
 ### Format 2: List of Callables
 
-**Use Case**: Multiple conditions as separate groups, each with equal score
+**A list is ordered.** What it means depends on `logical`:
+
+- `logical="all"` (default): **one sequential group** — the conditions must hold one
+  after the other, exactly like the dict form `{obj: [c1, c2, c3]}`. The group is named
+  after the object the conditions share (`"rubiks_cube"`), or `"sequence"`.
+- `logical="any"` / `"choose"`: **alternatives** — each callable becomes its own group
+  and `logical` picks between them.
 
 ```python
+# A sequence: grab the cube, place it left of the bowl, let go.
+Subtask(
+    conditions=[
+        partial(object_grabbed, object='rubiks_cube'),
+        partial(object_left_of, object='rubiks_cube', reference_object='bowl'),
+        partial(object_dropped, object='rubiks_cube'),
+    ],
+    logical="all",
+    name="rubiks_cube_left_of_bowl",
+)
+# Internal structure: {"rubiks_cube": [(grabbed, 1/3), (left_of, 1/3), (dropped, 1/3)]}
+
+# Alternatives: grab ANY one of these.
 Subtask(
     conditions=[
         partial(object_grabbed, object='banana'),
-        partial(object_grabbed, object='rubiks_cube')
+        partial(object_grabbed, object='rubiks_cube'),
     ],
-    logical="any",  # Grab ANY one object
-    name="grab_any_object"
+    logical="any",
+    name="grab_any_object",
 )
+# Internal structure: {"group1": [(func1, 0.5)], "group2": [(func2, 0.5)]}
 ```
 
-**Internal Structure**: Each callable becomes its own group with equal scores
-```python
-{
-    "group1": [(func1, 0.5)],
-    "group2": [(func2, 0.5)]
-}
-```
+> Before RoboLab Verified every list became parallel one-condition groups regardless of
+> `logical`. A sequence written as a list then completed `object_dropped` at reset (the
+> object is "not in contact" before the robot moves) and credited `object_left_of` while
+> the object was still in the hand — 11 benchmark tasks scored subtask progress that way
+> (VERIFIED_PLAN H-B1, seen in the dashboard as a subgoal reached at 0.07 s).
 
 ---
 
 ### Format 3: List of Tuples (Callable, Score)
 
-**Use Case**: Multiple conditions with custom score weighting
+**Use Case**: An ordered sequence with custom score weighting
 
 ```python
 Subtask(
@@ -131,13 +149,13 @@ Subtask(
 )
 ```
 
-**Internal Structure**: Each tuple becomes its own group
+**Internal Structure**: one sequential group, scores as given (normalised to sum to 1)
 ```python
 {
-    "group1": [(func1, 1.0)],  # Scores normalized within group
-    "group2": [(func2, 1.0)]
+    "banana": [(func1, 0.3), (func2, 0.7)]
 }
 ```
+With `logical="any"`/`"choose"` each tuple is its own group instead, as in Format 2.
 
 ---
 
