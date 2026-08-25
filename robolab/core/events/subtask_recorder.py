@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import copy
+import re
 import logging
 from collections.abc import Sequence
 from typing import Any
@@ -13,7 +14,7 @@ from isaaclab.utils import configclass
 import robolab.constants
 from robolab.core.task.event_tracker import EventTracker
 from robolab.core.task.target_objects import subtask_targets, task_containers, task_targets
-from robolab.core.task.status import get_status_name
+from robolab.core.task.status import StatusCode, get_status_name
 from robolab.core.task.conditionals_state_machine import ConditionalsStateMachine
 from robolab.core.task.subtask_state_machine import SubtaskStateMachine
 
@@ -192,6 +193,13 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
                 step_idx = -1
             current_score = float(subtask_state["score"])
 
+            # P41 (A7): a placement credited for an object the hand never carried
+            # (dragged / pushed into place) gets a flag; scores are untouched.
+            try:
+                self._flag_placements_without_lift(eid, step_idx, current_score, all_status_codes)
+            except Exception:
+                logger.exception("placed-without-lift check failed")
+
             for tracker_info, tracker_code, env_mask in all_events:
                 if env_mask[eid]:
                     code_int = int(tracker_code)
@@ -270,6 +278,28 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
 
         # Return env 0's info for backward compat
         return self.infos[0]
+
+    _PLACEMENT_RE = re.compile(r"success: (object_in_container|object_on_top|object_on_surface|object_on_center|stacked|object_left_of|object_right_of|object_behind|object_in_front_of)\(object=(\w+)")
+
+    def _flag_placements_without_lift(self, eid: int, step_idx: int, score: float, all_status_codes) -> None:
+        from robolab.core.task.grasp import get_grasp_tracker
+        tracker = get_grasp_tracker(self._env)
+        for info, code in all_status_codes or []:
+            m = self._PLACEMENT_RE.search(info or "")
+            if not m:
+                continue
+            obj = m.group(2)
+            st = tracker._pairs.get((obj, "gripper"))
+            carried = st is not None and int(st.last_grasped_step[eid].item()) >= 0
+            if carried:
+                continue
+            self._events[eid].append({
+                "step": step_idx,
+                "code": int(StatusCode.PLACED_WITHOUT_LIFT),
+                "name": get_status_name(int(StatusCode.PLACED_WITHOUT_LIFT)),
+                "info": f"'{obj}' placed without ever being carried (dragged or pushed into place)",
+                "score": score,
+            })
 
     def judge_final_score(self, eid: int) -> float:
         """The subtask ladder re-judged on the *final* frame (VERIFIED_PLAN H-B3, A3/A4).
