@@ -27,19 +27,23 @@ See the [Ecosystem](docs/ecosystem.md) page for projects built on RoboLab.
 
 ## Getting Started
 
-Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and a system `ffmpeg` (used for video recording). The IsaacSim/IsaacLab stack is selected at install time via a mutually-exclusive extra — `isaac50` (IsaacSim 5.0 / IsaacLab 2.2.0, default) or `isaac51` (IsaacSim 5.1 / IsaacLab 2.3.2.post1). See [Requirements](#requirements) for hardware.
+Requires [uv](https://docs.astral.sh/uv/getting-started/installation/), [Git LFS](https://git-lfs.com) (all `.usd`/`.usda` assets are LFS objects — without it every scene file is a 130-byte pointer stub) and a system `ffmpeg` (used for video recording). The IsaacSim/IsaacLab stack is selected at install time via a mutually-exclusive extra — `isaac51` (IsaacSim 5.1 / IsaacLab 2.3.2.post1, **recommended**) or `isaac50` (IsaacSim 5.0 / IsaacLab 2.2.0). IsaacSim 5.0 segfaults at startup on NVIDIA drivers ≥ 580; use `isaac51` on current drivers. See [Requirements](#requirements) for hardware.
 
 ### Installation
 
 ```bash
-sudo apt install ffmpeg
-git clone <repo_url>
+sudo apt install ffmpeg git-lfs
+git lfs install
+git clone https://github.com/NVlabs/RoboLab.git robolab
 cd robolab
+git lfs pull                     # fetch the USD assets (~6 GB)
 uv venv --python 3.11
 source .venv/bin/activate
-uv sync --extra isaac50          # IsaacSim 5.0 / IsaacLab 2.2.0 (default)
-# uv sync --extra isaac51        # IsaacSim 5.1 / IsaacLab 2.3.2.post1
+uv sync --extra isaac51 --extra test   # IsaacSim 5.1 / IsaacLab 2.3.2.post1 (recommended)
+# uv sync --extra isaac50 --extra test # IsaacSim 5.0 / IsaacLab 2.2.0 (drivers < 580 only)
 ```
+
+`--extra test` pulls in `pytest`; without it the install-verification suite below cannot run.
 
 The two stacks cannot coexist in one environment. To keep both available, install each into its own venv via `UV_PROJECT_ENVIRONMENT`:
 
@@ -50,12 +54,14 @@ UV_PROJECT_ENVIRONMENT=.venv-51 uv sync --extra isaac51
 
 Verify installation:
 ```bash
-uv run pytest tests/
+uv run --no-sync pytest tests/
 ```
 
 This runs the install-verification suite end-to-end: isaaclab importable, all task definitions valid, env factory populated, one full episode runs. The suite auto-accepts the NVIDIA Omniverse EULA so the run is fully headless with no prompts. More details at [Debugging → Diagnostic Scripts](docs/debug.md#diagnostic-scripts).
 
-> **Running without activating the venv**: if you don't `source .venv/bin/activate`, prefix every `python` command with `uv run` (e.g. `uv run pytest tests/`).
+> **Running without activating the venv**: if you don't `source .venv/bin/activate`, prefix every `python` command with `uv run --no-sync` (e.g. `uv run --no-sync pytest tests/`). A bare `uv run` re-syncs the environment to the *default* dependency set first, which silently removes the Isaac extra you just installed.
+
+> **Long runs**: launch with `python -u` (or `PYTHONUNBUFFERED=1`). With stdout redirected to a file Python block-buffers, and Isaac Sim frequently dies at shutdown before the buffer is flushed — the run's final summary lines are lost. Per-episode results are always flushed to `episode_results.jsonl`, and a finished run writes `run_complete.json` next to it.
 
 > **EULA outside the test suite**: when running other entry points (e.g. `policies/pi0_family/run.py`) for the first time, set `export OMNI_KIT_ACCEPT_EULA=Y` once. Cached after first acceptance.
 
@@ -84,7 +90,7 @@ Quick run after install in the RoboLab terminal, to see it working:
 
 ```bash
 cd robolab
-uv run python policies/pi0_family/run.py --policy pi05 --task BananaInBowlTask --num-envs 10
+uv run --no-sync python policies/pi0_family/run.py --policy pi05 --task BananaInBowlTask --num-envs 10
 ```
 Use the [dashboard](#dashboard) to view the output written to your local folder.
 
@@ -134,7 +140,7 @@ See the full [Benchmark Task Library](robolab/tasks/README.md) for all 120 tasks
 A self-contained web dashboard for browsing the benchmark (scenes and tasks) and analyzing your experiment results.
 
 ```bash
-uv run robolab-dashboard
+uv run --no-sync robolab-dashboard
 # open http://localhost:8080
 ```
 
