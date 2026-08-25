@@ -611,6 +611,25 @@ body.sidebar-resizing { cursor: col-resize; user-select: none; }
 .stage-box.partial { background: linear-gradient(90deg, var(--border-strong) 50%, transparent 50%); }
 .stage-count { font-size: 10px; color: var(--text-2); margin-left: 3px; }
 
+/* sidebar: policy-family groups + filter */
+.family-row {
+  cursor: pointer; user-select: none;
+  background: var(--bg-1);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px; letter-spacing: 0.02em;
+  color: var(--text-0);
+}
+.family-row:hover { background: var(--bg-2); }
+.family-name { font-weight: 600; }
+.family-stats { font-size: 10px; color: var(--text-2); white-space: nowrap; }
+.sidebar-filter {
+  width: 100%; font-size: 12px; padding: 4px 8px;
+  background: var(--bg-0); color: var(--text-0);
+  border: 1px solid var(--border-strong); border-radius: 6px; outline: none;
+}
+.sidebar-filter:focus { border-color: var(--accent); }
+
 .run-date {
   flex: none;
   font-size: 10px;

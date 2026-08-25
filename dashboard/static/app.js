@@ -472,7 +472,33 @@ function renderSidebar() {
   // source dir — otherwise the label is redundant (matches the global one).
   const sourceSet = new Set(state.runs.map((r) => r.source).filter(Boolean));
   const showSource = sourceSet.size > 1;
-  for (const run of state.runs) {
+
+  // ---- filter box + policy-family groups (review feedback 2026-08-25: "too
+  // many runs, I need to distinguish — pi05, Gemini, Aloha, …") ----
+  state.sidebarFilter = state.sidebarFilter || '';
+  const filterBox = el('input', {
+    type: 'search', class: 'sidebar-filter', placeholder: 'filter runs… (name, policy)',
+    value: state.sidebarFilter,
+  });
+  filterBox.addEventListener('input', () => {
+    state.sidebarFilter = filterBox.value; renderSidebar();
+    requestAnimationFrame(() => { const b = $('#sidebar .sidebar-filter'); if (b) { b.focus(); b.setSelectionRange(b.value.length, b.value.length); } });
+  });
+  root.appendChild(el('div', { class: 'px-3 pb-1' }, filterBox));
+  const q = state.sidebarFilter.trim().toLowerCase();
+  const visibleRuns = state.runs.filter((r) => !q || r.run_id.toLowerCase().includes(q) || (r.policy || '').toLowerCase().includes(q) || (r.family || '').toLowerCase().includes(q));
+
+  // group by family; groups ordered by their newest run (runs are already newest-first)
+  const groups = new Map();
+  for (const run of visibleRuns) {
+    const key = run.family || 'Unlabelled';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(run);
+  }
+  let collapsed;
+  try { collapsed = new Set(JSON.parse(localStorage.getItem('sidebar.collapsedFamilies') || '[]')); } catch { collapsed = new Set(); }
+  const selectedRun = state.selection.run_id;
+  const renderRun = (run) => {
     const isExpanded = state.expanded.runs.has(run.run_id);
     const isSelected = state.selection.view === 'run' && state.selection.run_id === run.run_id;
     const isCompared = state.compareSet.has(run.run_id);
@@ -579,7 +605,31 @@ function renderSidebar() {
         }
       }
     }
+  };
+
+  for (const [fam, runs] of groups) {
+    const n = runs.reduce((a, r) => a + r.num_episodes, 0);
+    const k = runs.reduce((a, r) => a + r.num_success, 0);
+    const newest = Math.max(...runs.map((r) => r.modified_at || 0));
+    // a group containing the selected run never stays collapsed (deep links)
+    const isCollapsed = collapsed.has(fam) && !runs.some((r) => r.run_id === selectedRun);
+    const header = el('div', {
+      class: 'family-row flex items-center gap-2 px-3 py-1.5',
+      title: `${runs.length} run${runs.length === 1 ? '' : 's'} · ${k}/${n} episodes succeeded`,
+      onclick: () => {
+        if (collapsed.has(fam)) collapsed.delete(fam); else collapsed.add(fam);
+        try { localStorage.setItem('sidebar.collapsedFamilies', JSON.stringify([...collapsed])); } catch { /* private mode */ }
+        renderSidebar();
+      },
+    },
+      el('span', { class: 'w-3', style: { color: 'var(--text-2)' } }, isCollapsed ? '▸' : '▾'),
+      el('span', { class: 'family-name flex-1 min-w-0 truncate' }, fam),
+      el('span', { class: 'family-stats font-mono' }, `${runs.length} · ${n ? fmtPct(k / n) : '—'}`),
+      newest ? el('span', { class: 'run-date font-mono' }, fmtRelativeDay(newest)) : null);
+    root.appendChild(header);
+    if (!isCollapsed) for (const run of runs) renderRun(run);
   }
+  if (!groups.size) root.appendChild(el('div', { class: 'p-3 text-slate-500 text-xs' }, 'No runs match the filter.'));
 }
 
 // ---- compare bar / report ---------------------------------------------------

@@ -128,7 +128,6 @@ class EpisodeRow:
     run_index: int          # the "run" counter inside a multi-run eval (NOT the output dir)
     success: bool
     score: float | None     # subtask ladder judged on the final frame (0..1); None if not recorded
-    score_peak: float | None = None   # highest live ladder score (subgoals reached, kept or not)
     reason: str | None      # failure reason if success is False
     duration: float
     episode_step: int
@@ -141,6 +140,7 @@ class EpisodeRow:
     videos: list[CameraVideo] = field(default_factory=list)
     last_frame_path: str | None = None   # absolute path, may be None
     has_hdf5: bool = False
+    score_peak: float | None = None      # highest live ladder score (subgoals reached, kept or not) — P34
     recorded_at: float | None = None     # unix time the episode's newest video was written
     stages_reached: int | None = None    # subtask stages completed (from "Completed subtask k/N" events)
     stages_total: int | None = None      # N — from the events, else the task's ladder length
@@ -176,6 +176,33 @@ class RunMeta:
     num_success: int
     success_rate: float
     modified_at: float | None = None   # unix time of the newest episode_results/log file
+    family: str = "Unlabelled"         # policy family for sidebar grouping (see policy_family)
+
+
+def policy_family(policy: str | None) -> str:
+    """Coarse policy family used to group runs in the sidebar: the `policy`
+    label the runner stamps into episode_results (``pi05``, ``pi05_aloha_mobile``,
+    ``gemini_pointing``, ``cosmos3``, ``scripted_bimanual`` …) collapsed to the
+    handful of names a reviewer thinks in (review feedback 2026-08-25: "pi05,
+    Gemini, Aloha, …")."""
+    if not policy:
+        return "Unlabelled"
+    p = policy.lower()
+    if "aloha" in p:
+        return "ALOHA"
+    if p.startswith("gemini"):
+        return "Gemini"
+    if p.startswith("cosmos"):
+        return "Cosmos3"
+    if p.startswith("pi05") or p.startswith("pi0.5"):
+        return "π0.5"
+    if p.startswith("pi0"):
+        return "π0"
+    if p.startswith("gr00t"):
+        return "GR00T"
+    if "scripted" in p:
+        return "Scripted"
+    return policy
 
 
 class LocalLoader:
@@ -236,6 +263,7 @@ class LocalLoader:
             num_success=success,
             success_rate=(success / len(eps)) if eps else 0.0,
             modified_at=self._run_modified_at(run_dir),
+            family=policy_family(policy),
         )
 
     def _attach_progress(self, task_dir: Path, e: EpisodeRow) -> None:
