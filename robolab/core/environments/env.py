@@ -161,6 +161,8 @@ class RobolabEnv(ManagerBasedRLEnv):
                 'success_confirmed_step': self._confirm_step(eid, 'confirmed_step'),
                 # H-B3: ladder re-judged on the final frame (None when no subtask tracking)
                 'score_final': (getattr(self, '_subtask_final_scores', {}) or {}).get(eid),
+                # A1: distinct non-target objects that entered a goal container (None = no tracking)
+                'collateral_placed': (getattr(self, '_collateral_placed', {}) or {}).get(eid, 0),
             })
         return results
 
@@ -185,4 +187,5 @@ class RobolabEnv(ManagerBasedRLEnv):
         self._env_term_step.clear()
         self._early_resets.clear()
         self._subtask_final_scores = {}
+        self._collateral_placed = {}
         self._has_stepped = False

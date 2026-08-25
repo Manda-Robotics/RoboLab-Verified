@@ -3,6 +3,7 @@
 
 from typing import Any
 
+import logging
 import torch
 
 import robolab.constants
@@ -15,8 +16,12 @@ from robolab.core.task.conditionals import (
     object_upright,
 )
 from robolab.core.task.predicate_logic import in_contact
+from robolab.core.task.collateral import CollateralTracker
 from robolab.core.task.status import StatusCode
 from robolab.core.world.world_state import get_world
+
+
+logger = logging.getLogger(__name__)
 
 
 class EventTracker:
@@ -74,6 +79,7 @@ class EventTracker:
         self._recorded_gripper_hit_table = torch.zeros(N, dtype=torch.bool, device=dev)
         self._recorded_gripper_fully_closed = torch.zeros(N, dtype=torch.bool, device=dev)
         self._was_warm = torch.ones(N, dtype=torch.bool, device=dev)          # inside the reset warm-up window
+        self._collateral = CollateralTracker(N, dev)                            # A1 / B7: non-targets entering goal containers
         self._settling: dict[int, dict[str, float]] = {}                     # env_id -> {object: displacement} seen during warm-up
         self._recorded_multiple_grab = torch.zeros(N, dtype=torch.bool, device=dev)
         self._target_was_grabbed = torch.zeros(N, dtype=torch.bool, device=dev)
@@ -95,6 +101,7 @@ class EventTracker:
         self._recorded_gripper_hit_table[idx] = False
         self._recorded_gripper_fully_closed[idx] = False
         self._was_warm[idx] = True
+        self._collateral.reset_envs(idx.tolist() if hasattr(idx, "tolist") else list(idx))
         for i in (idx.tolist() if hasattr(idx, "tolist") else list(idx)):
             self._settling.pop(int(i), None)
         self._recorded_multiple_grab[idx] = False
@@ -187,6 +194,12 @@ class EventTracker:
                 events.append((f"'{obj_name}' dropped (left the closed hand)", StatusCode.OBJECT_DROPPED, mask))
             if verbose:
                 print(f"[EventTracker] env{eid}: {events[-1][0]}")
+
+        # --- Collateral placement: a non-target enters a goal container (A1, B7) ---
+        try:
+            events.extend(self._check_collateral_batched(env, tracker, per_env_allowed, per_env_containers, ignore_set, active_mask, verbose))
+        except Exception:
+            logger.exception("collateral placement check failed")
 
         # --- Wrong object grabbed (per-env loop, returns string) ---
         for eid in range(self.num_envs):
@@ -305,6 +318,46 @@ class EventTracker:
         )
         events.extend(multi_events)
 
+        return events
+
+    def _check_collateral_batched(self, env, tracker, per_env_allowed, per_env_containers, ignore_set, active_mask, verbose):
+        """One flag per non-target object that enters a goal container after the
+        warm-up: WRONG_OBJECT_PLACED if the hand held it recently, else
+        WRONG_OBJECT_PUSHED_IN. Objects inside at reset never count."""
+        from robolab.core.task.conditionals import object_in_container
+        containers = sorted(set().union(*per_env_containers)) if per_env_containers else []
+        if not containers:
+            return []
+        targets = set().union(*per_env_allowed) if per_env_allowed else set()
+        scene_objs = list((getattr(env.cfg, "contact_object_list", None) or []))
+        candidates = [o for o in scene_objs if o not in ignore_set and o not in targets and o not in containers]
+        if not candidates:
+            return []
+        warm = getattr(self, "_warm_now", None)
+        if warm is None:
+            warm = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+        inside = {}
+        for c in containers:
+            for o in candidates:
+                try:
+                    r = object_in_container(env, object=o, container=c, env_id=None)
+                except Exception:
+                    continue
+                inside[(o, c)] = r if isinstance(r, torch.Tensor) else torch.as_tensor(r, dtype=torch.bool, device=self.device).reshape(-1)
+        held = {o: tracker.recently_held(o, "gripper") for o in candidates}
+        events = []
+        for eid, obj, cont, kind in self._collateral.update(inside, warm, held):
+            if not active_mask[eid]:
+                continue
+            mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device); mask[eid] = True
+            if kind == "placed":
+                events.append((f"Wrong object placed: '{obj}' released inside '{cont}' (not a target)", StatusCode.WRONG_OBJECT_PLACED, mask))
+            else:
+                events.append((f"Wrong object pushed in: '{obj}' entered '{cont}' without being held", StatusCode.WRONG_OBJECT_PUSHED_IN, mask))
+            if verbose:
+                print(f"[EventTracker] env{eid}: {events[-1][0]}")
+        # publish the count for the results row
+        env._collateral_placed = {eid: len(v) for eid, v in self._collateral.collateral.items()}
         return events
 
     def _check_movement_transitions_batched(

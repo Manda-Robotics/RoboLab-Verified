@@ -94,6 +94,7 @@ class _PairState:
         self.grasped = torch.zeros(n, dtype=torch.bool, device=device)
         self.prev_contact = torch.zeros(n, dtype=torch.bool, device=device)
         self.attempt_closed = torch.zeros(n, dtype=torch.bool, device=device)   # hand was closing during the contact
+        self.last_grasped_step = torch.full((n,), -10**9, dtype=torch.long, device=device)
         self.rel_hist: deque = deque(maxlen=k + 1)     # object - hand offsets, newest last
         self.hand_hist: deque = deque(maxlen=k + 1)
         self.last_step = -1
@@ -171,6 +172,7 @@ class GraspTracker:
             self._events.append((eid, obj, hand, "dropped" if bool(still_closed[eid]) else "released"))
 
         st.grasped = (st.grasped | newly) & contact
+        st.last_grasped_step = torch.where(st.grasped, env.episode_length_buf, st.last_grasped_step)
         st.prev_contact = contact.clone()
         # remember whether the hand was closing while the (now ended) contact lasted
         st._last_attempt_closed = st.attempt_closed.clone()
@@ -185,6 +187,15 @@ class GraspTracker:
     def grasped(self, obj: str, hand: str, env_id: int | None = None):
         st = self.update(obj, hand)
         return bool(st.grasped[env_id]) if env_id is not None else st.grasped.clone()
+
+    def recently_held(self, obj: str, hand: str, within_s: float = 2.0) -> torch.Tensor:
+        """(N,) bool: the object was grasped within the last ``within_s`` seconds (or is now)."""
+        st = self._pairs.get((obj, hand))
+        if st is None:
+            return torch.zeros(self.env.num_envs, dtype=torch.bool, device=self.env.device)
+        dt = float(getattr(self.env, "step_dt", 0.0) or 1 / 15)
+        k = max(1, int(round(within_s / dt)))
+        return (self.env.episode_length_buf - st.last_grasped_step) <= k
 
     def pop_events(self) -> list[tuple[int, str, str, str]]:
         ev, self._events = self._events, []

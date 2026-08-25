@@ -159,6 +159,8 @@ class StatusCode(IntEnum):
     OBJECT_RELEASED = 267          # A grasped object left the hand while it was opening (deliberate)
     OBJECT_DROPPED = 268           # A grasped object left the hand while it stayed closed (slip)
     SCENE_SETTLING = 269           # Objects moved during the reset warm-up without the hand touching them
+    WRONG_OBJECT_PLACED = 270      # A non-target object the hand had held was released inside a goal container
+    WRONG_OBJECT_PUSHED_IN = 271   # A non-target object entered a goal container without having been held
 
     # ============================================================
     # Legacy aliases for backward compatibility
@@ -203,4 +205,6 @@ EVENT_STATUS_CODES: set[StatusCode] = {
     StatusCode.OBJECT_RELEASED,
     StatusCode.OBJECT_DROPPED,
     StatusCode.SCENE_SETTLING,
+    StatusCode.WRONG_OBJECT_PLACED,
+    StatusCode.WRONG_OBJECT_PUSHED_IN,
 }
