@@ -292,11 +292,15 @@ def object_in_container(
 ):
     """Checks if objects are in an open-top container.
 
-    Geometric check: the object's centroid is transformed into the container's local
-    frame and bounds-checked against the container's local AABB (with one
-    container-height of open-top slack along the container's local +z). Because the
-    check is performed in the container's coordinates, the predicate is invariant to
-    container orientation — a flipped or tipped container correctly fails.
+    Geometric check: the object's hull centroid is transformed into the
+    container's local frame and tested against the container's convex-hull
+    half-spaces with the rim faces replaced by a horizontal cap at rim height
+    plus a margin (``hull_check.build_local_hull``'s ``open_top_cap_margin``,
+    5 cm) — so an object resting slightly proud of a shallow container still
+    counts, but one hovering high above it, or sitting on a shelf over it,
+    does not (VERIFIED_PLAN H-B6). Because the check is performed in the
+    container's coordinates, the predicate is invariant to container
+    orientation — a flipped or tipped container correctly fails.
     """
     def condition(world, obj, env_id=None):
         result = in_opentop_container(

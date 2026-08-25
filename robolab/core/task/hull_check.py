@@ -44,6 +44,7 @@ def build_local_hull(
     points_np: np.ndarray,
     device: torch.device | str = "cpu",
     open_top_threshold: float = 0.7,
+    open_top_cap_margin: float | None = 0.05,
 ) -> LocalHull:
     """Compute the convex hull of ``points_np`` and package as a ``LocalHull``.
 
@@ -55,6 +56,16 @@ def build_local_hull(
         points_np: (P, 3) array of mesh points in body-local frame.
         device: torch device for the returned tensors.
         open_top_threshold: passed to ``open_top_planes`` (axis=2).
+        open_top_cap_margin: height above the container's rim (max local z of
+            the hull) at which the open-top polytope is capped. ``None``
+            restores the historical unbounded column — which scored an object
+            on a shelf above a bin, or one still falling toward it, as "in the
+            container" (VERIFIED_PLAN H-B6; seen live in H-R5-8 / H-R7-6).
+            The margin is finite but non-zero on purpose: a shallow bowl
+            legitimately holds objects whose centroid rests above the rim
+            plane (a banana in a bowl), so rim-exact capping would break
+            those tasks. Per-container tuning may still be needed for very
+            tall cargo in very shallow containers.
 
     Returns:
         LocalHull with vertices, full planes, and open-top planes.
@@ -69,7 +80,10 @@ def build_local_hull(
     verts = torch.tensor(points_np[hull.vertices], dtype=torch.float32, device=device)
     centroid = verts.mean(dim=0)
     planes_full = torch.tensor(hull.equations, dtype=torch.float32, device=device)
-    planes_ot = open_top_planes(planes_full, axis=2, threshold=open_top_threshold)
+    cap = None
+    if open_top_cap_margin is not None:
+        cap = float(verts[:, 2].max()) + open_top_cap_margin
+    planes_ot = open_top_planes(planes_full, axis=2, threshold=open_top_threshold, cap=cap)
     return LocalHull(vertices=verts, centroid=centroid, planes_full=planes_full, planes_open_top=planes_ot)
 
 
@@ -89,22 +103,39 @@ def point_in_hull(points: torch.Tensor, planes: torch.Tensor) -> torch.Tensor:
     return signed.amax(dim=-1) <= 0
 
 
-def open_top_planes(planes: torch.Tensor, axis: int = 2, threshold: float = 0.7) -> torch.Tensor:
+def open_top_planes(
+    planes: torch.Tensor,
+    axis: int = 2,
+    threshold: float = 0.7,
+    cap: float | None = None,
+) -> torch.Tensor:
     """Drop faces whose outward normal projects ``>= threshold`` onto ``+axis``.
 
     With default ``axis=2`` and ``threshold=0.7``, this removes faces facing
     within ~45° of straight up — the rim cap of an open-top container in the
-    standard +z-up authoring convention. The resulting polytope is unbounded
-    along the container's local +z, modelling the "open air above the rim".
+    standard +z-up authoring convention, modelling the "open air above the rim".
+
+    With ``cap=None`` the resulting polytope is unbounded along ``+axis``: an
+    object arbitrarily far above the container still tests "inside". Passing a
+    ``cap`` replaces the dropped rim faces with one horizontal cap plane
+    ``x[axis] <= cap``, bounding that column.
 
     Args:
         planes: shape ``(F, 4)``.
         axis: index of the local axis defining "up". Default 2 (z).
         threshold: minimum normal component to drop. Faces with
             ``planes[:, axis] >= threshold`` are removed.
+        cap: local ``axis`` coordinate at which to cap the opened column,
+            typically rim height + a margin. ``None`` leaves it unbounded.
 
     Returns:
-        ``(F_kept, 4)`` plane subset. Caller is responsible for caching.
+        ``(F_kept[+1], 4)`` plane set. Caller is responsible for caching.
     """
     keep = planes[:, axis] < threshold
-    return planes[keep]
+    kept = planes[keep]
+    if cap is None:
+        return kept
+    cap_plane = torch.zeros((1, 4), dtype=planes.dtype, device=planes.device)
+    cap_plane[0, axis] = 1.0
+    cap_plane[0, 3] = -float(cap)          # n·x + d <= 0  ⇔  x[axis] <= cap
+    return torch.cat([kept, cap_plane], dim=0)
