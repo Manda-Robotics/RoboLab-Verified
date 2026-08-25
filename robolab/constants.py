@@ -76,10 +76,12 @@ DEBUG = False
 VERBOSE = False
 VISUALIZE = False
 ENABLE_SUBTASK_PROGRESS_CHECKING = True
-# Confirmed success (VERIFIED_PLAN A2): the success predicate must hold for
-# SUCCESS_HOLD_S seconds with every target object slower than SUCCESS_MAX_SPEED
-# (m/s) before an episode is scored. 0 restores upstream's first-frame termination.
-SUCCESS_HOLD_S = 1.0
+# Confirmed success (VERIFIED_PLAN A2): an episode is scored a success when the
+# success predicate holds AND every target object has been at rest (slower than
+# SUCCESS_MAX_SPEED m/s) for SUCCESS_REST_S seconds in a row. An object already at
+# rest when the goal is reached ends the episode immediately; a moving one makes
+# the episode wait until it settles. 0 restores upstream's first-frame termination.
+SUCCESS_REST_S = 0.2
 SUCCESS_MAX_SPEED = 0.02
 # A grasp is contact AND a closed hand (VERIFIED_PLAN B1): `object_grabbed` requires
 # the gripper to be at least GRAB_MIN_CLOSURE closed (0 = open, 1 = fully closed,
