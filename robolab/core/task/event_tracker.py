@@ -159,6 +159,28 @@ class EventTracker:
         if per_env_containers is None:
             per_env_containers = [set() for _ in range(self.num_envs)]
 
+        # --- Grasp attempts / releases / drops (from the shared GraspTracker) ---
+        from robolab.core.task.grasp import get_grasp_tracker
+        tracker = get_grasp_tracker(env)
+        for obj_name in sorted(set().union(*per_env_intended) | set().union(*per_env_allowed) if per_env_allowed else set().union(*per_env_intended)):
+            try:
+                tracker.update(obj_name, "gripper")
+            except Exception:
+                continue
+        for eid, obj_name, hand, kind in tracker.pop_events():
+            if frozen_mask[eid]:
+                continue
+            mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+            mask[eid] = True
+            if kind == "attempt_failed":
+                events.append((f"Grasp attempt on '{obj_name}' failed (contact lost before a carry was established)", StatusCode.GRASP_ATTEMPT_FAILED, mask))
+            elif kind == "released":
+                events.append((f"'{obj_name}' released (hand opened)", StatusCode.OBJECT_RELEASED, mask))
+            else:
+                events.append((f"'{obj_name}' dropped (left the closed hand)", StatusCode.OBJECT_DROPPED, mask))
+            if verbose:
+                print(f"[EventTracker] env{eid}: {events[-1][0]}")
+
         # --- Wrong object grabbed (per-env loop, returns string) ---
         for eid in range(self.num_envs):
             if frozen_mask[eid]:
@@ -439,18 +461,12 @@ class EventTracker:
             except Exception:
                 continue
 
-        # Detect drop: was grabbed -> now not grabbed
+        # TARGET_OBJECT_DROPPED is superseded by the GraspTracker's OBJECT_RELEASED /
+        # OBJECT_DROPPED (VERIFIED_PLAN B6): the state is still maintained for
+        # re-grab bookkeeping, but nothing is emitted here any more.
         dropped = self._target_was_grabbed & ~any_grabbed & active_mask & ~self._recorded_target_dropped
         if dropped.any():
-            events.append((
-                "Target object dropped during transport",
-                StatusCode.TARGET_OBJECT_DROPPED,
-                dropped.clone()
-            ))
             self._recorded_target_dropped |= dropped
-            if verbose:
-                envs = dropped.nonzero(as_tuple=False).squeeze(-1).tolist()
-                print(f"[EventTracker] envs {envs}: Target object dropped")
 
         self._target_was_grabbed = any_grabbed
 

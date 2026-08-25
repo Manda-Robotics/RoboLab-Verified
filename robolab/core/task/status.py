@@ -155,6 +155,9 @@ class StatusCode(IntEnum):
     TARGET_OBJECT_DROPPED = 263    # Target object was grabbed but is now dropped mid-transport
     GRIPPER_HIT_OBJECT = 264       # Gripper collided with an object (not table)
     MULTIPLE_OBJECTS_GRABBED = 265 # Gripper is in contact with multiple objects
+    GRASP_ATTEMPT_FAILED = 266     # Hand closed on / touched the object but never established a carry
+    OBJECT_RELEASED = 267          # A grasped object left the hand while it was opening (deliberate)
+    OBJECT_DROPPED = 268           # A grasped object left the hand while it stayed closed (slip)
 
     # ============================================================
     # Legacy aliases for backward compatibility
@@ -195,4 +198,7 @@ EVENT_STATUS_CODES: set[StatusCode] = {
     StatusCode.GRIPPER_HIT_OBJECT,
     StatusCode.MULTIPLE_OBJECTS_GRABBED,
     StatusCode.GRIPPER_FULLY_CLOSED,
+    StatusCode.GRASP_ATTEMPT_FAILED,
+    StatusCode.OBJECT_RELEASED,
+    StatusCode.OBJECT_DROPPED,
 }

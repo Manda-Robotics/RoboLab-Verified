@@ -83,12 +83,17 @@ ENABLE_SUBTASK_PROGRESS_CHECKING = True
 # the episode wait until it settles. 0 restores upstream's first-frame termination.
 SUCCESS_REST_S = 0.2
 SUCCESS_MAX_SPEED = 0.02
-# A grasp is contact AND a closed hand (VERIFIED_PLAN B1): `object_grabbed` requires
-# the gripper to be at least GRAB_MIN_CLOSURE closed (0 = open, 1 = fully closed,
-# per the robot's gripper_closure_cfg). Set to 0 to restore upstream's
-# contact-only definition. On the Verified corpus 64 % of recorded "grabs" had an
-# open hand and 77 % never moved the object.
-GRAB_MIN_CLOSURE = 0.30
+# A grasp is a carry, not a touch (VERIFIED_PLAN B1; robolab/core/task/grasp.py):
+# the object must stay in contact for GRASP_HOLD_S with its offset to the hand
+# changing < GRASP_COUPLING_M while the hand moves >= GRASP_HAND_MOVE_M. A contact
+# that ends earlier with the hand >= GRASP_ATTEMPT_CLOSURE closed is one
+# GRASP_ATTEMPT_FAILED; after a grasp, losing contact is OBJECT_RELEASED when the
+# hand is below GRASP_RELEASE_CLOSURE (opening) and OBJECT_DROPPED otherwise.
+GRASP_HOLD_S = 0.2
+GRASP_COUPLING_M = 0.005
+GRASP_HAND_MOVE_M = 0.01
+GRASP_ATTEMPT_CLOSURE = 0.3
+GRASP_RELEASE_CLOSURE = 0.1
 RECORD_IMAGE_DATA = False
 DEVICE = "cuda:0"
 

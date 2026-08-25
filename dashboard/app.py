@@ -140,6 +140,8 @@ def _event_severity(name: str, code: int | None = None) -> str:
         return "success"
     if u.endswith("_FAILURE"):
         return "failure"
+    if "RELEASED" in toks:
+        return "neutral"                      # a deliberate release is not a failure
     if toks & {"DROPPED", "WRONG", "HIT"}:
         return "failure"
     if code is not None:
