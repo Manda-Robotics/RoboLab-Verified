@@ -35,11 +35,16 @@ class RubiksCubeRightOfBowlTask(Task):
     subtasks = [
         Subtask(
             name="rubiks_cube_right_of_bowl",
-            conditions=[
-                partial(object_grabbed, object="rubiks_cube"),
-                partial(object_right_of, object="rubiks_cube", reference_object="bowl", frame_of_reference="robot", mirrored=False),
-                partial(object_dropped, object="rubiks_cube"),
-            ],
+            # Grab, then place-and-release: the placement check carries
+            # require_gripper_detached=True exactly like `success` above. The old third
+            # condition, object_dropped (= "not touching the gripper"), is true at spawn and
+            # credited itself at 0.07 s before the robot moved (VERIFIED_PLAN H-B1, H-R6-11).
+            conditions={
+                "rubiks_cube": [
+                    partial(object_grabbed, object="rubiks_cube"),
+                    partial(object_right_of, object="rubiks_cube", reference_object="bowl", frame_of_reference="robot", mirrored=False, require_gripper_detached=True),
+                ],
+            },
             logical="all",
             score=1.0
         )
