@@ -107,10 +107,41 @@ class HeadCameraCfg:
             vertical_aperture=3.024,
         ),
         offset=TiledCameraCfg.OffsetCfg(
-            pos=(1.5, 0.0, 1.0), rot=(0.0, 0.474, 0.0, 0.881), convention="opengl"
+            # P39 (H-R5-1 / H-R6-1): the previous (0, 0.474, 0, 0.881) was a pure
+            # Y rotation — it pointed the camera at the robot but left the image
+            # "up" along world +Y, so every recording showed this panel rolled 90°.
+            # Same placement as the egocentric mirrored camera, whose orientation
+            # renders upright (its derivation is documented above).
+            pos=(1.5, 0.0, 1.0), rot=(0.653, 0.271, 0.271, 0.653), convention="opengl"
         ),
     )
 
+
+
+################################################################################
+# Review camera (P40): behind the robot, looking over it at the workspace, so the
+# reviewer's left/right is the robot's left/right — the default viewport used
+# to be the front-facing mirrored camera, which reads "right" for the robot's
+# left (VERIFIED_PLAN D3, H-R7-5: four inverted bowl stacks read as correct).
+################################################################################
+@configclass
+class OverShoulderReviewCameraCfg:
+    over_shoulder_review_camera = TiledCameraCfg(
+        prim_path="{ENV_REGEX_NS}/over_shoulder_review_camera",
+        height=480,
+        width=864,
+        data_types=["rgb"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=2.1,
+            focus_distance=28.0,
+            horizontal_aperture=5.376,
+            vertical_aperture=3.024,
+        ),
+        offset=TiledCameraCfg.OffsetCfg(
+            # look-at from (-0.75, 0, 1.05) to the table centre (0.55, 0, 0.05), world +Z up
+            pos=(-0.75, 0.0, 1.05), rot=(0.634, 0.312, -0.312, -0.634), convention="opengl"
+        ),
+    )
 
 
 ################################################################################
