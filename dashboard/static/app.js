@@ -443,6 +443,24 @@ async function ensureEpisodes(runId, task) {
   return data;
 }
 
+// "today" / "yesterday" / "Tue" (this week) / "12 Aug" / "12 Aug 2025", from a
+// unix timestamp, relative to the viewer's local midnight.
+function fmtRelativeDay(unixSec) {
+  const d = new Date(unixSec * 1000);
+  const now = new Date();
+  const dayStart = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((dayStart(now) - dayStart(d)) / 86400000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return d.toLocaleDateString(undefined, { weekday: 'short' });
+  const opts = { day: 'numeric', month: 'short' };
+  if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+  return d.toLocaleDateString(undefined, opts);
+}
+function fmtClock(unixSec) {
+  return new Date(unixSec * 1000).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+
 function renderSidebar() {
   const root = $('#sidebar');
   root.innerHTML = '';
@@ -491,7 +509,15 @@ function renderSidebar() {
       }),
       el('span', { class: 'w-3', style: { color: 'var(--text-2)' } }, isExpanded ? '▾' : '▸'),
       el('div', { class: 'flex-1 min-w-0' },
-        el('div', { class: 'font-medium truncate', title: run.run_id }, run.run_id),
+        el('div', { class: 'flex items-baseline gap-2' },
+          el('div', { class: 'font-medium truncate flex-1 min-w-0', title: run.run_id }, run.run_id),
+          // Subtle "when": today / yesterday / weekday / date, top-right of the
+          // row, full timestamp on hover (review feedback 2026-08-24: runs need
+          // a date so you can tell last night's from last week's).
+          run.modified_at
+            ? el('span', { class: 'run-date font-mono', title: new Date(run.modified_at * 1000).toLocaleString() },
+                fmtRelativeDay(run.modified_at))
+            : ''),
         el('div', { class: 'text-xs', style: { color: 'var(--text-2)' } },
           run.policy ? `${run.policy} · ` : '',
           `${run.num_success}/${run.num_episodes} (${fmtPct(run.success_rate)})`),
@@ -1835,6 +1861,12 @@ async function renderEpisode(runId, task, envId, runIndex) {
     chip(`${ep.episode_step} steps`),
     chip(fmtSec(ep.duration)),
     ep.instruction_type ? chip(`instr: ${ep.instruction_type}`) : null,
+    // When this episode was recorded (newest video mtime) — subtle, full
+    // timestamp on hover.
+    ep.recorded_at
+      ? el('span', { class: 'run-date font-mono self-center', title: new Date(ep.recorded_at * 1000).toLocaleString() },
+          `${fmtRelativeDay(ep.recorded_at)} ${fmtClock(ep.recorded_at)}`)
+      : null,
     ...(ep.attributes || []).map((a) => chip(a)));
   pane.appendChild(header);
 

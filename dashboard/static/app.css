@@ -516,6 +516,13 @@ body.sidebar-resizing { cursor: col-resize; user-select: none; }
   background: var(--bg-0);
   display: flex; align-items: center; gap: 6px;
 }
+.run-date {
+  flex: none;
+  font-size: 10px;
+  color: var(--text-2);
+  opacity: 0.75;
+  white-space: nowrap;
+}
 .cam-tile-label .dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--text-2);

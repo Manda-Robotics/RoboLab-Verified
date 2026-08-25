@@ -138,6 +138,7 @@ class EpisodeRow:
     videos: list[CameraVideo] = field(default_factory=list)
     last_frame_path: str | None = None   # absolute path, may be None
     has_hdf5: bool = False
+    recorded_at: float | None = None     # unix time the episode's newest video was written
 
 
 @dataclass
@@ -167,6 +168,7 @@ class RunMeta:
     num_episodes: int
     num_success: int
     success_rate: float
+    modified_at: float | None = None   # unix time of the newest episode_results/log file
 
 
 class LocalLoader:
@@ -200,6 +202,10 @@ class LocalLoader:
                 if meta is not None:
                     runs.append(meta)
                     used_ids.add(meta.run_id)
+        # Newest data first — a run that finished tonight should not hide under
+        # last week's because its name sorts lower (review feedback 2026-08-24:
+        # "there's no episode with today's date", it was 12 rows down).
+        runs.sort(key=lambda r: (-(r.modified_at or 0.0), r.run_id))
         return runs
 
     def _run_meta(self, run_dir: Path, source: Path, used_ids: set[str]) -> RunMeta | None:
@@ -222,7 +228,26 @@ class LocalLoader:
             num_episodes=len(eps),
             num_success=success,
             success_rate=(success / len(eps)) if eps else 0.0,
+            modified_at=self._run_modified_at(run_dir),
         )
+
+    @staticmethod
+    def _run_modified_at(run_dir: Path) -> float | None:
+        """When the run last produced data: newest mtime over the files the eval
+        runner appends to (``episode_results.jsonl``, per-task ``log_*.json``),
+        falling back to the directory itself. Directory mtime alone is wrong —
+        rsync/scp of an old run stamps it 'now'."""
+        candidates = [run_dir / "episode_results.jsonl"]
+        for d in run_dir.iterdir():
+            if d.is_dir():
+                candidates.extend(d.glob("log_*.json"))
+        times = [c.stat().st_mtime for c in candidates if c.exists()]
+        if not times:
+            try:
+                return run_dir.stat().st_mtime
+            except OSError:
+                return None
+        return max(times)
 
     @staticmethod
     def _looks_like_task_dir(d: Path) -> bool:
@@ -467,6 +492,13 @@ class LocalLoader:
             _add("playback", playback)
 
         e.videos = videos
+        times = []
+        for v in videos:
+            try:
+                times.append(Path(v.path).stat().st_mtime)
+            except OSError:
+                pass
+        e.recorded_at = max(times) if times else None
         if has_hdf5_eps is None:
             has_hdf5_eps = self._hdf5_has_episodes(task_dir / "data.hdf5")
         e.has_hdf5 = has_hdf5_eps
