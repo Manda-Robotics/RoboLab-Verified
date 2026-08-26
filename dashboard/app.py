@@ -143,7 +143,7 @@ def _event_severity(name: str, code: int | None = None) -> str:
                 return "neutral"
         except Exception:
             pass
-    if u in ("GRIPPER_FULLY_CLOSED", "OBJECT_RELEASED", "SCENE_SETTLING"):
+    if u in ("GRIPPER_FULLY_CLOSED", "OBJECT_RELEASED", "SCENE_SETTLING", "TARGET_OBJECT_BUMPED"):
         return "neutral"
     if u.endswith("_SUCCESS") or u == "OK":
         return "success"

@@ -102,6 +102,23 @@ def hand_contact(env, obj: str, hand_label: str) -> torch.Tensor:
     return r if isinstance(r, torch.Tensor) else torch.as_tensor(r, dtype=torch.bool, device=env.device).reshape(-1)
 
 
+def gripper_open_commanded(env) -> torch.Tensor:
+    """(N,) bool: the policy *commanded* the gripper open on this step.
+
+    The measured finger joint lags and can even be closing at the instant an object
+    leaves the hand, so it cannot separate a deliberate release from a slip. The
+    action channel can: RoboLab's binary gripper term takes 1 = close, 0 = open
+    (``BinaryJointPositionZeroToOneActionCfg``), so the last action's final column is
+    the policy's intent (Finn 2026-08-26: "was this a release on purpose or on
+    accident? how can we reliably tell?"). Falls back to all-False when the action is
+    unavailable, in which case the measured-closure rule decides as before."""
+    try:
+        a = env.action_manager.action
+        return a[:, -1] < 0.5
+    except Exception:
+        return torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
+
+
 def hand_closed(env, hand_label: str, threshold: float) -> torch.Tensor:
     from robolab.core.task.conditionals import gripper_fully_closed
     r = gripper_fully_closed(env, closed_threshold=threshold, env_id=None, gripper_name=hand_label)
@@ -123,6 +140,8 @@ class _PairState:
         self.attempt_closed = torch.zeros(n, dtype=torch.bool, device=device)   # hand was closing during the contact
         self.last_grasped_step = torch.full((n,), -10**9, dtype=torch.long, device=device)
         self.towed_flagged = torch.zeros(n, dtype=torch.bool, device=device)  # TOWED_WITHOUT_GRASP raised this episode
+        self.contact_start_z = torch.zeros(n, device=device)                  # object height when the current contact began
+        self.recent_open_cmd = torch.zeros(n, dtype=torch.long, device=device)  # steps since the policy commanded "open"
         self.attempt_count = torch.zeros(n, dtype=torch.long, device=device)   # failed attempts in the open burst
         self.attempt_first = torch.zeros(n, dtype=torch.long, device=device)
         self.attempt_last = torch.zeros(n, dtype=torch.long, device=device)
@@ -142,9 +161,11 @@ class GraspTracker:
         self.release_closure = float(getattr(robolab.constants, "GRASP_RELEASE_CLOSURE", 0.1))
         self.tow_closure = float(getattr(robolab.constants, "GRASP_TOW_CLOSURE", 0.1))
         self.tow_offset = float(getattr(robolab.constants, "GRASP_TOW_OFFSET_M", 0.03))
+        self.tow_lift = float(getattr(robolab.constants, "GRASP_TOW_LIFT_M", 0.02))
         self._pairs: dict[tuple[str, str], _PairState] = {}
         self._events: list[tuple[int, str, str, str, dict]] = []   # (env_id, object, hand, kind, extra)
         self.burst_s = float(getattr(robolab.constants, "GRASP_ATTEMPT_BURST_S", 2.0))
+        self.open_cmd_memory = max(1, int(round(0.3 / float(getattr(env, "step_dt", 0.0) or 1 / 15))))  # "commanded open" counts for 0.3 s
 
     # -- parameters --------------------------------------------------------
     def hold_steps(self) -> int:
@@ -206,11 +227,16 @@ class GraspTracker:
         # the real world; a PhysX high-friction artifact). Flag it once per object
         # and never credit it as a grasp; a real grasp always reads closed here.
         off_centre = jaw_offset(env, obj) >= self.tow_offset
-        towed = carry & hand_open & off_centre & ~st.grasped & ~st.towed_flagged
+        # height of the object when this contact began — a tow lifts it clear of the
+        # table, a drag keeps it at the same height
+        began = contact & ~st.prev_contact
+        st.contact_start_z = torch.where(began, obj_pos[:, 2], st.contact_start_z)
+        lifted = (obj_pos[:, 2] - st.contact_start_z) >= self.tow_lift
+        towed = carry & hand_open & off_centre & lifted & ~st.grasped & ~st.towed_flagged
         for eid in towed.nonzero(as_tuple=False).flatten().tolist():
             self._events.append((eid, obj, hand, "towed", {}))
         st.towed_flagged |= towed
-        st.towed_now = carry & hand_open & off_centre
+        st.towed_now = carry & hand_open & off_centre & lifted
         # a carry that is not a tow is a grasp — wide objects read only 0.2-0.35 closed,
         # and a can as wide as the open jaws reads 0.0 but sits centred
         newly = (~st.grasped) & carry & ~st.towed_now
@@ -235,8 +261,15 @@ class GraspTracker:
                                   "first_step": int(st.attempt_first[eid]),
                                   "last_step": int(st.attempt_last[eid])}))
             st.attempt_count[eid] = 0
+        # release vs drop: the commanded gripper is the policy's intent; the measured
+        # joint only decides when no action is available (see gripper_open_commanded)
+        commanded_open = gripper_open_commanded(env)
+        deliberate = commanded_open | (st.recent_open_cmd > 0)
+        st.recent_open_cmd = torch.where(commanded_open, torch.full_like(st.recent_open_cmd, self.open_cmd_memory),
+                                         torch.clamp(st.recent_open_cmd - 1, min=0))
         for eid in lost.nonzero(as_tuple=False).flatten().tolist():
-            self._events.append((eid, obj, hand, "dropped" if bool(still_closed[eid]) else "released", {}))
+            released = bool(deliberate[eid]) if bool(commanded_open.any()) or bool((st.recent_open_cmd > 0).any()) else (not bool(still_closed[eid]))
+            self._events.append((eid, obj, hand, "released" if released else "dropped", {}))
 
         st.grasped = (st.grasped | newly) & contact
         st.last_grasped_step = torch.where(st.grasped, env.episode_length_buf, st.last_grasped_step)

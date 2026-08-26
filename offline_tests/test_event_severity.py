@@ -26,3 +26,4 @@ def test_severity_tokens_and_code_range():
     assert s("GRIPPER_FULLY_CLOSED", 256) == "neutral"     # a note, not a failure (P49)
     assert s("OBJECT_RELEASED", 267) == "neutral"
     assert s("SCENE_SETTLING", 269) == "neutral"
+    assert s("TARGET_OBJECT_BUMPED", 282) == "neutral"   # the policy nudging its own target

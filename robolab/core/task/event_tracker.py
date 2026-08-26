@@ -403,10 +403,11 @@ class EventTracker:
             if not active_mask[eid]:
                 continue
             mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device); mask[eid] = True
-            if kind == "placed":
-                events.append((f"Wrong object placed: '{obj}' released inside '{cont}' (not a target)", StatusCode.WRONG_OBJECT_PLACED, mask))
-            else:
-                events.append((f"Wrong object pushed in: '{obj}' entered '{cont}' without being held", StatusCode.WRONG_OBJECT_PUSHED_IN, mask))
+            # One flag either way (Finn 2026-08-26: "not sure the distinction is
+            # necessary… would probably just have placed") — the wording still says
+            # whether the hand was carrying it, since grasp detection can miss a carry.
+            how = "released inside" if kind == "placed" else "ended up in"
+            events.append((f"Wrong object placed: '{obj}' {how} '{cont}' (not a target)", StatusCode.WRONG_OBJECT_PLACED, mask))
             if verbose:
                 print(f"[EventTracker] env{eid}: {events[-1][0]}")
         # publish the count for the results row
@@ -500,11 +501,15 @@ class EventTracker:
                     bumped_mask = stopped_with_start & (displacement >= self.bump_threshold) & (displacement < self.move_threshold)
                     if bumped_mask.any():
                         avg_disp = displacement[bumped_mask].mean().item()
-                        events.append((
-                            f"Object bumped: '{obj_name}' nudged {avg_disp:.3f}m",
-                            StatusCode.OBJECT_BUMPED,
-                            bumped_mask.clone()
-                        ))
+                        # P52: nudging an object the task is about is the policy doing
+                        # its job — a neutral note, not a red flag.
+                        is_target = ~self._get_not_intended_mask(obj_name, per_env_intended)
+                        for code, mask_sel, label in (
+                            (StatusCode.TARGET_OBJECT_BUMPED, bumped_mask & is_target, "Target object bumped"),
+                            (StatusCode.OBJECT_BUMPED, bumped_mask & ~is_target, "Object bumped"),
+                        ):
+                            if mask_sel.any():
+                                events.append((f"{label}: '{obj_name}' nudged {avg_disp:.3f}m", code, mask_sel.clone()))
                         if verbose:
                             envs = bumped_mask.nonzero(as_tuple=False).squeeze(-1).tolist()
                             print(f"[EventTracker] envs {envs}: Object bumped: '{obj_name}'")

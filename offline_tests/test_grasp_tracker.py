@@ -9,11 +9,17 @@ import robolab.core.task.grasp as G
 ENV = None
 
 
+class _ActionManager:
+    def __init__(self): self.action = torch.tensor([[0.0] * 7 + [1.0]])   # gripper commanded CLOSED
+    def set_open(self, is_open): self.action[0, -1] = 0.0 if is_open else 1.0
+
+
 class _Env:
     def __init__(self, n=1, dt=0.1):
         self.num_envs = n; self.device = "cpu"; self.step_dt = dt
         self.episode_length_buf = torch.zeros(n, dtype=torch.long)
         self.common_step_counter = 0
+        self.action_manager = _ActionManager()
 
 
 class _Script:
@@ -34,8 +40,9 @@ def _kinds(evs):
     return [(e[0], e[1], e[3], e[4].get("count")) for e in evs]
 
 
-def _tick(env, tracker, script, contact, hand=None, obj=None, closure=None):
+def _tick(env, tracker, script, contact, hand=None, obj=None, closure=None, cmd_open=None):
     env.common_step_counter += 1; env.episode_length_buf += 1
+    if cmd_open is not None: env.action_manager.set_open(cmd_open)
     script.contact = contact
     if hand is not None: script.hand = torch.tensor(hand, dtype=torch.float)
     if obj is not None: script.obj = torch.tensor(obj, dtype=torch.float)
@@ -73,13 +80,13 @@ def test_carry_becomes_a_grasp_then_release_or_drop():
     assert grasped is True and ev == []
     # keep carrying, then open the hand → released
     _tick(env, t, s, True, hand=[0.03, 0, 0], obj=[0.08, 0, 0], closure=0.6)
-    grasped, ev = _tick(env, t, s, False, hand=[0.04, 0, 0], obj=[0.09, 0, 0], closure=0.0)
+    grasped, ev = _tick(env, t, s, False, hand=[0.04, 0, 0], obj=[0.09, 0, 0], closure=0.0, cmd_open=True)
     assert grasped is False and _kinds(ev) == [(0, "banana", "released", None)]
     # new grasp, then lose it with the hand still closed → dropped
     for x in (0.05, 0.06, 0.07):
-        grasped, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0], closure=0.6)
+        grasped, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0], closure=0.6, cmd_open=False)
     assert grasped is True
-    grasped, ev = _tick(env, t, s, False, hand=[0.08, 0, 0], obj=[0.30, 0, -0.2], closure=0.6)
+    grasped, ev = _tick(env, t, s, False, hand=[0.08, 0, 0], obj=[0.30, 0, -0.2], closure=0.6, cmd_open=False)
     assert grasped is False and _kinds(ev) == [(0, "banana", "dropped", None)]
 
 
@@ -117,14 +124,15 @@ def test_open_hand_carry_is_towed_not_grasped():
     env = _Env(dt=0.1); s = _Script(); s.install(); t = G.GraspTracker(env)
     env.episode_length_buf[:] = 1
     evs = []
-    for x in (0.00, 0.01, 0.02, 0.03):
-        grasped, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0], closure=0.02)  # hand OPEN (< 0.1)
+    heights = [0.0, 0.0, 0.03, 0.03, 0.03]          # contact starts on the table, then the object rides up 3 cm
+    for x, z in zip((0.00, 0.01, 0.02, 0.03, 0.04), heights):
+        grasped, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, z], closure=0.02)  # hand OPEN
         evs += ev
     assert grasped is False
     assert _kinds(evs) == [(0, "banana", "towed", None)]                 # flagged once
     assert t.towed_objects() == {0: {"banana"}}
     # closing the hand on the same carry → now a grasp
-    grasped, _ = _tick(env, t, s, True, hand=[0.04, 0, 0], obj=[0.09, 0, 0], closure=0.6)
+    grasped, _ = _tick(env, t, s, True, hand=[0.05, 0, 0], obj=[0.10, 0, 0.03], closure=0.6, cmd_open=False)
     assert grasped is True
 
 
@@ -168,3 +176,14 @@ def test_open_burst_is_flushed_at_episode_end():
     _tick(env, t, s, True, closure=0.6); _tick(env, t, s, False, closure=0.6)
     t.flush_attempts()
     assert _kinds(t.pop_events()) == [(0, "banana", "attempt_failed", 1)]
+
+
+def test_drag_along_the_table_is_not_a_tow():
+    """Open hand, object moving with it, but never lifted → a drag, not a tow (P53)."""
+    env = _Env(dt=0.1); s = _Script(); s.install(); t = G.GraspTracker(env)
+    env.episode_length_buf[:] = 1
+    evs = []
+    for x in (0.00, 0.01, 0.02, 0.03):
+        _, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0.0], closure=0.02)   # same height throughout
+        evs += ev
+    assert evs == []

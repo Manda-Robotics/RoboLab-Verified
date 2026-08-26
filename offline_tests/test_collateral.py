@@ -23,7 +23,7 @@ def test_pre_placed_never_counts_and_each_object_flags_once():
 def test_pushed_vs_placed():
     c = CollateralTracker(1, "cpu"); cold = b(F)
     c.update({("orange", "bin"): b(F)}, b(T), {})
-    assert c.update({("orange", "bin"): b(T)}, cold, {"orange": b(F)}) == [(0, "orange", "bin", "pushed")]
+    assert c.update({("orange", "bin"): b(T)}, cold, {"orange": b(F)}) == [(0, "orange", "bin", "pushed")]   # kind kept internally; both render as WRONG_OBJECT_PLACED
 
 def test_reset_clears():
     c = CollateralTracker(1, "cpu"); cold = b(F)

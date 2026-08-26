@@ -110,6 +110,10 @@ GRASP_TOW_CLOSURE = 0.1
 # hand frame (GRASP_JAW_BODY's +y): a centred object between fully open jaws (a can as
 # wide as the aperture) is a grip; one hanging 4-11 cm off-centre on one finger is a tow.
 GRASP_TOW_OFFSET_M = 0.03
+# ...and the object must actually be off its support: a tow lifts the object clear,
+# a drag slides it along the table (Finn 2026-08-26: "this was more of a drag on the
+# table… tighten it to when the dragged item is basically in the air").
+GRASP_TOW_LIFT_M = 0.02
 GRASP_JAW_BODY = "base_link"
 # Scene settling (VERIFIED_PLAN B12): object motion during the first
 # SETTLE_WARMUP_S of an episode, for objects the hand is not touching, is the

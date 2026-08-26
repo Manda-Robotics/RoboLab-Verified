@@ -178,6 +178,7 @@ class StatusCode(IntEnum):
     OBJECT_PICKED_UP_FAILURE = 279
     OBJECTS_PLACED_IN_CONTAINER_IN_ORDER_FAILURE = 280
     OBJECT_GROUPS_IN_CONTAINERS_FAILURE = 281
+    TARGET_OBJECT_BUMPED = 282     # the policy nudged an object the task is about — expected, not a failure
 
     # ============================================================
     # Legacy aliases for backward compatibility
@@ -213,6 +214,7 @@ NEUTRAL_STATUS_CODES: set[int] = {
     int(256),   # GRIPPER_FULLY_CLOSED — "closed on nothing"
     int(267),   # OBJECT_RELEASED — a deliberate release
     int(269),   # SCENE_SETTLING
+    int(282),   # TARGET_OBJECT_BUMPED — the policy working on its own target
 }
 
 EVENT_STATUS_CODES: set[StatusCode] = {
@@ -231,6 +233,7 @@ EVENT_STATUS_CODES: set[StatusCode] = {
     StatusCode.OBJECT_RELEASED,
     StatusCode.OBJECT_DROPPED,
     StatusCode.SCENE_SETTLING,
+    StatusCode.TARGET_OBJECT_BUMPED,
     StatusCode.WRONG_OBJECT_PLACED,
     StatusCode.WRONG_OBJECT_PUSHED_IN,
     StatusCode.OBJECT_FELL_OFF_TABLE,
