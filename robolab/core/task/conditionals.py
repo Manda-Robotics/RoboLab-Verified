@@ -22,6 +22,7 @@ import robolab.constants
 from robolab.core.task.decorators import atomic, composite
 from robolab.core.task.predicate_logic import *
 from robolab.core.task.predicate_logic import _and, _not, gripper_detached
+from robolab.core.task.rest import at_rest
 from robolab.core.task.subtask import Subtask
 from robolab.core.world.world_state import get_world
 
@@ -323,6 +324,7 @@ def object_in_container(
             tolerance=tolerance,
             env_id=env_id,
         ))
+        result = _and(result, at_rest(env, obj, env_id=env_id))   # P46: credit a placement only once it settles
         if require_contact_with is True:
             result = _and(result, in_contact(world, obj, container, env_id=env_id))
         elif require_contact_with:
@@ -366,6 +368,7 @@ def object_on_top(
         result = _and(result, centroid_in_footprint(
             world, obj, reference_object, tolerance=tolerance, env_id=env_id
         ))
+        result = _and(result, at_rest(env, obj, env_id=env_id))   # P46
         if require_contact_with is not None:
             result = _and(result, in_contact(world, obj, require_contact_with, env_id=env_id))
         if require_gripper_detached:
@@ -424,6 +427,7 @@ def object_on_center(
     """Checks if objects are centered on reference_object (XY alignment)."""
     def condition(world, obj, env_id=None):
         result = center_of(world, obj, reference_object, tolerance, env_id=env_id)
+        result = _and(result, at_rest(env, obj, env_id=env_id))   # P46
         if require_contact_with is True:
             result = _and(result, in_contact(world, obj, reference_object, env_id=env_id))
         elif require_contact_with:

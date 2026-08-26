@@ -123,6 +123,9 @@ class _PairState:
         self.attempt_closed = torch.zeros(n, dtype=torch.bool, device=device)   # hand was closing during the contact
         self.last_grasped_step = torch.full((n,), -10**9, dtype=torch.long, device=device)
         self.towed_flagged = torch.zeros(n, dtype=torch.bool, device=device)  # TOWED_WITHOUT_GRASP raised this episode
+        self.attempt_count = torch.zeros(n, dtype=torch.long, device=device)   # failed attempts in the open burst
+        self.attempt_first = torch.zeros(n, dtype=torch.long, device=device)
+        self.attempt_last = torch.zeros(n, dtype=torch.long, device=device)
         self.towed_now = torch.zeros(n, dtype=torch.bool, device=device)
         self.rel_hist: deque = deque(maxlen=k + 1)     # object - hand offsets, newest last
         self.hand_hist: deque = deque(maxlen=k + 1)
@@ -140,7 +143,8 @@ class GraspTracker:
         self.tow_closure = float(getattr(robolab.constants, "GRASP_TOW_CLOSURE", 0.1))
         self.tow_offset = float(getattr(robolab.constants, "GRASP_TOW_OFFSET_M", 0.03))
         self._pairs: dict[tuple[str, str], _PairState] = {}
-        self._events: list[tuple[int, str, str, str]] = []      # (env_id, object, hand, kind)
+        self._events: list[tuple[int, str, str, str, dict]] = []   # (env_id, object, hand, kind, extra)
+        self.burst_s = float(getattr(robolab.constants, "GRASP_ATTEMPT_BURST_S", 2.0))
 
     # -- parameters --------------------------------------------------------
     def hold_steps(self) -> int:
@@ -171,6 +175,7 @@ class GraspTracker:
             st.prev_contact[fresh] = False
             st.attempt_closed[fresh] = False
             st.towed_flagged[fresh] = False
+            st.attempt_count[fresh] = 0
             st.towed_now[fresh] = False
             if bool(fresh.all()):
                 st.rel_hist.clear(); st.hand_hist.clear()
@@ -203,7 +208,7 @@ class GraspTracker:
         off_centre = jaw_offset(env, obj) >= self.tow_offset
         towed = carry & hand_open & off_centre & ~st.grasped & ~st.towed_flagged
         for eid in towed.nonzero(as_tuple=False).flatten().tolist():
-            self._events.append((eid, obj, hand, "towed"))
+            self._events.append((eid, obj, hand, "towed", {}))
         st.towed_flagged |= towed
         st.towed_now = carry & hand_open & off_centre
         # a carry that is not a tow is a grasp — wide objects read only 0.2-0.35 closed,
@@ -212,11 +217,26 @@ class GraspTracker:
 
         lost = st.grasped & ~contact
         ended_attempt = (~st.grasped) & st.prev_contact & ~contact & ~fresh
+        # P47: a fumble is one line with a count, not one line per contact blip.
+        ep = env.episode_length_buf                      # per-env step index
+        burst = max(1, int(round(self.burst_s / float(getattr(env, "step_dt", 0.0) or 1 / 15))))
         for eid in ended_attempt.nonzero(as_tuple=False).flatten().tolist():
-            if bool(self._attempt_flag(st, eid)):
-                self._events.append((eid, obj, hand, "attempt_failed"))
+            if not bool(self._attempt_flag(st, eid)):
+                continue
+            if int(st.attempt_count[eid]) == 0:
+                st.attempt_first[eid] = int(ep[eid])
+            st.attempt_count[eid] += 1
+            st.attempt_last[eid] = int(ep[eid])
+        # flush a burst that has gone quiet, or that a real grasp ended
+        stale = (st.attempt_count > 0) & ((ep - st.attempt_last) > burst)
+        for eid in (stale | (newly & (st.attempt_count > 0))).nonzero(as_tuple=False).flatten().tolist():
+            self._events.append((eid, obj, hand, "attempt_failed",
+                                 {"count": int(st.attempt_count[eid]),
+                                  "first_step": int(st.attempt_first[eid]),
+                                  "last_step": int(st.attempt_last[eid])}))
+            st.attempt_count[eid] = 0
         for eid in lost.nonzero(as_tuple=False).flatten().tolist():
-            self._events.append((eid, obj, hand, "dropped" if bool(still_closed[eid]) else "released"))
+            self._events.append((eid, obj, hand, "dropped" if bool(still_closed[eid]) else "released", {}))
 
         st.grasped = (st.grasped | newly) & contact
         st.last_grasped_step = torch.where(st.grasped, env.episode_length_buf, st.last_grasped_step)
@@ -243,6 +263,17 @@ class GraspTracker:
         dt = float(getattr(self.env, "step_dt", 0.0) or 1 / 15)
         k = max(1, int(round(within_s / dt)))
         return (self.env.episode_length_buf - st.last_grasped_step) <= k
+
+    def flush_attempts(self) -> None:
+        """Emit any open attempt burst — called at episode end so a fumble that runs
+        into the buzzer is still reported."""
+        for (obj, hand), st in self._pairs.items():
+            for eid in (st.attempt_count > 0).nonzero(as_tuple=False).flatten().tolist():
+                self._events.append((eid, obj, hand, "attempt_failed",
+                                     {"count": int(st.attempt_count[eid]),
+                                      "first_step": int(st.attempt_first[eid]),
+                                      "last_step": int(st.attempt_last[eid])}))
+                st.attempt_count[eid] = 0
 
     def towed_objects(self) -> dict[int, set[str]]:
         """env_id -> objects that were towed without a grasp this episode."""

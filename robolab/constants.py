@@ -82,6 +82,11 @@ ENABLE_SUBTASK_PROGRESS_CHECKING = True
 # rest when the goal is reached ends the episode immediately; a moving one makes
 # the episode wait until it settles. 0 restores upstream's first-frame termination.
 SUCCESS_REST_S = 0.2
+# A *placement* is credited in the subtask ladder only once the object has been at
+# rest (< SUCCESS_MAX_SPEED) for PLACEMENT_REST_S — the same question P30 asks of
+# success, so a bounce through a container no longer scores (VERIFIED_PLAN A2/H-B25;
+# BananaInBowl v_ env3). 0 restores upstream's credit-on-first-frame.
+PLACEMENT_REST_S = 0.2
 SUCCESS_MAX_SPEED = 0.02
 # A grasp is a carry, not a touch (VERIFIED_PLAN B1; robolab/core/task/grasp.py):
 # the object must stay in contact for GRASP_HOLD_S with its offset to the hand
@@ -97,6 +102,9 @@ GRASP_RELEASE_CLOSURE = 0.1
 # TOWED_WITHOUT_GRASP: a carry with the hand below GRASP_TOW_CLOSURE closed. Corpus
 # calibration (Finn, 2026-08-25): real grips of wide objects (oranges, cans) sit at
 # 0.2-0.35 of the closure range, confirmed tows at 0.00; 0.1 separates them.
+# Consecutive failed grasp attempts on the same object within GRASP_ATTEMPT_BURST_S
+# are one line with a count (a fumble at a banana produced 9 lines in 5 s).
+GRASP_ATTEMPT_BURST_S = 2.0
 GRASP_TOW_CLOSURE = 0.1
 # ...AND the object sits off-centre along the jaw axis by >= GRASP_TOW_OFFSET_M in the
 # hand frame (GRASP_JAW_BODY's +y): a centred object between fully open jaws (a can as

@@ -181,13 +181,19 @@ class EventTracker:
                 tracker.update(obj_name, "gripper")
             except Exception:
                 continue
-        for eid, obj_name, hand, kind in tracker.pop_events():
+        step_dt = float(getattr(env, "step_dt", 0.0) or 1 / 15)
+        for eid, obj_name, hand, kind, extra in tracker.pop_events():
             if frozen_mask[eid]:
                 continue
             mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
             mask[eid] = True
             if kind == "attempt_failed":
-                events.append((f"Grasp attempt on '{obj_name}' failed (contact lost before a carry was established)", StatusCode.GRASP_ATTEMPT_FAILED, mask))
+                n = int(extra.get("count", 1))
+                span = (int(extra.get("last_step", 0)) - int(extra.get("first_step", 0))) * step_dt
+                info = (f"Grasp attempt on '{obj_name}' failed (contact lost before a carry was established)"
+                        if n <= 1 else
+                        f"Grasp attempts on '{obj_name}' failed ×{n} over {span:.1f}s (contact never became a carry)")
+                events.append((info, StatusCode.GRASP_ATTEMPT_FAILED, mask))
             elif kind == "released":
                 events.append((f"'{obj_name}' released (hand opened)", StatusCode.OBJECT_RELEASED, mask))
             elif kind == "towed":

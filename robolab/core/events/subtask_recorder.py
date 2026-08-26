@@ -333,6 +333,13 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
         """Record final status for all envs when episode ends incomplete."""
         if not self.subtask_state_machines:
             return None, None
+        # P47: report any grasp-attempt burst still open at the buzzer
+        try:
+            from robolab.core.task.grasp import get_grasp_tracker
+            get_grasp_tracker(self._env).flush_attempts()
+        except Exception:
+            logger.exception("flushing grasp attempts failed")
+
         # Final-frame judgement for every env, published on the env for the
         # results row (env.get_env_results → summarize: score / score_peak).
         finals = getattr(self._env, "_subtask_final_scores", None)

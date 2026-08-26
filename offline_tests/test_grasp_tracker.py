@@ -30,6 +30,10 @@ class _Script:
         G.hand_closed = lambda env, hand, thr: torch.tensor([self.closure >= thr])
 
 
+def _kinds(evs):
+    return [(e[0], e[1], e[3], e[4].get("count")) for e in evs]
+
+
 def _tick(env, tracker, script, contact, hand=None, obj=None, closure=None):
     env.common_step_counter += 1; env.episode_length_buf += 1
     script.contact = contact
@@ -47,12 +51,17 @@ def test_open_hand_brush_is_nothing():
 
 
 def test_short_closed_contact_is_one_failed_attempt():
+    """The line appears once the burst goes quiet (P47), with a count of 1."""
     env = _Env(); s = _Script(); s.install(); t = G.GraspTracker(env)
     env.episode_length_buf[:] = 1
     assert _tick(env, t, s, True, closure=0.5)[0] is False
     assert _tick(env, t, s, True, closure=0.6)[0] is False
     grasped, ev = _tick(env, t, s, False, closure=0.6)
-    assert grasped is False and ev == [(0, "banana", "gripper", "attempt_failed")]
+    assert grasped is False and ev == []                    # burst still open
+    evs = []
+    for _ in range(25):                                     # quiet > GRASP_ATTEMPT_BURST_S
+        evs += _tick(env, t, s, False, closure=0.0)[1]
+    assert _kinds(evs) == [(0, "banana", "attempt_failed", 1)]
 
 
 def test_carry_becomes_a_grasp_then_release_or_drop():
@@ -65,13 +74,13 @@ def test_carry_becomes_a_grasp_then_release_or_drop():
     # keep carrying, then open the hand → released
     _tick(env, t, s, True, hand=[0.03, 0, 0], obj=[0.08, 0, 0], closure=0.6)
     grasped, ev = _tick(env, t, s, False, hand=[0.04, 0, 0], obj=[0.09, 0, 0], closure=0.0)
-    assert grasped is False and ev == [(0, "banana", "gripper", "released")]
+    assert grasped is False and _kinds(ev) == [(0, "banana", "released", None)]
     # new grasp, then lose it with the hand still closed → dropped
     for x in (0.05, 0.06, 0.07):
         grasped, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0], closure=0.6)
     assert grasped is True
     grasped, ev = _tick(env, t, s, False, hand=[0.08, 0, 0], obj=[0.30, 0, -0.2], closure=0.6)
-    assert grasped is False and ev == [(0, "banana", "gripper", "dropped")]
+    assert grasped is False and _kinds(ev) == [(0, "banana", "dropped", None)]
 
 
 def test_contact_without_coupling_is_not_a_grasp():
@@ -112,7 +121,7 @@ def test_open_hand_carry_is_towed_not_grasped():
         grasped, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0], closure=0.02)  # hand OPEN (< 0.1)
         evs += ev
     assert grasped is False
-    assert evs == [(0, "banana", "gripper", "towed")]                 # flagged once
+    assert _kinds(evs) == [(0, "banana", "towed", None)]                 # flagged once
     assert t.towed_objects() == {0: {"banana"}}
     # closing the hand on the same carry → now a grasp
     grasped, _ = _tick(env, t, s, True, hand=[0.04, 0, 0], obj=[0.09, 0, 0], closure=0.6)
@@ -138,3 +147,24 @@ def test_centred_object_between_open_jaws_is_a_grip_not_a_tow():
         grasped, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0], closure=0.0)
         evs += ev
     assert grasped is True and evs == []
+
+
+def test_attempt_burst_is_one_line_with_a_count():
+    env = _Env(dt=0.1); s = _Script(); s.install(); t = G.GraspTracker(env)   # burst window 2 s = 20 ticks
+    env.episode_length_buf[:] = 1
+    evs = []
+    for _ in range(3):                                    # three touch-and-lose blips in a row
+        evs += _tick(env, t, s, True, closure=0.6)[1]
+        evs += _tick(env, t, s, False, closure=0.6)[1]
+    assert evs == []                                      # nothing emitted while the burst is open
+    for _ in range(25):                                   # quiet period > 2 s
+        evs += _tick(env, t, s, False, closure=0.0)[1]
+    assert _kinds(evs) == [(0, "banana", "attempt_failed", 3)]
+
+
+def test_open_burst_is_flushed_at_episode_end():
+    env = _Env(dt=0.1); s = _Script(); s.install(); t = G.GraspTracker(env)
+    env.episode_length_buf[:] = 1
+    _tick(env, t, s, True, closure=0.6); _tick(env, t, s, False, closure=0.6)
+    t.flush_attempts()
+    assert _kinds(t.pop_events()) == [(0, "banana", "attempt_failed", 1)]
