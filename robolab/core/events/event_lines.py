@@ -77,7 +77,11 @@ def dedupe_tick(tracker_lines: list[dict], ladder_line: dict | None) -> tuple[li
     # rule a
     if p and p[0] == "failed" and p[1] == "object_grabbed" and p[2] in released:
         return kept, None
-    # rule b (+ d: a completion line keeps its own name and text)
-    if "Completed subtask" not in info:
+    # rule b: predicate lines are named after their predicate; a completion line is
+    # SUBTASK_COMPLETED (it used to borrow the stage's first condition's code — a
+    # pick_and_place completion read "OBJECT_GRABBED_SUCCESS · Completed subtask").
+    if "Completed subtask" in info:
+        ladder_line = dict(ladder_line, name="SUBTASK_COMPLETED", code=int(StatusCode.SUBTASK_COMPLETED))
+    else:
         ladder_line = dict(ladder_line, name=name_for_ladder_line(int(ladder_line.get("code", 0)), info))
     return kept, ladder_line

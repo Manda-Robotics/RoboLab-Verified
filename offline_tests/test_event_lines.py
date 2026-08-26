@@ -30,4 +30,4 @@ def test_completion_line_keeps_its_text_and_wrong_detach_folds():
     ladder = L(StatusCode.OBJECT_IN_CONTAINER_SUCCESS, "Completed subtask 'pick_and_place' 1/1")
     kept, ld = dedupe_tick(tr, ladder)
     assert [k["code"] for k in kept] == [int(StatusCode.OBJECT_RELEASED)]
-    assert ld is not None and "Completed subtask" in ld["info"]
+    assert ld is not None and "Completed subtask" in ld["info"] and ld["name"] == "SUBTASK_COMPLETED"

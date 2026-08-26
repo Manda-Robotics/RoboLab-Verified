@@ -65,6 +65,7 @@ class StatusCode(IntEnum):
     OBJECT_PICKED_UP_SUCCESS = 179
     OBJECTS_PLACED_IN_CONTAINER_IN_ORDER_SUCCESS = 180
     OBJECT_GROUPS_IN_CONTAINERS_SUCCESS = 181
+    SUBTASK_COMPLETED = 190        # a ladder stage finished (named as such, not after its first condition)
     OBJECT_OUTSIDE_OF_SUCCESS = 126
     OBJECT_ENCLOSED_SUCCESS = 127
     OBJECT_ABOVE_SUCCESS = 128
