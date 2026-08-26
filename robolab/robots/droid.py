@@ -358,8 +358,8 @@ class DroidIKActionCfg:
     error in root frame but multiplies the rotational Jacobian by R_offset,
     leaving the bases inconsistent — the IK reaches position cleanly, then
     drifts in orientation and diverges. (See run_abs_ik_demo.py for the
-    command-side conversion.) The relative IK path is unaffected, so
-    DroidRelIKActionCfg keeps body_offset.rot.
+    command-side conversion.) The relative IK path also tracks base_link
+    directly, with an explicitly authored identity offset.
 
     Note:
         if self.cfg.command_type == "position", action_dim = 3, (x, y, z)
@@ -405,6 +405,11 @@ class DroidRelIKActionCfg:
         scale=0.5,
         body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(
             pos=[0.0, 0.0, 0.0],
+            # RoboLab-authored rotations are WXYZ. Spell out identity instead
+            # of inheriting Isaac Lab 3's XYZW default: prepare_env_cfg() must
+            # convert this to runtime XYZW [0, 0, 0, 1], not a 180-degree Z
+            # rotation [0, 0, 1, 0].
+            rot=(1.0, 0.0, 0.0, 0.0),
             # rot=(0.5, -0.5, 0.5, -0.5),  # Match eef_frame: rotates base_link to the EE control frame.
         ),
         # Robotiq 2F-85 max height base flange -> fingertip is 162.8mm (per Robotiq spec).

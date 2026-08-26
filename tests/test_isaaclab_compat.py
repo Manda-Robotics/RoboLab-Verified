@@ -62,3 +62,15 @@ def test_config_rotations_are_prepared_once_and_recorded_as_wxyz(monkeypatch):
     recorded = compat.env_cfg_to_recording_dict(cfg)
     assert recorded["rot"] == (1.0, 0.0, 0.0, 0.0)
     assert recorded["child"]["rot"] == [0.5, 0.1, 0.2, 0.3]
+
+
+def test_droid_relative_ik_authors_identity_at_wxyz_boundary(monkeypatch):
+    """The relative-IK offset must not inherit Isaac Lab 3's XYZW default."""
+    from robolab.robots.droid import DroidRelIKActionCfg
+
+    cfg = DroidRelIKActionCfg()
+    assert cfg.arm_action.body_offset.rot == (1.0, 0.0, 0.0, 0.0)
+
+    monkeypatch.setattr(compat, "ISAACLAB_USES_XYZW", True)
+    compat.prepare_env_cfg(cfg)
+    assert cfg.arm_action.body_offset.rot == (0.0, 0.0, 0.0, 1.0)
