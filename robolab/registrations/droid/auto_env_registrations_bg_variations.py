@@ -67,7 +67,7 @@ def auto_register_droid_envs_bg_variations(
         contact_gripper,
     )
     from robolab.variations.backgrounds import find_and_generate_background_config
-    from robolab.variations.camera import EgocentricMirroredCameraCfg, OverShoulderReviewCameraCfg
+    from robolab.variations.camera import OverShoulderLeftCameraCfg, EgocentricMirroredCameraCfg, OverShoulderReviewCameraCfg
 
     # Use defaults if not provided
     if backgrounds is None:
@@ -85,7 +85,7 @@ def auto_register_droid_envs_bg_variations(
 
     # Generate Observations
     ImageObsCfg = generate_image_obs_from_cameras(cameras)
-    ViewportCameraCfg = generate_image_obs_from_cameras([OverShoulderReviewCameraCfg])
+    ViewportCameraCfg = generate_image_obs_from_cameras([OverShoulderLeftCameraCfg])
     ObservationCfg = generate_obs_cfg({
         "image_obs": ImageObsCfg(),
         "proprio_obs": ProprioceptionObservationCfg(),

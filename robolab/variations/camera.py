@@ -119,10 +119,11 @@ class HeadCameraCfg:
 
 
 ################################################################################
-# Review camera (P40): behind the robot, looking over it at the workspace, so the
-# reviewer's left/right is the robot's left/right — the default viewport used
-# to be the front-facing mirrored camera, which reads "right" for the robot's
-# left (VERIFIED_PLAN D3, H-R7-5: four inverted bowl stacks read as correct).
+# Review camera (P40, superseded): a camera directly behind the robot keeps the
+# handedness but the arm occludes the table (tested on the pod 2026-08-26), so the
+# default review viewport is OverShoulderLeftCameraCfg above — same handedness,
+# clear view, and already the panel reviewers watch in the recordings. Kept here
+# because it is the right starting point for a taller/offset review angle.
 ################################################################################
 @configclass
 class OverShoulderReviewCameraCfg:
