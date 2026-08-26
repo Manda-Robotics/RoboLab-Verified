@@ -52,7 +52,7 @@ class EventTracker:
         self,
         num_envs: int = 1,
         device: torch.device = None,
-        bump_threshold: float = 0.05,
+        bump_threshold: float = 0.02,   # 5 cm missed real knocks (wooden_bowl nudged 2.8 cm, pod 2026-08-26)
         move_threshold: float = 0.50,
         velocity_threshold: float = 0.05,
         workspace_center: tuple[float, float, float] = (0.55, 0.0, 0.5),
@@ -424,9 +424,19 @@ class EventTracker:
             if obj not in ignore_set
         ]
 
+        # H-B17 / P51: movement is tracked for EVERY object, targets included — a
+        # target knocked across the table used to produce no event at all. What is
+        # suppressed instead is movement *the policy is doing on purpose*: while the
+        # object is grasped, and briefly after it is released (the grasp/release
+        # events already say that).
+        from robolab.core.task.grasp import get_grasp_tracker
+        grasp_tracker = get_grasp_tracker(env)
         for obj_name in objects_to_check:
-            not_intended = self._get_not_intended_mask(obj_name, per_env_intended)
-            eligible = not_intended & active_mask
+            try:
+                handled = grasp_tracker.grasped(obj_name, "gripper") | grasp_tracker.recently_held(obj_name, "gripper", within_s=1.0)
+            except Exception:
+                handled = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+            eligible = active_mask & ~handled
 
             if not eligible.any():
                 continue

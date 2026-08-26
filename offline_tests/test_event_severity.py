@@ -23,3 +23,6 @@ def test_severity_tokens_and_code_range():
     assert s("WRONG_OBJECT_DETACHED", 257) == "failure"
     assert s("OBJECT_BUMPED", 258) == "failure"              # by code range
     assert s("OK", 0) == "success"
+    assert s("GRIPPER_FULLY_CLOSED", 256) == "neutral"     # a note, not a failure (P49)
+    assert s("OBJECT_RELEASED", 267) == "neutral"
+    assert s("SCENE_SETTLING", 269) == "neutral"

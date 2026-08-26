@@ -136,6 +136,15 @@ def _event_severity(name: str, code: int | None = None) -> str:
     (``robolab/core/task/status.py``)."""
     u = (name or "").upper()
     toks = set(u.split("_"))
+    if code is not None:
+        try:
+            from robolab.core.task.status import NEUTRAL_STATUS_CODES
+            if int(code) in NEUTRAL_STATUS_CODES:
+                return "neutral"
+        except Exception:
+            pass
+    if u in ("GRIPPER_FULLY_CLOSED", "OBJECT_RELEASED", "SCENE_SETTLING"):
+        return "neutral"
     if u.endswith("_SUCCESS") or u == "OK":
         return "success"
     if u.endswith("_FAILURE"):

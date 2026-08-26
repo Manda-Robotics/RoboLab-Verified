@@ -206,6 +206,15 @@ class StatusCode(IntEnum):
 # Subset of StatusCodes classified as runtime events worth tallying in a
 # run summary (wrong grabs, collisions, displacements, etc.). Consumed by
 # ``robolab.eval.summarize.extract_events_from_log``.
+# Events that describe *what happened* without judging it — the dashboard paints
+# these grey (Finn 2026-08-26: "it should be a grey flag, it's not particularly
+# good or bad").
+NEUTRAL_STATUS_CODES: set[int] = {
+    int(256),   # GRIPPER_FULLY_CLOSED — "closed on nothing"
+    int(267),   # OBJECT_RELEASED — a deliberate release
+    int(269),   # SCENE_SETTLING
+}
+
 EVENT_STATUS_CODES: set[StatusCode] = {
     StatusCode.WRONG_OBJECT_GRABBED_FAILURE,
     StatusCode.GRIPPER_HIT_TABLE,
