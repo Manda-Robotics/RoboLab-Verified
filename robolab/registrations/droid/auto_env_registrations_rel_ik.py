@@ -35,7 +35,7 @@ def auto_register_droid_rel_ik_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, task=None
         cameras = WRIST_LEFT
 
     ImageObsCfg = generate_image_obs_from_cameras(cameras)
-    ViewportCameraCfg = generate_image_obs_from_cameras([OverShoulderLeftCameraCfg])
+    ViewportCameraCfg = generate_image_obs_from_cameras([EgocentricMirroredCameraCfg])
 
     ObservationCfg = generate_obs_cfg({
         "image_obs": ImageObsCfg(),

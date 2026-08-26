@@ -119,11 +119,13 @@ class HeadCameraCfg:
 
 
 ################################################################################
-# Review camera (P40, superseded): a camera directly behind the robot keeps the
-# handedness but the arm occludes the table (tested on the pod 2026-08-26), so the
-# default review viewport is OverShoulderLeftCameraCfg above — same handedness,
-# clear view, and already the panel reviewers watch in the recordings. Kept here
-# because it is the right starting point for a taller/offset review angle.
+# Review camera (P40, REJECTED 2026-08-26): a camera behind the robot keeps the
+# handedness but the arm occludes the table, and an over-the-shoulder viewport was
+# no better for review. Finn: "the new viewport is terrible… the original viewport
+# was fine, and just having the flag of left and right is correct." The default
+# review viewport stays EgocentricMirroredCameraCfg; the dashboard labels it
+# "mirrored · robot R = your L" (P17). Kept only as a starting point if someone
+# revisits the angle.
 ################################################################################
 @configclass
 class OverShoulderReviewCameraCfg:

@@ -51,7 +51,7 @@ def auto_register_droid_envs_light_intensity(task_dirs=DEFAULT_TASK_SUBFOLDERS, 
 
     # Generate Observations
     ImageObsCfg = generate_image_obs_from_cameras(cameras)
-    ViewportCameraCfg = generate_image_obs_from_cameras([OverShoulderLeftCameraCfg])
+    ViewportCameraCfg = generate_image_obs_from_cameras([EgocentricMirroredCameraCfg])
     ObservationCfg = generate_obs_cfg({
         "image_obs": ImageObsCfg(),
         "proprio_obs": ProprioceptionObservationCfg(),
@@ -111,7 +111,7 @@ def auto_register_droid_envs_shadows(task_dirs=DEFAULT_TASK_SUBFOLDERS):
 
     # Generate Observations
     ImageObsCfg = generate_image_obs_from_cameras(cameras)
-    ViewportCameraCfg = generate_image_obs_from_cameras([OverShoulderLeftCameraCfg])
+    ViewportCameraCfg = generate_image_obs_from_cameras([EgocentricMirroredCameraCfg])
     ObservationCfg = generate_obs_cfg({
         "image_obs": ImageObsCfg(),
         "proprio_obs": ProprioceptionObservationCfg(),
@@ -173,7 +173,7 @@ def auto_register_droid_envs_colored_lights(task_dirs=DEFAULT_TASK_SUBFOLDERS):
 
     # Generate Observations
     ImageObsCfg = generate_image_obs_from_cameras(cameras)
-    ViewportCameraCfg = generate_image_obs_from_cameras([OverShoulderLeftCameraCfg])
+    ViewportCameraCfg = generate_image_obs_from_cameras([EgocentricMirroredCameraCfg])
     ObservationCfg = generate_obs_cfg({
         "image_obs": ImageObsCfg(),
         "proprio_obs": ProprioceptionObservationCfg(),
