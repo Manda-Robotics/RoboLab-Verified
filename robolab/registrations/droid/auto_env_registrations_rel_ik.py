@@ -7,15 +7,28 @@ import robolab.constants
 from robolab.constants import DEFAULT_TASK_SUBFOLDERS, TASK_DIR
 
 
-def auto_register_droid_rel_ik_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, task=None, cameras=None,
-                                    randomize_background=False, background_seed=None,
-                                    env_postfix=""):
+def auto_register_droid_rel_ik_envs(
+    task_dirs=DEFAULT_TASK_SUBFOLDERS,
+    task=None,
+    cameras=None,
+    randomize_background=False,
+    background_seed=None,
+    env_postfix="",
+    *,
+    dt=1 / (60 * 2),
+    render_interval=8,
+    decimation=8,
+):
     """Register tasks against ``DroidRelIKActionCfg`` (relative end-effector pose IK).
 
     Mirrors :func:`robolab.registrations.droid.auto_env_registrations_jointpos.auto_register_droid_envs`
     but swaps the action config from joint-position to relative differential-IK. Used by
     policies that emit (dx, dy, dz, droll, dpitch, dyaw, gripper) deltas — e.g. VAMs
     trained on LIBERO-format OSC_POSE data.
+
+    ``dt``, ``render_interval``, and ``decimation`` are exposed for policies whose
+    training control frequency differs from RoboLab's 15 Hz default. Keeping the
+    defaults preserves the historical registration exactly.
     """
     from robolab.core.environments.factory import auto_discover_and_create_cfgs
     from robolab.core.observations.observation_utils import generate_image_obs_from_cameras, generate_obs_cfg
@@ -37,10 +50,9 @@ def auto_register_droid_rel_ik_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, task=None
     ImageObsCfg = generate_image_obs_from_cameras(cameras)
     ViewportCameraCfg = generate_image_obs_from_cameras([EgocentricMirroredCameraCfg])
 
-    ObservationCfg = generate_obs_cfg({
-        "image_obs": ImageObsCfg(),
-        "proprio_obs": ProprioceptionObservationCfg(),
-        "viewport_cam": ViewportCameraCfg()})
+    ObservationCfg = generate_obs_cfg(
+        {"image_obs": ImageObsCfg(), "proprio_obs": ProprioceptionObservationCfg(), "viewport_cam": ViewportCameraCfg()}
+    )
 
     # WristCameraCfg is robot-mounted (wrist_cam is already attached via DroidCfg).
     # Including it as a scene mixin puts wrist_cam before robot in dataclass field
@@ -55,9 +67,7 @@ def auto_register_droid_rel_ik_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, task=None
         default_bg_path = HomeOfficeBackgroundCfg.dome_light.spawn.texture_file
         all_bgs = [p for p in all_bgs if p != default_bg_path]
         if not all_bgs:
-            raise FileNotFoundError(
-                "No backgrounds available for randomization after excluding the default."
-            )
+            raise FileNotFoundError("No backgrounds available for randomization after excluding the default.")
 
         def _bg_factory():
             return generate_background_config(rng.choice(all_bgs))
@@ -80,12 +90,13 @@ def auto_register_droid_rel_ik_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, task=None
         lighting_cfg=SphereLightCfg,
         background_cfg=background_cfg,
         contact_gripper=contact_gripper,
-        dt=1 / (60 * 2),
-        render_interval=8,
-        decimation=8,
+        dt=dt,
+        render_interval=render_interval,
+        decimation=decimation,
         seed=1,
     )
 
     if robolab.constants.VERBOSE:
         from robolab.core.environments.factory import print_env_table
+
         print_env_table()
