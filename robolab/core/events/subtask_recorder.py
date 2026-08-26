@@ -12,7 +12,7 @@ from isaaclab.managers.recorder_manager import RecorderManagerBaseCfg, RecorderT
 from isaaclab.utils import configclass
 
 import robolab.constants
-from robolab.core.events.event_lines import dedupe_tick
+from robolab.core.events.event_lines import dedupe_tick, fold_detach_into_release
 from robolab.core.task.event_tracker import EventTracker
 from robolab.core.task.target_objects import subtask_targets, task_containers, task_targets
 from robolab.core.task.status import StatusCode, get_status_name
@@ -410,9 +410,20 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
             env_id: If None, return list[per-env list[event dict]].
                    If int, return that env's list[event dict].
         """
+        window = self._detach_fold_steps()
         if env_id is None:
-            return [copy.deepcopy(ev) for ev in self._events]
-        return copy.deepcopy(self._events[env_id])
+            return [fold_detach_into_release(copy.deepcopy(ev), window) for ev in self._events]
+        return fold_detach_into_release(copy.deepcopy(self._events[env_id]), window)
+
+    def _detach_fold_steps(self) -> int:
+        """P57 window in steps; falls back to 0 (no folding) if dt is unknown."""
+        from robolab.constants import DETACH_FOLD_S  # noqa: PLC0415
+
+        dt = getattr(self._env, "step_dt", None) or getattr(self._env, "physics_dt", None)
+        try:
+            return max(1, round(DETACH_FOLD_S / float(dt))) if dt else 0
+        except (TypeError, ValueError, ZeroDivisionError):
+            return 0
 
     def clear(self):
         """Clear recording buffers.

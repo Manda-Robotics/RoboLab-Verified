@@ -20,7 +20,14 @@ b. a ladder line is named after the predicate that flipped
    previous transition had;
 c. ``WRONG_OBJECT_DETACHED`` is dropped when a tracker release/drop for the same
    object was written on the same tick (the release line carries the fact);
-d. a ``Completed subtask`` line absorbs the predicate line of the same tick.
+d. a ``Completed subtask`` line absorbs the predicate line of the same tick;
+e. (P57) ``WRONG_OBJECT_DETACHED`` is folded into a release/drop for the same
+   object that lands within a short window, not only on the same tick — rule c
+   only caught the same-tick case, and in the rc2 corpus **43 of 43** detach
+   lines were followed by a release/drop for the same object within 0.5 s
+   (typically 0.07 s later), so the pair is 100 % redundant in practice. A
+   detach with no release after it is kept: that is the informative case where
+   the wrong object is knocked out of the hand without the gripper opening.
 Scores, ladders and detectors are untouched; only what is written and its name.
 """
 from __future__ import annotations
@@ -85,3 +92,31 @@ def dedupe_tick(tracker_lines: list[dict], ladder_line: dict | None) -> tuple[li
     else:
         ladder_line = dict(ladder_line, name=name_for_ladder_line(int(ladder_line.get("code", 0)), info))
     return kept, ladder_line
+
+
+def fold_detach_into_release(events: list[dict], window_steps: int) -> list[dict]:
+    """Rule e: drop a WRONG_OBJECT_DETACHED that a release/drop for the same object follows.
+
+    Operates on one env's finished event list (pure; ``events`` is not mutated).
+    ``window_steps`` is how far ahead a release may land and still absorb the
+    detach line. Order is preserved.
+    """
+    if window_steps <= 0:
+        return list(events)
+
+    releases: dict[str, list[int]] = {}
+    for ev in events:
+        if int(ev.get("code", -1)) in _RELEASE_CODES:
+            m = _OBJ_IN_INFO.search(ev.get("info", "") or "")
+            if m:
+                releases.setdefault(m.group(1), []).append(int(ev.get("step", 0)))
+
+    out = []
+    for ev in events:
+        if int(ev.get("code", -1)) == int(StatusCode.WRONG_OBJECT_DETACHED):
+            m = _OBJ_IN_INFO.search(ev.get("info", "") or "")
+            step = int(ev.get("step", 0))
+            if m and any(step <= r <= step + window_steps for r in releases.get(m.group(1), ())):
+                continue
+        out.append(ev)
+    return out

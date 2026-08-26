@@ -120,6 +120,12 @@ GRASP_JAW_BODY = "base_link"
 # scene settling — reported once per env as SCENE_SETTLING, not as OBJECT_BUMPED
 # / OBJECT_MOVED on the robot's account.
 SETTLE_WARMUP_S = 1.0
+
+# P57: a WRONG_OBJECT_DETACHED line is folded into the release/drop for the same
+# object when one lands within this window. In the rc2 corpus every one of the 43
+# detach lines was followed by a release/drop for the same object inside 0.5 s
+# (median 0.07 s), so the two lines always described one physical event.
+DETACH_FOLD_S = 0.5
 # An object OFF_TABLE_DROP_M below its starting height has left the table:
 # OBJECT_FELL_OFF_TABLE flag; TARGET_LOST terminal failure when the success
 # condition can no longer be met (robolab/core/task/off_table.py).
