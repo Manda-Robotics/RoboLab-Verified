@@ -22,12 +22,24 @@ class _Env:
 
 
 def _run(contact_fn, objs=("banana", "bowl")):
-    # predicate_logic pulls in isaaclab, which is not available offline; the helper
-    # imports it lazily, so a stub module is enough to exercise the logic.
-    stub = types.ModuleType("robolab.core.task.predicate_logic")
+    """Stub predicate_logic just for this call, then put sys.modules back.
+
+    The helper imports it lazily, so a stub is enough. Leaving the stub installed
+    breaks every later test module that imports real names from it (`_and` was the
+    casualty) -- pytest shares one interpreter across files.
+    """
+    name = "robolab.core.task.predicate_logic"
+    saved = sys.modules.get(name)
+    stub = types.ModuleType(name)
     stub.in_contact = contact_fn
-    sys.modules["robolab.core.task.predicate_logic"] = stub
-    return G.pad_contact_columns(_Env(), object(), objs)
+    sys.modules[name] = stub
+    try:
+        return G.pad_contact_columns(_Env(), object(), objs)
+    finally:
+        if saved is not None:
+            sys.modules[name] = saved
+        else:
+            sys.modules.pop(name, None)
 
 
 def test_shape_and_dtype():

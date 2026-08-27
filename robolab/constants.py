@@ -152,6 +152,12 @@ GRIPPER_CLOSED_EVENT_THRESHOLD = 0.98
 # detach lines was followed by a release/drop for the same object inside 0.5 s
 # (median 0.07 s), so the two lines always described one physical event.
 DETACH_FOLD_S = 0.5
+
+# P75: PLACED_WITHOUT_LIFT (P41) is retired. In three runs it fired four times, all
+# four on BlackItemsInBin's keyboard -- "placed without ever being carried" because
+# the keyboard *starts* in the bin, which is the P74 bug rather than a dragged
+# placement. No true positive has ever been observed. Set True to re-enable.
+EMIT_PLACED_WITHOUT_LIFT = False
 # An object OFF_TABLE_DROP_M below its starting height has left the table:
 # OBJECT_FELL_OFF_TABLE flag; TARGET_LOST terminal failure when the success
 # condition can no longer be met (robolab/core/task/off_table.py).

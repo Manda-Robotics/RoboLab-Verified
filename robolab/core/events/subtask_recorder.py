@@ -198,10 +198,16 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
 
             # P41 (A7): a placement credited for an object the hand never carried
             # (dragged / pushed into place) gets a flag; scores are untouched.
-            try:
-                self._flag_placements_without_lift(eid, step_idx, current_score, all_status_codes)
-            except Exception:
-                logger.exception("placed-without-lift check failed")
+            # P75: PLACED_WITHOUT_LIFT is retired. Across three runs it fired exactly four
+            # times -- all four on BlackItemsInBin's keyboard, which counted as "never
+            # carried" only because the keyboard starts inside the bin (the P74 bug). No
+            # true positive has ever been observed. The detector is kept below; flip
+            # EMIT_PLACED_WITHOUT_LIFT to revive it.
+            if getattr(robolab.constants, "EMIT_PLACED_WITHOUT_LIFT", False):
+                try:
+                    self._flag_placements_without_lift(eid, step_idx, current_score, all_status_codes)
+                except Exception:
+                    logger.exception("placed-without-lift check failed")
 
             tracker_lines = []
             for ev in all_events:
