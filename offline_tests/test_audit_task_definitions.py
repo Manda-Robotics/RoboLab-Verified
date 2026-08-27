@@ -48,3 +48,53 @@ def test_spawn_check_explains_itself_or_says_it_could_not_run():
     """
     out = _run()
     assert ("already satisfied at spawn" in out) or ("spawn state could not be read" in out)
+
+
+# --- P65 (H-R9-T5): success terms are matched by prefix, not by exact name ----
+
+def _parse_task_definitions():
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import importlib
+    mod = importlib.import_module("audit_task_definitions")
+    return mod
+
+
+def test_prefixed_success_terms_are_seen(tmp_path):
+    """`success_bagel_02 = DoneTerm(...)` must register as a success term.
+
+    Under exact `success` matching, GrabABagel and GrabAFruit had no success term
+    as far as this sweep was concerned, so every check silently skipped them
+    (H-R9-T5). `find_task_definition_conflicts.py` already matched the prefix.
+    """
+    mod = _parse_task_definitions()
+    f = tmp_path / "prefixed.py"
+    f.write_text(
+        "class Terminations:\n"
+        "    time_out = DoneTerm(func=mdp.time_out, time_out=True)\n"
+        "    success_bagel_02 = DoneTerm(func=object_picked_up, params={'object': 'bagel_02', 'surface': 'table'})\n"
+        "    success_bagel_01 = DoneTerm(func=object_picked_up, params={'object': 'bagel_01', 'surface': 'table'})\n"
+        "\n"
+        "class ThingTask(Task):\n"
+        "    scene = import_scene('breakfast_table.usda', [])\n"
+        "    terminations = Terminations\n"
+        "    subtasks = [Subtask(name='x', conditions=[partial(object_grabbed, object='bagel_02')])]\n"
+    )
+    tasks = [t for t in mod.parse_task_file(f) if t.get("class") == "ThingTask"]
+    assert tasks, "task class not parsed"
+    assert {"bagel_01", "bagel_02"} <= tasks[0]["success"], "prefixed success terms were skipped"
+
+
+def test_time_out_is_not_a_success_term(tmp_path):
+    mod = _parse_task_definitions()
+    f = tmp_path / "timeout_only.py"
+    f.write_text(
+        "class Terminations:\n"
+        "    time_out = DoneTerm(func=mdp.time_out, time_out=True)\n"
+        "\n"
+        "class ThingTask(Task):\n"
+        "    scene = import_scene('breakfast_table.usda', [])\n"
+        "    terminations = Terminations\n"
+        "    subtasks = [Subtask(name='x', conditions=[partial(object_grabbed, object='bagel_02')])]\n"
+    )
+    tasks = [t for t in mod.parse_task_file(f) if t.get("class") == "ThingTask"]
+    assert tasks and not tasks[0]["success"]

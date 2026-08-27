@@ -176,15 +176,26 @@ def parse_task_file(path: Path) -> list[dict]:
         return [{"file": path, "class": "<unparseable>", "error": str(e)}]
 
     # terminations classes: name -> success node
+    #
+    # P65 (H-R9-T5): match the `success*` PREFIX, not the exact name `success`.
+    # GrabABagel names its terms success_bagel_01/_02/_07 and GrabAFruit names
+    # its success_banana/_banana_01/_apple/_orange, so under exact matching both
+    # tasks had no success term at all as far as this sweep was concerned and
+    # every check below silently skipped them. `find_task_definition_conflicts.py`
+    # already used startswith("success"); the two lints now agree. A class may
+    # carry several success terms, so they are collected and walked together.
     term_success: dict[str, ast.AST] = {}
     for node in tree.body:
         if not isinstance(node, ast.ClassDef):
             continue
-        for stmt in node.body:
+        nodes = [
+            stmt.value for stmt in node.body
             if isinstance(stmt, ast.Assign) and any(
-                isinstance(t, ast.Name) and t.id == "success" for t in stmt.targets
-            ):
-                term_success[node.name] = stmt.value
+                isinstance(t, ast.Name) and t.id.startswith("success") for t in stmt.targets
+            )
+        ]
+        if nodes:
+            term_success[node.name] = nodes[0] if len(nodes) == 1 else ast.Tuple(elts=nodes, ctx=ast.Load())
 
     out = []
     for node in tree.body:

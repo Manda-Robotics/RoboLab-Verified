@@ -40,14 +40,29 @@ class GrabABagelTask(Task):
     }
     episode_length_s: int = 30
     attributes = ['semantics']
+    # P65 (H-R9-T4): success is object_picked_up(..., distance=0.05) -- a 50 mm
+    # lift -- so a ladder made only of object_grabbed (contact) reported
+    # "Completed subtask grab_a_bagel" on episodes the task scored as failures.
+    # Each bagel now gets its own two-rung ladder, touch then lift, whose final
+    # rung is the success predicate itself; logical="any" is unchanged, so one
+    # bagel still suffices. Touching is worth 0.5, lifting completes it.
     subtasks = [
         Subtask(
             name="grab_a_bagel",
-            conditions=[
-                partial(object_grabbed, object="bagel_02"),
-                partial(object_grabbed, object="bagel_01"),
-                partial(object_grabbed, object="bagel_07"),
-            ],
+            conditions={
+                "bagel_02": [
+                    partial(object_grabbed, object="bagel_02"),
+                    partial(object_picked_up, object="bagel_02", surface="table", distance=0.05),
+                ],
+                "bagel_01": [
+                    partial(object_grabbed, object="bagel_01"),
+                    partial(object_picked_up, object="bagel_01", surface="table", distance=0.05),
+                ],
+                "bagel_07": [
+                    partial(object_grabbed, object="bagel_07"),
+                    partial(object_picked_up, object="bagel_07", surface="table", distance=0.05),
+                ],
+            },
             logical="any",
             score=1.0
         )
