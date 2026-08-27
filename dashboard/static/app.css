@@ -48,17 +48,23 @@ html, body { background-color: var(--bg-0); color: var(--text-0); }
      a deliberate contrast with the sans wordmark, and no webfont to fetch
      (H-E23: the page must still render on an air-gapped GPU box). */
   font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
-  font-size: 0.46em;
+  font-size: 0.4em;
   font-weight: 700;
   line-height: 1;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: lowercase;
-  /* Stamp: black glyphs inside a thick white outline. paint-order puts the
-     stroke BEHIND the fill -- without it the stroke is centred on the glyph
-     edge and eats half the letter at this size. */
+  /* A solid chip rather than an outline. -webkit-text-stroke miters every join,
+     which spikes on mono glyphs at this size, and CSS exposes no
+     stroke-linejoin for HTML text -- so the fix is to stop stroking. Same
+     "black on thick white", as a stamp. */
   color: #000;
-  -webkit-text-stroke: 3px #fff;
-  paint-order: stroke fill;
+  background: #fff;
+  padding: 2px 6px 1px;
+  border-radius: 3px;
+  /* the light theme has a white page behind it, so the chip needs an edge */
+  border: 1px solid var(--border);
+  /* the trailing letter-space would otherwise sit inside the chip */
+  text-indent: 0.14em;
   opacity: 1;
 }
 
