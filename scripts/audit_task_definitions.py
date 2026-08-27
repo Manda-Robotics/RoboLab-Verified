@@ -208,11 +208,16 @@ def parse_task_file(path: Path) -> list[dict]:
         contacts = [c for c in (contacts or []) if isinstance(c, str)]
 
         succ_names, succ_meta = (set(), {})
+        succ_func = None
         term_name = None
         if "terminations" in assigns and isinstance(assigns["terminations"], ast.Name):
             term_name = assigns["terminations"].id
             if term_name in term_success:
                 succ_names, succ_meta = _refs(term_success[term_name])
+                for call in _walk_calls(term_success[term_name]):
+                    for k in call.keywords:
+                        if k.arg == "func" and isinstance(k.value, ast.Name):
+                            succ_func = k.value.id
 
         sub_names, sub_meta = (set(), {})
         if "subtasks" in assigns:
@@ -221,10 +226,55 @@ def parse_task_file(path: Path) -> list[dict]:
         out.append({
             "file": path, "class": node.name, "scene": scene_file,
             "contacts": contacts, "success": succ_names, "success_meta": succ_meta,
-            "ladder": sub_names, "ladder_meta": sub_meta,
+            "ladder": sub_names, "ladder_meta": sub_meta, "success_func": succ_func,
             "has_ladder": "subtasks" in assigns,
         })
     return out
+
+
+# Predicates whose goal is "near the container" vs "away from it". A target that
+# already satisfies its goal relation at spawn needs no action, so a ladder that
+# leaves it out is correct, not a conflict. Ignoring this produced two confident
+# false positives (UnstackRubiksCube, BananasInCrate) that Finn caught by simply
+# looking at the scene -- the bottom cube already sits on the table 25 cm from the
+# bin, and banana_01 already sits 2 cm from the crate centre.
+NEAR_GOAL_FUNCS = {"object_in_container", "pick_and_place", "object_on_top", "object_on_center"}
+AWAY_GOAL_FUNCS = {"object_outside_of_and_on_surface", "pick_and_place_on_surface"}
+SPAWN_NEAR_M = 0.06
+
+
+def spawn_satisfied(task: dict, obj: str, states_dir: Path) -> tuple[bool, str]:
+    """Does `obj` already satisfy the success relation at step 0? (verdict, evidence)."""
+    func = task.get("success_func")
+    if func not in NEAR_GOAL_FUNCS | AWAY_GOAL_FUNCS:
+        return False, "unknown predicate"
+    containers = sorted(task["success"] - (task["success_meta"].get("_targets") or set()))
+    if not containers:
+        return False, "no container named"
+    try:
+        import h5py  # noqa: PLC0415
+        import numpy as np  # noqa: PLC0415
+    except ImportError:
+        return False, "h5py unavailable"
+    files = sorted((states_dir / task["class"]).glob("*.hdf5"))
+    if not files:
+        return False, "no run to read spawn poses from"
+    try:
+        with h5py.File(files[0]) as f:
+            g = f[f"data/{list(f['data'])[0]}/states/rigid_object"]
+            if obj not in g:
+                return False, f"{obj} not in the recorded state"
+            o = g[obj]["root_pose"][0, :2]
+            for c in containers:
+                if c not in g:
+                    continue
+                d = float(np.linalg.norm(o - g[c]["root_pose"][0, :2]))
+                near = d < SPAWN_NEAR_M
+                if (func in NEAR_GOAL_FUNCS and near) or (func in AWAY_GOAL_FUNCS and not near):
+                    return True, f"{obj} starts {d*100:.0f} cm from {c} — already satisfied at spawn"
+    except (OSError, KeyError, IndexError) as e:
+        return False, f"could not read spawn poses ({type(e).__name__})"
+    return False, "not satisfied at spawn"
 
 
 def scene_prim_names(scene_path: Path) -> set[str] | None:
@@ -243,11 +293,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tasks-dir", default="robolab/tasks/benchmark")
     ap.add_argument("--scenes-dir", default="assets/scenes")
+    ap.add_argument("--states-dir", default="../RoboLab/output/isaac60_robolab120_pi05",
+                    help="a run whose step-0 poses give each task's spawn state")
     ap.add_argument("--all-task-dirs", default="robolab/tasks",
                     help="root scanned for duplicate class names (check F)")
     args = ap.parse_args()
 
-    tasks_dir, scenes_dir = Path(args.tasks_dir), Path(args.scenes_dir)
+    tasks_dir, scenes_dir, states_dir = Path(args.tasks_dir), Path(args.scenes_dir), Path(args.states_dir)
     tasks = [t for f in sorted(tasks_dir.glob("*.py")) if f.name != "__init__.py"
              for t in parse_task_file(f)]
 
@@ -258,6 +310,8 @@ def main() -> int:
             scene_cache[scene] = scene_prim_names(scenes_dir / scene)
         return scene_cache[scene]
 
+    dismissed: list[str] = []   # cleared by the spawn-state check
+    unverified: list[str] = []  # spawn state could not be read -> NOT asserted as findings
     A: list[str] = []   # referenced object not in scene
     B: list[str] = []   # referenced object not in contact_object_list
     C: list[str] = []   # contact_object_list entry not in scene
@@ -294,7 +348,16 @@ def main() -> int:
             missing = t["success"] - t["ladder"]
             targets = t["success_meta"].get("_targets", set())
             if t["success_meta"].get("logical", "all") == "all":
-                mt = sorted(missing & targets)
+                mt = []
+                for o in sorted(missing & targets):
+                    done, why = spawn_satisfied(t, o, states_dir)
+                    if done:
+                        dismissed.append(f"{loc}: {why}")
+                    elif why != "not satisfied at spawn":
+                        # could not check -> never assert a conflict we did not verify
+                        unverified.append(f"{loc}: '{o}' unchecked ({why})")
+                    else:
+                        mt.append(o)
                 mr = sorted(missing - targets)
                 if mt:
                     D1.append(f"{loc}: success must move {mt} but the ladder never mentions {'it' if len(mt)==1 else 'them'}")
@@ -305,7 +368,20 @@ def main() -> int:
         if t["has_ladder"] and sm.get("logical") and lm.get("logical") and sm["logical"] != lm["logical"]:
             E.append(f"{loc}: success logical='{sm['logical']}' but ladder logical='{lm['logical']}'")
         if t["has_ladder"] and sm.get("K") and lm.get("K") and sm["K"] != lm["K"]:
-            E.append(f"{loc}: success K={sm['K']} but ladder K={lm['K']}")
+            # a target already in its goal relation at spawn counts toward success's K
+            prestaged = 0
+            blocked = False
+            for o in sorted(sm.get("_targets") or set()):
+                done, why = spawn_satisfied(t, o, states_dir)
+                if done:
+                    prestaged += 1
+                    dismissed.append(f"{loc}: {why}")
+                elif why != "not satisfied at spawn":
+                    blocked = True
+            if blocked:
+                unverified.append(f"{loc}: K={sm['K']} vs ladder K={lm['K']} unchecked (spawn state unreadable)")
+            elif lm["K"] + prestaged < sm["K"]:
+                E.append(f"{loc}: success K={sm['K']} but ladder K={lm['K']} (+{prestaged} pre-staged at spawn)")
 
     # F: duplicate class names across task subfolders
     seen: dict[str, list[Path]] = defaultdict(list)
@@ -346,6 +422,16 @@ def main() -> int:
         for line in items:
             print(f"  {line}")
         total += len(items)
+    if unverified:
+        print(f"\n## NOT asserted — spawn state could not be read — {len(unverified)}")
+        print("   (a target already in its goal relation at spawn needs no ladder step; without the")
+        print("    spawn poses this cannot be told apart from a real gap, so it is not a finding)")
+        for line in unverified:
+            print(f"  {line}")
+    if dismissed:
+        print(f"\n## cleared by the spawn-state check (already satisfied before the robot moves) — {len(dismissed)}")
+        for line in dismissed:
+            print(f"  {line}")
     print(f"\ntotal findings: {total}")
     return 1 if total else 0
 

@@ -1,11 +1,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""The task-definition audit must keep finding the two conflicts we verified by hand.
+"""The audit must NOT report a ladder as incomplete when the missing object
+already satisfies the success relation before the robot moves.
 
-Both were found by scripts/audit_task_definitions.py and confirmed by reading the
-task files; they are the regression anchors for the extractor, which has already
-under-reported once (a whitelist of condition names missed
-`pick_and_place_on_surface` and made 20+ ladders look empty).
+Both cases below were reported as conflicts by the first version of this tool and
+were wrong. Finn checked the scenes and said so: the Rubik's tower's bottom cube
+already sits on the table, and one banana already sits in the crate. Measured
+from the corpus run's step-0 poses: 25 cm from the bin, and 2 cm from the crate
+centre. These are the regression anchors for the spawn-state check.
 """
 import ast
 import subprocess
@@ -26,16 +28,23 @@ def test_script_parses():
     ast.parse((ROOT / "scripts" / "audit_task_definitions.py").read_text())
 
 
-def test_finds_unstack_rubiks_cube_missing_target():
-    # success needs middle+top+bottom out of the bin (logical='all');
-    # the ladder only covers middle+top, so it reads 1.0 with the bottom cube stuck.
+def test_unstack_rubiks_cube_is_not_reported_as_a_missing_target():
     out = _run()
-    assert "UnstackRubiksCubeTask" in out
-    assert "rubiks_cube_bottom" in out
+    d1 = out.split("## D1")[1].split("## D2")[0] if "## D1" in out else ""
+    assert "UnstackRubiksCubeTask" not in d1, "bottom cube starts on the table; not a conflict"
 
 
-def test_finds_bananas_in_crate_k_mismatch():
-    # success is choose K=2 of 5 bananas; the ladder is choose K=1 of 4.
+def test_bananas_in_crate_is_not_reported_as_a_k_mismatch():
     out = _run()
-    assert "BananasInCrateTask" in out
-    assert "K=2" in out and "K=1" in out
+    e = out.split("## E ")[1].split("## F")[0] if "## E " in out else ""
+    assert "BananasInCrateTask" not in e, "one banana starts in the crate; K=1 + 1 pre-staged = 2"
+
+
+def test_spawn_check_explains_itself_or_says_it_could_not_run():
+    """Either the check ran and shows its measurement, or it says it could not run.
+
+    What must never happen is a silent pass-through that turns an unverified
+    candidate into an asserted conflict -- that is the bug this file guards.
+    """
+    out = _run()
+    assert ("already satisfied at spawn" in out) or ("spawn state could not be read" in out)
