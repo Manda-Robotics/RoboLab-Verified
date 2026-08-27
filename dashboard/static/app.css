@@ -29,24 +29,32 @@ html, body { background-color: var(--bg-0); color: var(--text-0); }
   cursor: pointer;
 }
 
-/* "verified" sits under the wordmark, right-aligned to it, and takes no
-   vertical space of its own -- the 45px topnav is unchanged. */
-.brand-wordmark {
+/* "verified" sits under the wordmark, right-aligned to it, and takes almost no
+   vertical space of its own -- the 45px topnav is unchanged.
+   The doubled class raises specificity over Tailwind's .text-xl / .text-2xl,
+   which set line-height 1.75rem / 2rem and otherwise open a big gap under the
+   wordmark (and around the mark itself, which inherits it). */
+.brand-wordmark.brand-wordmark {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-end;
-  line-height: 1;
+  line-height: 1.05;
 }
 .brand-wordmark--start { align-items: flex-start; }
-.brand-verified {
+.brand-verified.brand-verified {
   display: block;
-  margin-top: 1px;
-  font-size: 0.5em;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  margin-top: 2px;
+  /* the dashboard's technical face, as used by the metric and code panels --
+     a deliberate contrast with the sans wordmark, and no webfont to fetch
+     (H-E23: the page must still render on an air-gapped GPU box). */
+  font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-size: 0.42em;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.18em;
   text-transform: lowercase;
   color: var(--accent-fg);
-  opacity: 0.85;
+  opacity: 0.8;
 }
 
 /* Dancing robot mark.  The body sways side-to-side, the arms wave in
