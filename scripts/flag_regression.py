@@ -9,7 +9,7 @@ recorded episodes and reports, per label:
     missing        -> the flag must now be PRESENT
     correct        -> the flag must still be there
     correct-absent -> the flag must still NOT be there
-    ambiguous      -> reported, never scored
+    ambiguous      -> reported, never scored (Finn's "unclear" maps here)
 
 The value is the diff over time: run it after each patch and it says which flag a
 change fixed, and which one it broke. A label whose signal was never recorded is
