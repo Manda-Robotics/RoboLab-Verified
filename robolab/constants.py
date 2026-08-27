@@ -121,6 +121,18 @@ GRASP_JAW_BODY = "base_link"
 # / OBJECT_MOVED on the robot's account.
 SETTLE_WARMUP_S = 1.0
 
+# P64 (H-R9-9 / H-R9-T1 / H-R9-T3): a ladder rung that is ALREADY TRUE at reset
+# is not something the policy achieved, so it earns no credit. The state machine
+# probes every rung once on the first step of an episode and marks the true ones
+# "excluded": they stay in the ladder (the ladder walks past them) but they carry
+# no score, and the remaining rungs are renormalised so the group can still reach
+# 1.0. Evidence: BananasOutOfBin logs "Completed subtask 'bananas_out_of_bin' 1/1"
+# at 0.07 s in both envs because its LAST rung is object_dropped (= not in contact),
+# which is true before the arm moves; BlackItemsInBin credits
+# object_in_container(keyboard, grey_bin) at 0.07 s because the keyboard spawns in
+# the bin. Set False to restore upstream behaviour.
+SUBTASK_EXCLUDE_SPAWN_TRUE_RUNGS = True
+
 # P57: a WRONG_OBJECT_DETACHED line is folded into the release/drop for the same
 # object when one lands within this window. In the rc2 corpus every one of the 43
 # detach lines was followed by a release/drop for the same object inside 0.5 s

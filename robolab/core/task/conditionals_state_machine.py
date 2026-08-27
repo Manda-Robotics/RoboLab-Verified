@@ -72,6 +72,12 @@ class ConditionalsStateMachine:
         self.object_tracker = {} # [object_name] -> int showing the current subtask index
         self.object_completed_table = {} # [object_name][subtask_index] -> bool showing which subtasks are completed
 
+        # P64: rungs that were already true at reset earn no credit (see
+        # robolab.constants.SUBTASK_EXCLUDE_SPAWN_TRUE_RUNGS).
+        self._excluded: dict[str, list[bool]] = {}    # [object][idx] -> true at spawn
+        self._eff_score: dict[str, list[float]] = {}  # [object][idx] -> score after renormalising
+        self._spawn_probed = False                    # the probe runs on the first step()
+
         self._prev_object_tracker_state = {} # the last object tracker state
 
         # Per-step condition cache to avoid duplicate evaluations
@@ -93,11 +99,14 @@ class ConditionalsStateMachine:
         if not conditions:
             return object_score
 
-        # conditions is a list of (function, score) tuples
+        # conditions is a list of (function, score) tuples; P64 replaces the
+        # authored score with the renormalised one, which is 0 for a rung that was
+        # already true at reset.
+        eff = self._eff_score.get(obj_name)
         for i, (conditional_func, score) in enumerate(conditions):
 
             if self.object_completed_table[obj_name][i]:
-                object_score += score
+                object_score += eff[i] if eff is not None and i < len(eff) else score
 
         object_score = max(object_score, 0.0) # cap at 0
         return object_score
@@ -107,10 +116,69 @@ class ConditionalsStateMachine:
         for group_name, subtasks in self.subtask.conditions.items():
             self.object_tracker[group_name] = 0
             self.object_completed_table[group_name] = [False] * len(subtasks)
+            self._excluded[group_name] = [False] * len(subtasks)
+            self._eff_score[group_name] = [float(score) for _, score in subtasks]
+        self._spawn_probed = False
 
         self._prev_object_tracker_state = dict(self.object_tracker)
         if robolab.constants.VERBOSE:
             self._print_current_state()
+
+    def _probe_spawn_state(self) -> None:
+        """P64: mark every ladder rung that is already true before the policy acts.
+
+        Runs once, on the first ``step`` of an episode, so the world is live and at
+        its reset pose. A rung that is true here was satisfied by the *scene author*,
+        not by the policy, so it earns no credit: it is marked excluded, and the
+        remaining rungs of its group are renormalised to sum to 1.0 (upstream
+        normalises each group's rung scores to 1.0 in ``Subtask.__post_init__``, so
+        without renormalising, a group with an excluded rung could never reach 1.0).
+
+        A rung whose condition raises here is left creditable — the safe default is
+        upstream behaviour — and recorded in ``spawn_probe_errors``.
+        """
+        self._spawn_probed = True
+        self.spawn_probe_errors: dict[str, list[int]] = {}
+        if not getattr(robolab.constants, "SUBTASK_EXCLUDE_SPAWN_TRUE_RUNGS", True):
+            return
+        self._condition_cache.clear()
+        for group_name in self.subtask.group_names:
+            conditions = self.subtask.get_group(group_name)
+            excluded = [False] * len(conditions)
+            for i, (conditional_func, _score) in enumerate(conditions):
+                try:
+                    result, _info = self.check_condition_satisfied(conditional_func)
+                except Exception:
+                    self.spawn_probe_errors.setdefault(group_name, []).append(i)
+                    continue
+                excluded[i] = bool(result)
+            self._excluded[group_name] = excluded
+            # Renormalise the surviving rungs so the group can still reach 1.0.
+            total = sum(score for (_f, score), skip in zip(conditions, excluded) if not skip)
+            if total > 0:
+                self._eff_score[group_name] = [
+                    0.0 if skip else float(score) / total
+                    for (_f, score), skip in zip(conditions, excluded)
+                ]
+            else:
+                # Every rung was true at spawn: the group is pre-satisfied by the
+                # scene and measures nothing. It scores 0 and is reported.
+                self._eff_score[group_name] = [0.0] * len(conditions)
+        self._condition_cache.clear()
+        if robolab.constants.DEBUG:
+            for group_name, flags in self._excluded.items():
+                if any(flags):
+                    print(f"[P64] '{self.subtask.name}' group '{group_name}': rungs "
+                          f"{[i for i, f in enumerate(flags) if f]} were true at spawn — not credited")
+
+    def spawn_excluded_rungs(self) -> dict[str, list[int]]:
+        """Groups with at least one rung that was already true at reset (P64)."""
+        return {g: [i for i, f in enumerate(flags) if f]
+                for g, flags in self._excluded.items() if any(flags)}
+
+    def _is_excluded(self, obj_name: str, idx: int) -> bool:
+        flags = self._excluded.get(obj_name)
+        return bool(flags) and idx < len(flags) and flags[idx]
 
     def check_condition_satisfied(self, conditional_func: Callable) -> tuple[bool, str]:
         """
@@ -194,19 +262,43 @@ class ConditionalsStateMachine:
         # satisfied even if an earlier transient one is not (e.g., object_grabbed
         # is False after release but object_in_container is True). If the later
         # condition is met, the earlier one must have been satisfied at some point.
+        #
+        # P64: that assumption fails for a rung the SCENE already satisfies at
+        # reset — the highest satisfied rung is then the last one on frame 1 and
+        # the whole ladder completes before the policy acts (BananasOutOfBin,
+        # BlackItemsInBin). Rungs marked excluded by the spawn probe are skipped
+        # here: they never appear in ``satisfied_indices``, so they emit no
+        # completion line and earn no score.
         latest_satisfied_idx = current_idx
         satisfied_indices = []
+        advanced = False
         for i in range(current_idx, num_conditions):
+            if self._is_excluded(obj_name, i):
+                continue
             conditional_func, _ = conditions_list[i]
             result, info = self.check_condition_satisfied(conditional_func)
             if result:
                 latest_satisfied_idx = i
                 satisfied_indices.append(i)
+                advanced = True
+
+        # P64: an excluded rung is transparent — once the ladder reaches it, it
+        # walks past without crediting it. Without this a group whose last rung is
+        # spawn-true (BananasOutOfBin) would stall one short of completion forever.
+        walk = latest_satisfied_idx + 1 if advanced else current_idx
+        while walk < num_conditions and self._is_excluded(obj_name, walk):
+            latest_satisfied_idx = walk
+            advanced = True
+            walk += 1
 
         # Return advancement if any forward condition is satisfied
-        if satisfied_indices:
-            conditional_func, _ = conditions_list[latest_satisfied_idx]
-            _, info = self.check_condition_satisfied(conditional_func)
+        if advanced:
+            if satisfied_indices:
+                conditional_func, _ = conditions_list[max(satisfied_indices)]
+                _, info = self.check_condition_satisfied(conditional_func)
+            else:
+                # pure walk over spawn-true rungs: nothing to report
+                info = f"Skipped {obj_name} rung(s) already satisfied at reset"
             return latest_satisfied_idx, info, True, satisfied_indices
 
         # No forward progress — check backward for regression.
@@ -214,6 +306,9 @@ class ConditionalsStateMachine:
         # condition is satisfied either (checked above).
         earliest_unsatisfied_idx = current_idx
         for i in range(current_idx - 1, -1, -1):
+            if self._is_excluded(obj_name, i):
+                # P64: a spawn-true rung is not a thing the policy can lose
+                break
             conditional_func, _ = conditions_list[i]
             result, info = self.check_condition_satisfied(conditional_func)
             if not result:
@@ -245,6 +340,12 @@ class ConditionalsStateMachine:
         """
         # Clear per-step condition cache to ensure fresh evaluations
         self._condition_cache.clear()
+
+        # P64: on the very first step, record which rungs the scene already
+        # satisfies. This must happen before any advancement is considered.
+        if not self._spawn_probed:
+            self._probe_spawn_state()
+            self._condition_cache.clear()
 
         # Process each object independently
         info = ""
@@ -369,9 +470,15 @@ class ConditionalsStateMachine:
                 all_status_codes.append((cond_info, cond_status))
 
             # Use the FIRST satisfied condition's status code as the primary status
-            # This ensures all intermediate conditions get logged properly
-            first_func_name, _ = get_callable_info(conditionals_list[current_idx][0])
-            status_code = StatusCode.subtask_to_success(first_func_name)
+            # This ensures all intermediate conditions get logged properly.
+            # P64: an advance made purely by walking over spawn-true rungs reports
+            # nothing — there is no achievement to log.
+            if satisfied_indices:
+                first_func_name, _ = get_callable_info(conditionals_list[min(satisfied_indices)][0])
+                status_code = StatusCode.subtask_to_success(first_func_name)
+            else:
+                status_code = StatusCode.OK
+                info = ""
 
             steps_advanced = target_idx - current_idx + 1
             info = f"{target_info} advanced {steps_advanced} step(s) to step {self.object_tracker[obj_name]} for {obj_name}."
