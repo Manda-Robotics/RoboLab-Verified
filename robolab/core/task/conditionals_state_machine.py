@@ -124,11 +124,35 @@ class ConditionalsStateMachine:
         if robolab.constants.VERBOSE:
             self._print_current_state()
 
+    def _past_settle_warmup(self) -> bool:
+        """P74: has the scene finished settling?
+
+        The probe used to run on the very first step. That is too early for any rung
+        whose predicate needs the object to be AT REST (P46): at step 0 the object is
+        still settling, the rung reads False, and it escapes exclusion. BlackItemsInBin
+        is the case Finn found -- the keyboard starts inside grey_bin, but
+        ``object_in_container`` only turned true at 0.27 s, after the probe had already
+        run, so the subtask was credited in all four envs before the arm moved.
+
+        Probing at the end of the settle warm-up instead: the scene is at rest and no
+        policy can have placed anything in one second.
+        """
+        env = getattr(self, "env", None) or getattr(self, "_env", None)
+        if env is None:
+            return True
+        try:
+            dt = float(getattr(env, "step_dt", 0.0) or 1 / 15)
+            need = max(1, int(round(float(robolab.constants.SETTLE_WARMUP_S) / dt)))
+            buf = env.episode_length_buf
+            return bool(int(buf if isinstance(buf, int) else buf.max()) >= need)
+        except Exception:
+            return True
+
     def _probe_spawn_state(self) -> None:
         """P64: mark every ladder rung that is already true before the policy acts.
 
-        Runs once, on the first ``step`` of an episode, so the world is live and at
-        its reset pose. A rung that is true here was satisfied by the *scene author*,
+        Runs once, at the end of the settle warm-up (see ``_past_settle_warmup``), so
+        the world is live and at rest at its reset pose. A rung that is true here was satisfied by the *scene author*,
         not by the policy, so it earns no credit: it is marked excluded, and the
         remaining rungs of its group are renormalised to sum to 1.0 (upstream
         normalises each group's rung scores to 1.0 in ``Subtask.__post_init__``, so
@@ -341,9 +365,15 @@ class ConditionalsStateMachine:
         # Clear per-step condition cache to ensure fresh evaluations
         self._condition_cache.clear()
 
-        # P64: on the very first step, record which rungs the scene already
-        # satisfies. This must happen before any advancement is considered.
+        # P64: record which rungs the scene already satisfies, before any advancement
+        # is considered. P74 defers this to the end of the settle warm-up, so a rung
+        # whose predicate needs the object AT REST is judged once the scene is at rest.
         if not self._spawn_probed:
+            if not self._past_settle_warmup():
+                # Nothing may be credited before the probe has run, or the very rung the
+                # probe would have excluded can be banked during the warm-up -- which is
+                # exactly how BlackItemsInBin credited its keyboard at 0.27 s.
+                return False, "", StatusCode.OK, []
             self._probe_spawn_state()
             self._condition_cache.clear()
 

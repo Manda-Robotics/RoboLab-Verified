@@ -125,3 +125,36 @@ def test_a_rung_false_at_spawn_is_never_excluded():
     sm = _machine(_bananas_subtask(w))
     sm.step()
     assert sm.spawn_excluded_rungs() == {"banana_02": [2]}, "only the dropped rung is spawn-true"
+
+
+# --- P74: the probe must run once the scene is AT REST, not on step 0 -----------------
+
+def test_p74_probe_waits_for_the_settle_warmup():
+    """BlackItemsInBin: the keyboard starts inside grey_bin, yet all four rc3 envs
+    credited the subtask at 0.27 s.
+
+    `object_in_container` also requires the object to be at rest (P46). At step 0 the
+    scene is still settling, so the rung read False, escaped the spawn probe, and was
+    banked a few ticks later. The probe now runs at the end of the settle warm-up.
+    """
+    import robolab.constants as C
+    from robolab.core.task.conditionals_state_machine import ConditionalsStateMachine
+
+    assert hasattr(ConditionalsStateMachine, "_past_settle_warmup")
+
+    class _Buf:
+        def __init__(self, v): self._v = v
+        def max(self): return self._v
+
+    class _Env:
+        step_dt = 1 / 15
+        def __init__(self, step): self.episode_length_buf = _Buf(step)
+
+    sm = ConditionalsStateMachine.__new__(ConditionalsStateMachine)
+    need = round(C.SETTLE_WARMUP_S / (1 / 15))
+    sm.env = _Env(0)
+    assert sm._past_settle_warmup() is False, "must not probe on step 0"
+    sm.env = _Env(need - 1)
+    assert sm._past_settle_warmup() is False, "must not probe mid-settle"
+    sm.env = _Env(need)
+    assert sm._past_settle_warmup() is True, "must probe once the scene is at rest"
