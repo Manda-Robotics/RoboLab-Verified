@@ -133,6 +133,20 @@ SETTLE_WARMUP_S = 1.0
 # the bin. Set False to restore upstream behaviour.
 SUBTASK_EXCLUDE_SPAWN_TRUE_RUNGS = True
 
+# P66 (H-R9-13 / H-R9-3): the GRIPPER_FULLY_CLOSED event means what its name says.
+# `gripper_fully_closed` defaults to closed_threshold=0.75 -- "at least 75 % closed"
+# -- and `gripper_slightly_closed` reuses it at 0.30, so the predicate's default
+# cannot be raised without moving that one too. The EVENT gets its own threshold.
+# Measured on isaac60_robolab120_pi05 (80 episodes with joint traces): the driving
+# finger_joint reaches 100 % of the nominal pi/4 span in 68 of 80 episodes, so this
+# is a narrow fix, not a broad one -- but it is exactly the reported case.
+# BlackItemsInBin env0 peaks at 0.830 of the span (the smartphone is wedged between
+# the fingers and blocks further closure) and never reaches 98 %, yet it emitted 69
+# GRIPPER_FULLY_CLOSED lines -- 93 % of that episode's entire log. At 0.98 it emits
+# none. Corpus closure transitions 501 -> 411; only 2 of the 70 episodes that fire
+# at all have a peak below 98 %.
+GRIPPER_CLOSED_EVENT_THRESHOLD = 0.98
+
 # P57: a WRONG_OBJECT_DETACHED line is folded into the release/drop for the same
 # object when one lands within this window. In the rc2 corpus every one of the 43
 # detach lines was followed by a release/drop for the same object inside 0.5 s

@@ -282,7 +282,13 @@ class EventTracker:
         # Upstream flagged every full closure, including the one holding the
         # object (25 % of the corpus flags — VERIFIED_PLAN B5, H-R5-9, H-R6-6).
         # Now: closed AND no scene object in contact with the hand = an air grasp.
-        fully_closed = gripper_fully_closed(env, env_id=None)  # (N,) bool
+        # P66: the event uses its own, strict threshold -- see
+        # robolab.constants.GRIPPER_CLOSED_EVENT_THRESHOLD. The predicate's 0.75
+        # default is shared with gripper_slightly_closed and is left alone.
+        fully_closed = gripper_fully_closed(
+            env, env_id=None,
+            closed_threshold=float(getattr(robolab.constants, "GRIPPER_CLOSED_EVENT_THRESHOLD", 0.75)),
+        )  # (N,) bool
         holding = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
         hand_candidates = [o for o in (getattr(env.cfg, "contact_object_list", None) or []) if o not in ignore_set]
         for eid in fully_closed.nonzero(as_tuple=False).flatten().tolist():
