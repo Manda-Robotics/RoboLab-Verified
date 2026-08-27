@@ -253,11 +253,20 @@ def object_picked_up(
     object: str,
     surface: str,
     distance: float = 0.05,
+    gripper_name: str | list[str] = "gripper",
     env_id: int | None = None,
 ):
-    """Check if object is grabbed and lifted at least `distance` above the surface."""
+    """Check if object is grabbed and lifted at least `distance` above the surface.
+
+    P68: ``gripper_name`` follows the same rules as every other predicate that takes
+    it (``object_on_top``, ``object_in_container``, …) — see
+    ``docs/task_conditionals.md#gripper-names``. A **list** means every listed gripper
+    must hold the object, so a two-armed lift is ``gripper_name=["left", "right"]``.
+    This was the one predicate that did not take the parameter, which left no way to
+    write a two-handed grasp into a success condition. The default is unchanged.
+    """
     result = _and(
-        object_grabbed(env, object, env_id=env_id),
+        object_grabbed(env, object, gripper_name=gripper_name, env_id=env_id),
         object_above(env, object=object, reference_object=surface, env_id=env_id, z_margin=distance)
     )
     if robolab.constants.DEBUG:
