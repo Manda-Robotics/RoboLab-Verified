@@ -76,11 +76,30 @@ def test_p60_tracker_grab_line_survives_when_the_ladder_has_none():
 
 
 def test_p60_two_separate_grasps_are_not_collapsed():
+    # a release between them means these are two different grasps
     events = [
         _line(100, "'bowl_1' grasped (carry established)"),
+        {"step": 200, "code": int(StatusCode.OBJECT_RELEASED), "name": "OBJECT_RELEASED",
+         "info": "'bowl_1' released (hand opened)", "score": 0.0},
         _line(400, "success: object_grabbed(object=bowl_1). advanced 1 step(s) to step 1"),
     ]
-    assert len(fold_duplicate_grab_lines(events, window_steps=8)) == 2
+    out = fold_duplicate_grab_lines(events, window_steps=8)
+    assert len([e for e in out if "grasped (carry" in e["info"]]) == 1
+
+
+def test_p60_ladder_line_lagging_far_behind_still_folds():
+    """rc3 measured the ladder lagging the tracker by 0.60-2.20 s (9-33 steps).
+
+    The original fixed 0.53 s window caught none of the five duplicates in that
+    run, which is why the rule is now structural.
+    """
+    for lag in (9, 10, 18, 23, 33):
+        events = [
+            _line(100, "'banana' grasped (carry established)"),
+            _line(100 + lag, "success: object_grabbed(object=banana). advanced 1 step(s) to step 1"),
+        ]
+        out = fold_duplicate_grab_lines(events, window_steps=8)
+        assert len(out) == 1 and "advanced" in out[0]["info"], f"lag {lag} not folded"
 
 
 def test_p60_a_grab_of_a_different_object_is_not_folded():
