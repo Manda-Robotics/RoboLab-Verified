@@ -21,7 +21,13 @@ class _Env:
     device = "cpu"
 
 
-def _run(contact_fn, objs=("banana", "bowl")):
+class _World:
+    """Stands in for WorldState: force between two bodies, per env."""
+    def __init__(self, force): self._f = force
+    def get_contact_force(self, a, b, env_id=None): return self._f(a, b)
+
+
+def _run(contact_fn, objs=("banana", "bowl"), force=None):
     """Stub predicate_logic just for this call, then put sys.modules back.
 
     The helper imports it lazily, so a stub is enough. Leaving the stub installed
@@ -33,8 +39,9 @@ def _run(contact_fn, objs=("banana", "bowl")):
     stub = types.ModuleType(name)
     stub.in_contact = contact_fn
     sys.modules[name] = stub
+    world = _World(force or (lambda a, b: torch.zeros(2, 3)))
     try:
-        return G.pad_contact_columns(_Env(), object(), objs)
+        return G.pad_contact_columns(_Env(), world, objs)
     finally:
         if saved is not None:
             sys.modules[name] = saved
@@ -42,32 +49,37 @@ def _run(contact_fn, objs=("banana", "bowl")):
             sys.modules.pop(name, None)
 
 
-def test_shape_and_dtype():
+def test_pad_forces_have_one_column_per_pad():
     out = _run(lambda w, obj, pad, env_id=None: torch.tensor([True, False]))
-    assert set(out) == {"banana", "bowl"}
-    assert out["banana"].shape == (2, 2) and out["banana"].dtype == torch.uint8
+    assert out["banana"].shape == (2, 2), "(num_envs, [left, right])"
+    assert out["banana"].dtype == torch.float32, "force, not a boolean"
 
 
-def test_single_pad_hold_is_visible_as_a_tow():
-    out = _run(lambda w, obj, pad, env_id=None: torch.tensor([pad == "gripper_left", False]))
-    assert out["banana"][0].tolist() == [1, 0]
+def test_a_firm_grip_and_a_magnetic_hold_are_distinguishable():
+    """The whole point of P77: a boolean cannot tell these apart, a force can."""
+    firm = _run(None, force=lambda a, b: torch.full((2, 3), 3.0))
+    ghost = _run(None, force=lambda a, b: torch.full((2, 3), 1e-4))
+    assert firm["banana"][0].sum() > 1.0
+    assert ghost["banana"][0].sum() < 0.01
 
 
-def test_wedged_object_reads_both_pads():
-    out = _run(lambda w, obj, pad, env_id=None: torch.tensor([True, True]))
-    assert out["banana"][0].tolist() == [1, 1], "wedged between both pads is not a tow"
+def test_destination_contact_is_recorded_for_containers():
+    out = _run(lambda w, obj, dest, env_id=None: torch.tensor([True, False]))
+    # 'bowl' looks like a destination, so banana-vs-bowl contact is recorded
+    assert "banana__bowl" in out, "placement predicates need object-to-container contact"
+    assert out["banana__bowl"].dtype == torch.uint8
 
 
-def test_failing_lookup_degrades_to_no_contact():
-    def boom(w, obj, pad, env_id=None):
+def test_failing_lookup_degrades_to_zero():
+    def boom(*a, **k):
         raise RuntimeError("sensor missing")
-    out = _run(boom)
+    out = _run(boom, force=boom)
     assert out["banana"].sum().item() == 0, "recording must never take a run down"
 
 
-def test_scalar_result_is_broadcast_to_every_env():
-    out = _run(lambda w, obj, pad, env_id=None: True)
-    assert out["banana"].shape == (2, 2)
+def test_no_destination_columns_between_two_destinations():
+    out = _run(lambda w, obj, dest, env_id=None: torch.tensor([True, True]))
+    assert "bowl__bowl" not in out
 
 
 def test_no_objects_records_nothing():

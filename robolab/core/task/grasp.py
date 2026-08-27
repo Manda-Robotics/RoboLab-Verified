@@ -342,30 +342,67 @@ class GraspTracker:
 
 PAD_LABELS = ("gripper_left", "gripper_right")
 
+# Objects that things are placed INTO or ONTO. Derived from names alone so the
+# recorder needs no task introspection.
+DEST_HINTS = ("bin", "crate", "rack", "shelf", "pail", "box", "plate", "bowl", "table", "container")
+
+
+def is_destination(name: str) -> bool:
+    return any(h in name.lower() for h in DEST_HINTS)
+
 
 def pad_contact_columns(env, world, object_names) -> dict:
-    """P62: per-object (num_envs, 2) uint8 contact, columns [left pad, right pad].
+    """P62/P77: what the event logic reads from contact, written to the HDF5.
 
-    Lives here rather than in the recorder so it can be tested without isaaclab.
-    A lookup that fails degrades to "no contact" for that pad -- recording must
-    never take a run down.
+    Per object:
+      ``<obj>``            (num_envs, 2) float32 — contact FORCE magnitude against the
+                           left and right gripper pads.
+      ``<obj>__<dest>``    (num_envs,) uint8 — in contact with a container/surface.
+
+    Forces rather than booleans because a boolean cannot answer the question the
+    labelled data actually asks. Finn labelled six open-hand carries; the three real
+    tows and the two he rejected are indistinguishable by per-pad booleans (both read
+    "both pads, closure ~1.0"), and jaw-axis geometry does not separate them either.
+    A genuine grip carries real normal force; an object that follows the hand with
+    almost none is the "magnetic" artifact.
+
+    Destination contact because ``object_in_container(require_contact_with=True)``
+    calls ``in_contact(world, obj, container)`` — without it, placement predicates
+    cannot be recomputed from a recording and every flag change needs a pod.
+
+    A lookup that fails degrades to zero for that column; recording must never take a
+    run down.
     """
     from robolab.core.task.predicate_logic import in_contact  # noqa: PLC0415
 
     n = env.num_envs
+    dests = [o for o in object_names if is_destination(o)]
     out = {}
     for name in object_names:
         cols = []
         for pad in PAD_LABELS:
             try:
-                r = in_contact(world, name, pad, env_id=None)
-                t = r if isinstance(r, torch.Tensor) else torch.as_tensor(
-                    r, dtype=torch.bool, device=env.device
-                ).reshape(-1)
+                f = world.get_contact_force(name, pad, env_id=None)
+                t = torch.as_tensor(f, dtype=torch.float32, device=env.device)
+                t = t.norm(dim=-1) if t.ndim > 1 else t.reshape(-1)
                 if t.numel() != n:
                     t = t.reshape(-1)[:1].expand(n)
             except Exception:
-                t = torch.zeros(n, dtype=torch.bool, device=env.device)
-            cols.append(t.to(torch.uint8))
+                t = torch.zeros(n, dtype=torch.float32, device=env.device)
+            cols.append(t.to(torch.float32))
         out[name] = torch.stack(cols, dim=-1)
+
+        for dest in dests:
+            if dest == name:
+                continue
+            try:
+                r = in_contact(world, name, dest, env_id=None)
+                b = r if isinstance(r, torch.Tensor) else torch.as_tensor(
+                    r, dtype=torch.bool, device=env.device
+                ).reshape(-1)
+                if b.numel() != n:
+                    b = b.reshape(-1)[:1].expand(n)
+            except Exception:
+                b = torch.zeros(n, dtype=torch.bool, device=env.device)
+            out[f"{name}__{dest}"] = b.to(torch.uint8)
     return out
