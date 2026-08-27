@@ -187,13 +187,20 @@ class EventTracker:
                 continue
             mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
             mask[eid] = True
-            if kind == "attempt_failed":
+            onset = extra.get("onset_step") if isinstance(extra, dict) else None
+            if kind == "grabbed":
+                events.append((f"'{obj_name}' grasped (carry established)",
+                               StatusCode.OBJECT_GRABBED_SUCCESS, mask, onset))
+            elif kind == "attempt_failed":
                 n = int(extra.get("count", 1))
                 span = (int(extra.get("last_step", 0)) - int(extra.get("first_step", 0))) * step_dt
                 info = (f"Grasp attempt on '{obj_name}' failed (contact lost before a carry was established)"
                         if n <= 1 else
                         f"Grasp attempts on '{obj_name}' failed ×{n} over {span:.1f}s (contact never became a carry)")
-                events.append((info, StatusCode.GRASP_ATTEMPT_FAILED, mask))
+                # P61: stamp the burst at the first attempt, not at the flush that
+                # happens GRASP_ATTEMPT_BURST_S later
+                events.append((info, StatusCode.GRASP_ATTEMPT_FAILED, mask,
+                               int(extra.get("first_step", 0)) or None))
             elif kind == "released":
                 events.append((f"'{obj_name}' released (hand opened)", StatusCode.OBJECT_RELEASED, mask))
             elif kind == "towed":

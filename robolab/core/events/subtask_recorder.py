@@ -12,7 +12,7 @@ from isaaclab.managers.recorder_manager import RecorderManagerBaseCfg, RecorderT
 from isaaclab.utils import configclass
 
 import robolab.constants
-from robolab.core.events.event_lines import dedupe_tick, fold_detach_into_release
+from robolab.core.events.event_lines import dedupe_tick, fold_detach_into_release, fold_duplicate_grab_lines
 from robolab.core.task.event_tracker import EventTracker
 from robolab.core.task.target_objects import subtask_targets, task_containers, task_targets
 from robolab.core.task.status import StatusCode, get_status_name
@@ -168,11 +168,13 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
                 score_list.append(self.infos[eid]["score"])
                 continue
 
-            # Filter events for this env: keep (info, status) where env_mask[eid] is True
+            # Filter events for this env: keep (info, status) where env_mask[eid] is True.
+            # Tracker events may carry a 4th element (P61 onset step); the state machine
+            # never sees it.
             env_events = [
-                (info_str, status_code)
-                for info_str, status_code, env_mask in all_events
-                if env_mask[eid]
+                (ev[0], ev[1])
+                for ev in all_events
+                if ev[2][eid]
             ]
 
             sm = self.subtask_state_machines[eid]
@@ -202,11 +204,17 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
                 logger.exception("placed-without-lift check failed")
 
             tracker_lines = []
-            for tracker_info, tracker_code, env_mask in all_events:
+            for ev in all_events:
+                tracker_info, tracker_code, env_mask = ev[0], ev[1], ev[2]
+                onset = ev[3] if len(ev) > 3 else None
                 if env_mask[eid]:
                     code_int = int(tracker_code)
+                    # P61: a line is stamped where the thing happened, not where the
+                    # detector concluded. `detected_step` keeps the causal timestamp for
+                    # anything that must not look into the future.
                     tracker_lines.append({
-                        "step": step_idx,
+                        "step": int(onset) if onset is not None else step_idx,
+                        "detected_step": step_idx,
                         "code": code_int,
                         "name": get_status_name(code_int),
                         "info": tracker_info,
@@ -411,9 +419,14 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
                    If int, return that env's list[event dict].
         """
         window = self._detach_fold_steps()
+
+        def _clean(evs):
+            evs = sorted(copy.deepcopy(evs), key=lambda e: int(e.get("step", 0)))
+            return fold_duplicate_grab_lines(fold_detach_into_release(evs, window), window)
+
         if env_id is None:
-            return [fold_detach_into_release(copy.deepcopy(ev), window) for ev in self._events]
-        return fold_detach_into_release(copy.deepcopy(self._events[env_id]), window)
+            return [_clean(ev) for ev in self._events]
+        return _clean(self._events[env_id])
 
     def _detach_fold_steps(self) -> int:
         """P57 window in steps; falls back to 0 (no folding) if dt is unknown."""

@@ -141,6 +141,7 @@ class _PairState:
         self.last_grasped_step = torch.full((n,), -10**9, dtype=torch.long, device=device)
         self.towed_flagged = torch.zeros(n, dtype=torch.bool, device=device)  # TOWED_WITHOUT_GRASP raised this episode
         self.contact_start_z = torch.zeros(n, device=device)                  # object height when the current contact began
+        self.contact_start_step = torch.zeros(n, dtype=torch.long, device=device)  # episode step when it began (P61 onset stamp)
         self.recent_open_cmd = torch.zeros(n, dtype=torch.long, device=device)  # steps since the policy commanded "open"
         self.attempt_count = torch.zeros(n, dtype=torch.long, device=device)   # failed attempts in the open burst
         self.attempt_first = torch.zeros(n, dtype=torch.long, device=device)
@@ -196,6 +197,7 @@ class GraspTracker:
             st.prev_contact[fresh] = False
             st.attempt_closed[fresh] = False
             st.towed_flagged[fresh] = False
+            st.contact_start_step[fresh] = 0
             st.attempt_count[fresh] = 0
             st.towed_now[fresh] = False
             if bool(fresh.all()):
@@ -231,6 +233,7 @@ class GraspTracker:
         # table, a drag keeps it at the same height
         began = contact & ~st.prev_contact
         st.contact_start_z = torch.where(began, obj_pos[:, 2], st.contact_start_z)
+        st.contact_start_step = torch.where(began, env.episode_length_buf, st.contact_start_step)
         lifted = (obj_pos[:, 2] - st.contact_start_z) >= self.tow_lift
         towed = carry & hand_open & off_centre & lifted & ~st.grasped & ~st.towed_flagged
         for eid in towed.nonzero(as_tuple=False).flatten().tolist():
@@ -240,6 +243,13 @@ class GraspTracker:
         # a carry that is not a tow is a grasp — wide objects read only 0.2-0.35 closed,
         # and a can as wide as the open jaws reads 0.0 but sits centred
         newly = (~st.grasped) & carry & ~st.towed_now
+        # P60: emit the grasp from the tracker. It used to appear only as a subtask-ladder
+        # transition line, so the five stacking tasks -- whose ladder is a single placement
+        # condition with no object_grabbed step -- showed releases and drops but never a
+        # grab (Finn, r3 BowlStackingRightOnLeft: "why is there a drop without a pick?").
+        for eid in newly.nonzero(as_tuple=False).flatten().tolist():
+            self._events.append((eid, obj, hand, "grabbed",
+                                 {"onset_step": int(st.contact_start_step[eid])}))
 
         lost = st.grasped & ~contact
         ended_attempt = (~st.grasped) & st.prev_contact & ~contact & ~fresh

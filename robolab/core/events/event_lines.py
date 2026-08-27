@@ -120,3 +120,35 @@ def fold_detach_into_release(events: list[dict], window_steps: int) -> list[dict
                 continue
         out.append(ev)
     return out
+
+
+_TRACKER_GRAB = re.compile(r"^'(\w+)' grasped")
+
+
+def fold_duplicate_grab_lines(events: list[dict], window_steps: int) -> list[dict]:
+    """P60: keep one grab line per grasp.
+
+    The tracker now emits the grasp itself, so tasks whose ladder has an
+    ``object_grabbed`` step would otherwise print the same grasp twice. Where both
+    exist for the same object within ``window_steps``, the ladder line wins — it
+    carries the progress text ("advanced 1 step") that the tracker line does not.
+    Tasks with no ``object_grabbed`` step (the five stacking tasks) keep the
+    tracker line, which is the whole point of P60.
+    """
+    ladder: dict[str, list[int]] = {}
+    for ev in events:
+        p = predicate_of(ev.get("info", "") or "")
+        if p and p[1] == "object_grabbed":
+            ladder.setdefault(p[2], []).append(int(ev.get("step", 0)))
+    if not ladder:
+        return list(events)
+
+    out = []
+    for ev in events:
+        m = _TRACKER_GRAB.match(ev.get("info", "") or "")
+        if m:
+            step = int(ev.get("step", 0))
+            if any(abs(step - l) <= window_steps for l in ladder.get(m.group(1), ())):
+                continue
+        out.append(ev)
+    return out

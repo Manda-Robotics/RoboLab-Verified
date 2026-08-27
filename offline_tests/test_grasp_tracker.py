@@ -37,7 +37,12 @@ class _Script:
 
 
 def _kinds(evs):
-    return [(e[0], e[1], e[3], e[4].get("count")) for e in evs]
+    """(env, object, kind, count) per event.
+
+    The P60 grasp line is dropped here: these tests are about tows, attempts and
+    release-vs-drop, and every successful carry now also emits a `grabbed` event.
+    `test_p60_grasp_is_emitted_by_the_tracker` covers that one directly."""
+    return [(e[0], e[1], e[3], e[4].get("count")) for e in evs if e[3] != "grabbed"]
 
 
 def _tick(env, tracker, script, contact, hand=None, obj=None, closure=None, cmd_open=None):
@@ -77,7 +82,7 @@ def test_carry_becomes_a_grasp_then_release_or_drop():
     # contact, hand moving 1 cm/tick, object riding along (offset constant)
     for x in (0.00, 0.01, 0.02):
         grasped, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0], closure=0.6)
-    assert grasped is True and ev == []
+    assert grasped is True and _kinds(ev) == []
     # keep carrying, then open the hand → released
     _tick(env, t, s, True, hand=[0.03, 0, 0], obj=[0.08, 0, 0], closure=0.6)
     grasped, ev = _tick(env, t, s, False, hand=[0.04, 0, 0], obj=[0.09, 0, 0], closure=0.0, cmd_open=True)
@@ -143,7 +148,7 @@ def test_wide_object_grip_at_low_closure_is_a_grasp_not_a_tow():
     for x in (0.00, 0.01, 0.02, 0.03):
         grasped, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0], closure=0.23)  # orange: 23 % closed
         evs += ev
-    assert grasped is True and evs == []
+    assert grasped is True and _kinds(evs) == []
 
 
 def test_centred_object_between_open_jaws_is_a_grip_not_a_tow():
@@ -154,7 +159,7 @@ def test_centred_object_between_open_jaws_is_a_grip_not_a_tow():
     for x in (0.00, 0.01, 0.02, 0.03):
         grasped, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0], closure=0.0)
         evs += ev
-    assert grasped is True and evs == []
+    assert grasped is True and _kinds(evs) == []
 
 
 def test_attempt_burst_is_one_line_with_a_count():
@@ -164,7 +169,7 @@ def test_attempt_burst_is_one_line_with_a_count():
     for _ in range(3):                                    # three touch-and-lose blips in a row
         evs += _tick(env, t, s, True, closure=0.6)[1]
         evs += _tick(env, t, s, False, closure=0.6)[1]
-    assert evs == []                                      # nothing emitted while the burst is open
+    assert _kinds(evs) == []                              # nothing emitted while the burst is open
     for _ in range(25):                                   # quiet period > 2 s
         evs += _tick(env, t, s, False, closure=0.0)[1]
     assert _kinds(evs) == [(0, "banana", "attempt_failed", 3)]
@@ -186,4 +191,4 @@ def test_drag_along_the_table_is_not_a_tow():
     for x in (0.00, 0.01, 0.02, 0.03):
         _, ev = _tick(env, t, s, True, hand=[x, 0, 0], obj=[x + 0.05, 0, 0.0], closure=0.02)   # same height throughout
         evs += ev
-    assert evs == []
+    assert _kinds(evs) == []
