@@ -29,6 +29,26 @@ html, body { background-color: var(--bg-0); color: var(--text-0); }
   cursor: pointer;
 }
 
+/* "verified" sits under the wordmark, right-aligned to it, and takes no
+   vertical space of its own -- the 45px topnav is unchanged. */
+.brand-wordmark {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1;
+}
+.brand-wordmark--start { align-items: flex-start; }
+.brand-verified {
+  display: block;
+  margin-top: 1px;
+  font-size: 0.5em;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: lowercase;
+  color: var(--accent-fg);
+  opacity: 0.85;
+}
+
 /* Dancing robot mark.  The body sways side-to-side, the arms wave in
    opposite phase. Subtle so it doesn't pull focus from the nav. */
 .ribble-icon {
