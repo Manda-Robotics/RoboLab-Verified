@@ -25,10 +25,11 @@ jobs:
 
       - name: install test dependencies
         # torch (CPU) for the tensor-level detector tests, usd-core for the scene
+        # lints, scipy for the hull check,
         # lints, h5py/numpy for the recording checks. Isaac Sim is not needed.
         run: |
           python -m pip install --upgrade pip
-          pip install pytest numpy h5py usd-core
+          pip install pytest numpy scipy h5py usd-core
           pip install torch --index-url https://download.pytorch.org/whl/cpu
 
       - name: offline test suite
