@@ -48,13 +48,18 @@ html, body { background-color: var(--bg-0); color: var(--text-0); }
      a deliberate contrast with the sans wordmark, and no webfont to fetch
      (H-E23: the page must still render on an air-gapped GPU box). */
   font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
-  font-size: 0.42em;
-  font-weight: 500;
+  font-size: 0.46em;
+  font-weight: 700;
   line-height: 1;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: lowercase;
-  color: var(--accent-fg);
-  opacity: 0.8;
+  /* Stamp: black glyphs inside a thick white outline. paint-order puts the
+     stroke BEHIND the fill -- without it the stroke is centred on the glyph
+     edge and eats half the letter at this size. */
+  color: #000;
+  -webkit-text-stroke: 3px #fff;
+  paint-order: stroke fill;
+  opacity: 1;
 }
 
 /* Dancing robot mark.  The body sways side-to-side, the arms wave in
