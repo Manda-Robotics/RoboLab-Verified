@@ -9,6 +9,7 @@ const state = {
   runs: [],            // RunMeta[]
   tasksByRun: {},      // run_id → TaskSummary[]
   episodesByKey: {},   // `${run_id}::${task}` → EpisodeRow[]
+  overview: null,      // cached /api/overview (P70: the task page needs each task's run list)
   selection: { view: 'overview' },
   expanded: { runs: new Set(), tasks: new Set() }, // task key = run_id::task
   compareSet: new Set(), // run_ids selected for cross-run comparison (Ctrl/Cmd-click)
@@ -416,6 +417,7 @@ async function refreshAll() {
   // clear caches that depend on the source list
   state.tasksByRun = {};
   state.episodesByKey = {};
+  state.overview = null;
   state.compareSet.clear();
   await renderSources();
   state.runs = await fetchJSON('/api/runs');
@@ -1601,6 +1603,159 @@ function setBreadcrumb(...parts) {
   });
 }
 
+// ---- P70: one task across every experiment ---------------------------------
+// Finn: "you can see all of the tasks being listed here, but you can't click on
+// the tasks ... you see all of the episodes and, obviously, which policy they
+// were on". Nothing new is needed server-side: /api/overview already gives each
+// task's run list, /api/runs each run's policy, ensureEpisodes the rows.
+
+// Pure join, kept out of the render so it is testable without a browser.
+function joinTaskEpisodes(taskRow, runs, episodesByRun) {
+  const meta = {};
+  for (const r of runs || []) meta[r.run_id] = r;
+  const rows = [];
+  for (const runId of (taskRow && taskRow.runs) || []) {
+    const info = meta[runId] || {};
+    for (const ep of episodesByRun[runId] || []) {
+      rows.push({
+        policy: info.policy || 'unknown',
+        family: info.family || info.policy || 'unknown',
+        run_id: runId,
+        env_id: ep.env_id,
+        run_index: ep.run_index,
+        success: !!ep.success,
+        score: typeof ep.score === 'number' ? ep.score : null,
+        duration: typeof ep.duration === 'number' ? ep.duration : null,
+        reason: ep.reason || '',
+      });
+    }
+  }
+  return rows;
+}
+
+// Per-policy aggregate over the joined rows, so the numbers can be checked directly.
+function summarisePolicies(rows) {
+  const by = new Map();
+  for (const r of rows) {
+    if (!by.has(r.policy)) by.set(r.policy, { policy: r.policy, n: 0, s: 0, scoreSum: 0, scoreN: 0, runSet: new Set() });
+    const a = by.get(r.policy);
+    a.n += 1;
+    if (r.success) a.s += 1;
+    if (r.score !== null) { a.scoreSum += r.score; a.scoreN += 1; }
+    a.runSet.add(r.run_id);
+  }
+  return [...by.values()]
+    .map((a) => ({ policy: a.policy, n: a.n, s: a.s, runs: a.runSet.size,
+                   rate: a.n ? a.s / a.n : 0,
+                   score: a.scoreN ? a.scoreSum / a.scoreN : null }))
+    .sort((x, y) => y.n - x.n || x.policy.localeCompare(y.policy));
+}
+
+async function ensureOverview() {
+  if (!state.overview) state.overview = await fetchJSON('/api/overview');
+  return state.overview;
+}
+
+async function selectTaskAll(task) {
+  state.selection = { view: 'taskall', task };
+  writeHash(`#/results/task/${encodeURIComponent(task)}`);
+  await renderTaskAll(task);
+}
+
+async function renderTaskAll(task) {
+  setBreadcrumb(
+    el('a', { class: 'hover:underline cursor-pointer', onclick: selectOverview }, 'Overview'),
+    task,
+  );
+  const pane = $('#pane');
+  pane.innerHTML = '';
+  pane.appendChild(el('div', { class: 'text-sm', style: { color: 'var(--text-2)' } }, 'Loading episodes...'));
+
+  let taskRow;
+  try {
+    const ov = await ensureOverview();
+    taskRow = (ov.tasks || []).find((t) => t.task === task);
+  } catch (e) {
+    pane.innerHTML = '';
+    pane.appendChild(el('div', { style: { color: 'var(--fail)' } }, String(e)));
+    return;
+  }
+  if (!taskRow) {
+    pane.innerHTML = '';
+    pane.appendChild(el('div', { style: { color: 'var(--text-2)' } }, `No experiment contains ${task}.`));
+    return;
+  }
+
+  // Fan out over the experiments that have this task. A run that fails to load
+  // contributes nothing rather than failing the whole page.
+  const episodesByRun = {};
+  await Promise.all(taskRow.runs.map(async (id) => {
+    try { episodesByRun[id] = await ensureEpisodes(id, task); }
+    catch (e) { episodesByRun[id] = []; }
+  }));
+
+  const rows = joinTaskEpisodes(taskRow, state.runs, episodesByRun);
+  const policies = summarisePolicies(rows);
+  pane.innerHTML = '';
+
+  pane.appendChild(el('div', { class: 'mb-5' },
+    el('h2', { class: 'text-xl font-semibold mb-1 truncate', title: task }, task),
+    el('p', { class: 'text-sm', style: { color: 'var(--text-2)' } },
+      `${rows.length} episodes / ${taskRow.runs.length} experiments / ${policies.length} policies`)));
+
+  // Per-policy strip: the split the pooled overview row cannot show (H-E20).
+  if (policies.length) {
+    pane.appendChild(el('div', { class: 'mb-6' },
+      el('h3', { class: 'text-sm font-semibold uppercase tracking-wide mb-2', style: { color: 'var(--text-2)' } }, 'By policy'),
+      el('div', { class: 'grid grid-cols-2 md:grid-cols-4 gap-3' },
+        ...policies.map((p) =>
+          el('div', { class: 'panel p-3' },
+            el('div', { class: 'font-medium truncate', title: p.policy }, p.policy),
+            el('div', { class: 'text-xs', style: { color: 'var(--text-2)' } },
+              `${p.runs} experiment${p.runs === 1 ? '' : 's'}, ${p.n} episodes`),
+            el('div', { class: 'mt-1.5' }, srScoreBar(p.rate, p.score)),
+            el('div', { class: 'mt-1 text-sm metric-block' }, fmtSRCell(p.s, p.n)))))));
+  }
+
+  // Episode table, policy-first by default.
+  seedSort('taskAllEps', 'policy', 'asc');
+  const onChange = () => renderTaskAll(task);
+  const pad = (n) => String(n).padStart(4, '0');
+  const sorted = sortRows(rows, 'taskAllEps', {
+    policy: (r) => `${r.policy} ${r.run_id} ${pad(r.env_id)}`,
+    run: (r) => `${r.run_id} ${pad(r.env_id)}`,
+    env: { get: (r) => r.env_id, numeric: true },
+    outcome: { get: (r) => (r.success ? 1 : 0), numeric: true },
+    score: { get: (r) => (r.score === null ? -1 : r.score), numeric: true },
+    duration: { get: (r) => (r.duration === null ? -1 : r.duration), numeric: true },
+  });
+
+  pane.appendChild(el('table', { class: 'panel w-full text-sm overflow-hidden' },
+    el('thead', { class: 'text-xs uppercase tracking-wider' },
+      el('tr', {},
+        sortableTh('taskAllEps', 'policy', 'Policy', { onChange }),
+        sortableTh('taskAllEps', 'run', 'Experiment', { onChange }),
+        sortableTh('taskAllEps', 'env', 'Env', { numeric: true, alignRight: true, onChange }),
+        sortableTh('taskAllEps', 'outcome', 'Outcome', { onChange }),
+        sortableTh('taskAllEps', 'score', 'Score', { numeric: true, alignRight: true, onChange }),
+        sortableTh('taskAllEps', 'duration', 'Duration', { numeric: true, alignRight: true, onChange }))),
+    el('tbody', {},
+      ...sorted.map((r) =>
+        el('tr', {
+          class: 'tbl-row cursor-pointer tbl-row-clickable',
+          title: r.reason,
+          onclick: () => selectEpisode(r.run_id, task, r.env_id, r.run_index),
+        },
+          el('td', { class: 'px-3 py-1.5 font-medium' }, r.policy),
+          el('td', { class: 'px-3 py-1.5 truncate', style: { color: 'var(--text-2)', maxWidth: '18rem' }, title: r.run_id }, r.run_id),
+          el('td', { class: 'px-3 py-1.5 text-right tabular-nums' }, String(r.env_id)),
+          el('td', { class: 'px-3 py-1.5' },
+            el('span', { style: { color: r.success ? 'var(--ok)' : 'var(--fail)' } }, r.success ? 'success' : 'fail')),
+          el('td', { class: 'px-3 py-1.5 text-right tabular-nums' }, r.score === null ? '-' : r.score.toFixed(2)),
+          el('td', { class: 'px-3 py-1.5 text-right tabular-nums', style: { color: 'var(--text-2)' } },
+            r.duration === null ? '-' : `${r.duration.toFixed(1)}s`))))));
+}
+
 function selectOverview() {
   state.selection = { view: 'overview' };
   writeHash('#/results');
@@ -1666,6 +1821,8 @@ async function applyHash() {
     if (parts[0] !== 'results') { if (h) setRoute('home'); return; }
     if (state.route !== 'results') setRoute('results', false);
     // results/run/<run>[/task/<task>[/ep/<env>/<runIndex>]]
+    // P70: #/results/task/<Task> - one task across every experiment
+    if (parts[1] === 'task' && parts[2]) { await selectTaskAll(parts[2]); return; }
     if (parts[1] === 'run' && parts[2]) {
       const runId = parts[2];
       state.expanded.runs.add(runId);
@@ -1758,7 +1915,8 @@ async function renderOverview() {
     el('tbody', {},
       ...sortedTasks.map((t) =>
         el('tr', { class: 'tbl-row' },
-          el('td', { class: 'px-3 py-1.5 font-medium text-left' }, t.task),
+          el('td', { class: 'px-3 py-1.5 font-medium text-left' },
+            el('a', { class: 'hover:underline cursor-pointer', onclick: () => selectTaskAll(t.task) }, t.task)),
           el('td', { class: 'px-3 py-1.5 text-right tabular-nums' }, String(t.n)),
           el('td', { class: 'px-3 py-1.5 text-right tabular-nums' }, String(t.s)),
           el('td', { class: 'px-3 py-1.5' },
