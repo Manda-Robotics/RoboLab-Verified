@@ -21,6 +21,7 @@ from robolab.core.events.basic_recorders import (
     InitialStateRecorderCfg,
     PostStepBBoxRecorderCfg,
     PostStepEndEffectorPoseRecorderCfg,
+    PostStepContactRecorderCfg,
     PostStepRobotRootPoseRecorderCfg,
     PostStepStatesRecorderCfg,
     PreStepActionsRecorderCfg,
@@ -57,6 +58,9 @@ class BaseRecorderManagerCfg(RecorderManagerBaseCfg):
     # the robot cfg's mandatory ee_recorder_bodies label (one term per channel).
     record_robot_root_pose: PostStepRobotRootPoseRecorderCfg = PostStepRobotRootPoseRecorderCfg()
     record_bbox: PostStepBBoxRecorderCfg = PostStepBBoxRecorderCfg()
+    # P62: per-pad gripper contact, the one signal the event logic uses that was
+    # not being written to disk (~1 % of the file).
+    record_contact: PostStepContactRecorderCfg = PostStepContactRecorderCfg()
     record_policy_observations: PreStepFlatPolicyObservationsRecorderCfg | None = None
     record_subtask_completion: SubtaskCompletionRecorderCfg | None = None
     dataset_export_mode: DatasetExportMode = DatasetExportMode.EXPORT_ALL

@@ -174,6 +174,35 @@ class PostStepEndEffectorPoseRecorder(RecorderTerm):
         }
 
 
+class PostStepContactRecorder(RecorderTerm):
+    """P62: record per-pad gripper contact for every rigid object, each step.
+
+    Everything the event logic needs is already in the HDF5 except this. Without
+    it, a flag change can only be re-verified by re-running the simulator, and the
+    one question our own labelled data could not settle -- is the object held by
+    ONE pad (a tow) or wedged between BOTH (not a tow) -- is unanswerable after
+    the fact. Finn's labels on six open-hand carries split exactly along that
+    line while jaw-axis geometry did not separate them at all.
+
+    Shape: one (num_envs, 2) uint8 array per object, columns [left, right],
+    matching the `contact_gripper` alias groups added by P48. Costs ~1% of the
+    file uncompressed.
+    """
+
+    def record_post_step(self):
+        from robolab.core.task.grasp import pad_contact_columns  # noqa: PLC0415
+        from robolab.core.world.world_state import get_world  # noqa: PLC0415
+
+        try:
+            world = get_world(self._env)
+        except Exception:
+            return None, None
+        out = pad_contact_columns(self._env, world, list(self._env.scene.rigid_objects))
+        if not out:
+            return None, None
+        return "contact", out
+
+
 class PostStepRobotRootPoseRecorder(RecorderTerm):
     """Recorder term that records the robot root pose at the end of each step.
 
@@ -305,6 +334,13 @@ class InitialStateRecorderCfg(RecorderTermCfg):
 
     class_type: type[RecorderTerm] = InitialStateRecorder
     camera_names: list[str] | None = None
+
+
+@configclass
+class PostStepContactRecorderCfg(RecorderTermCfg):
+    """Configuration for the per-pad contact recorder term (P62)."""
+
+    class_type: type[RecorderTerm] = PostStepContactRecorder
 
 
 @configclass

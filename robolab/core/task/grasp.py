@@ -329,3 +329,34 @@ class GraspTracker:
     def pop_events(self) -> list[tuple[int, str, str, str]]:
         ev, self._events = self._events, []
         return ev
+
+
+PAD_LABELS = ("gripper_left", "gripper_right")
+
+
+def pad_contact_columns(env, world, object_names) -> dict:
+    """P62: per-object (num_envs, 2) uint8 contact, columns [left pad, right pad].
+
+    Lives here rather than in the recorder so it can be tested without isaaclab.
+    A lookup that fails degrades to "no contact" for that pad -- recording must
+    never take a run down.
+    """
+    from robolab.core.task.predicate_logic import in_contact  # noqa: PLC0415
+
+    n = env.num_envs
+    out = {}
+    for name in object_names:
+        cols = []
+        for pad in PAD_LABELS:
+            try:
+                r = in_contact(world, name, pad, env_id=None)
+                t = r if isinstance(r, torch.Tensor) else torch.as_tensor(
+                    r, dtype=torch.bool, device=env.device
+                ).reshape(-1)
+                if t.numel() != n:
+                    t = t.reshape(-1)[:1].expand(n)
+            except Exception:
+                t = torch.zeros(n, dtype=torch.bool, device=env.device)
+            cols.append(t.to(torch.uint8))
+        out[name] = torch.stack(cols, dim=-1)
+    return out
