@@ -188,9 +188,15 @@ class EventTracker:
             mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
             mask[eid] = True
             onset = extra.get("onset_step") if isinstance(extra, dict) else None
+            is_container = bool(per_env_containers and obj_name in per_env_containers[eid])
             if kind == "grabbed":
-                events.append((f"'{obj_name}' grasped (carry established)",
-                               StatusCode.OBJECT_GRABBED_SUCCESS, mask, onset))
+                # P71: the detector reports a physical carry; it is NOT the progress signal.
+                # Emitting it as *_SUCCESS put a green "success" on 28 grasps of objects the
+                # task then flagged as WRONG (Finn: "it's giving an object grab success flag
+                # for the wrong object"). OBJECT_CARRIED is neutral; the ladder's
+                # OBJECT_GRABBED_SUCCESS remains the green line that means progress.
+                events.append((f"'{obj_name}' carried (grasp established)",
+                               StatusCode.OBJECT_CARRIED, mask, onset))
             elif kind == "attempt_failed":
                 n = int(extra.get("count", 1))
                 span = (int(extra.get("last_step", 0)) - int(extra.get("first_step", 0))) * step_dt
@@ -199,8 +205,13 @@ class EventTracker:
                         f"Grasp attempts on '{obj_name}' failed ×{n} over {span:.1f}s (contact never became a carry)")
                 # P61: stamp the burst at the first attempt, not at the flush that
                 # happens GRASP_ATTEMPT_BURST_S later
-                events.append((info, StatusCode.GRASP_ATTEMPT_FAILED, mask,
-                               int(extra.get("first_step", 0)) or None))
+                # P72: a brush against a bin or shelf is not a grasp attempt. 14 of 81
+                # attempt lines in rc3 were on a container or fixture (Finn: "I don't think
+                # this was a grasp attempt on bin"). A genuine attempt on a container is
+                # still reported by the wrong-object machinery.
+                if not is_container:
+                    events.append((info, StatusCode.GRASP_ATTEMPT_FAILED, mask,
+                                   int(extra.get("first_step", 0)) or None))
             elif kind == "released":
                 events.append((f"'{obj_name}' released (hand opened)", StatusCode.OBJECT_RELEASED, mask))
             elif kind == "towed":

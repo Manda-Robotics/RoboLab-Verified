@@ -179,6 +179,10 @@ class StatusCode(IntEnum):
     OBJECTS_PLACED_IN_CONTAINER_IN_ORDER_FAILURE = 280
     OBJECT_GROUPS_IN_CONTAINERS_FAILURE = 281
     TARGET_OBJECT_BUMPED = 282     # the policy nudged an object the task is about — expected, not a failure
+    OBJECT_CARRIED = 283           # P71: the grasp DETECTOR saw a carry established — a physical
+                                   # observation, not progress. The ladder's OBJECT_GRABBED_SUCCESS
+                                   # is the progress line. Finn saw both and asked what the
+                                   # difference was; they were both green and identically named.
 
     # ============================================================
     # Legacy aliases for backward compatibility
@@ -215,6 +219,7 @@ NEUTRAL_STATUS_CODES: set[int] = {
     int(267),   # OBJECT_RELEASED — a deliberate release
     int(269),   # SCENE_SETTLING
     int(282),   # TARGET_OBJECT_BUMPED — the policy working on its own target
+    int(283),   # OBJECT_CARRIED — a physical observation; the ladder line carries the credit
 }
 
 EVENT_STATUS_CODES: set[StatusCode] = {

@@ -142,6 +142,7 @@ class _PairState:
         self.towed_flagged = torch.zeros(n, dtype=torch.bool, device=device)  # TOWED_WITHOUT_GRASP raised this episode
         self.contact_start_z = torch.zeros(n, device=device)                  # object height when the current contact began
         self.contact_start_step = torch.zeros(n, dtype=torch.long, device=device)  # episode step when it began (P61 onset stamp)
+        self.last_parting_step = torch.full((n,), -10**9, dtype=torch.long, device=device)  # P73: when it last left the hand
         self.recent_open_cmd = torch.zeros(n, dtype=torch.long, device=device)  # steps since the policy commanded "open"
         self.attempt_count = torch.zeros(n, dtype=torch.long, device=device)   # failed attempts in the open burst
         self.attempt_first = torch.zeros(n, dtype=torch.long, device=device)
@@ -198,6 +199,7 @@ class GraspTracker:
             st.attempt_closed[fresh] = False
             st.towed_flagged[fresh] = False
             st.contact_start_step[fresh] = 0
+            st.last_parting_step[fresh] = -10**9
             st.attempt_count[fresh] = 0
             st.towed_now[fresh] = False
             if bool(fresh.all()):
@@ -259,6 +261,12 @@ class GraspTracker:
         for eid in ended_attempt.nonzero(as_tuple=False).flatten().tolist():
             if not bool(self._attempt_flag(st, eid)):
                 continue
+            # P73: contact flickers as an object leaves the hand. Counting that as a fresh
+            # failed attempt produced 10 of 81 attempt lines in rc3, right after a release of
+            # the same object (Finn: "there's often a grasp attempt failed after a release,
+            # which I don't really fully see").
+            if int(ep[eid]) - int(st.last_parting_step[eid]) <= burst:
+                continue
             if int(st.attempt_count[eid]) == 0:
                 st.attempt_first[eid] = int(ep[eid])
             st.attempt_count[eid] += 1
@@ -280,6 +288,7 @@ class GraspTracker:
         for eid in lost.nonzero(as_tuple=False).flatten().tolist():
             released = bool(deliberate[eid]) if bool(commanded_open.any()) or bool((st.recent_open_cmd > 0).any()) else (not bool(still_closed[eid]))
             self._events.append((eid, obj, hand, "released" if released else "dropped", {}))
+            st.last_parting_step[eid] = int(ep[eid])
 
         st.grasped = (st.grasped | newly) & contact
         st.last_grasped_step = torch.where(st.grasped, env.episode_length_buf, st.last_grasped_step)
