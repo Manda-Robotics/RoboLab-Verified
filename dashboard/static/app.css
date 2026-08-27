@@ -40,7 +40,10 @@ html, body { background-color: var(--bg-0); color: var(--text-0); }
   align-items: flex-end;
   line-height: 1.05;
 }
-.brand-wordmark--start { align-items: flex-start; }
+/* Doubled to match .brand-wordmark.brand-wordmark above -- otherwise the base
+   rule outranks this one and the homepage chip right-aligns under "Dashboard"
+   instead of sitting under "RoboLab". */
+.brand-wordmark--start.brand-wordmark--start { align-items: flex-start; }
 .brand-verified.brand-verified {
   display: block;
   margin-top: 2px;
