@@ -1,5 +1,43 @@
 # Changelog
 
+## [verified-unreleased] - RoboLab Verified
+
+A fork of NVIDIA RoboLab v0.3.1 focused on evaluation correctness. Every entry below
+is one commit with its own evidence; `docs/VERIFIED_PATCHES.md` carries the
+measurement behind each.
+
+### Added
+
+- Two bimanual embodiments: dual-Franka (verified 6/6 clean) and bimanual ViperX /
+  ALOHA (rig verified; **no working policy** -- the released pi05 checkpoint scores
+  0/6, see `robolab/robots/README_bimanual.md`).
+- A connector for running a pointing-capable VLM as a policy; the controller itself
+  stays in its own package and is not vendored here.
+- Offline analysis tooling that needs no simulator: task-definition audit against
+  scene spawn state, scene-intersection report, objects that sink at reset, open-hand
+  carries, and a re-flagger that replays the current rules over recorded episodes and
+  scores them against human verdicts.
+- Per-pad contact force and object-to-container contact are now recorded, so most
+  flag changes can be re-checked against existing recordings instead of a new run.
+
+### Changed
+
+- The grasp/event vocabulary: a grasp is a carry, releases are distinguished from
+  drops by the commanded gripper channel, failed attempts collapse into one line with
+  a count, and the detector's own grasp line is a neutral observation distinct from
+  the subtask ladder's progress line.
+- Subtask crediting: a ladder rung already satisfied by the scene at reset earns no
+  credit, and nothing is credited before the scene has settled.
+- An episode ends when the success term can no longer be satisfied -- including when
+  its destination container or surface leaves the table.
+
+### Known and deliberately unchanged
+
+- Scene objects are authored interpenetrating in several scenes; PhysX resolves this
+  at reset. Reported at runtime via `SCENE_SETTLING` rather than re-authored.
+- Object friction is left at upstream values.
+
+
 ## [0.3.1] - 2026-08-11
 
 ### Added
