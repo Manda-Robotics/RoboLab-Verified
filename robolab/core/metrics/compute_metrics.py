@@ -42,6 +42,47 @@ DEFAULT_DT = 1.0 / 15.0
 NUM_ARM_JOINTS = 7
 
 
+def read_ee_channels(demo, demo_key: str = "demo") -> dict:
+    """P67: end-effector pose channels, one per recorded arm.
+
+    Channel names come from the robot's ``ee_recorder_bodies`` label: ``ee_pose``
+    on a single-arm robot, one ``<arm>_ee_pose`` per arm on a bimanual one
+    (``robolab/robots/bimanual_franka.py`` declares ``left_ee_pose`` /
+    ``right_ee_pose``). Upstream read ``demo["ee_pose"]`` unconditionally, so a
+    bimanual demo raised ``KeyError``, the caller's bare ``except`` swallowed it,
+    and ``load_demo_data`` returned ``None`` — every bimanual run silently
+    produced no metrics at all.
+
+    Returns ``ee_channels`` plus the legacy flat keys (``ee_position``,
+    ``ee_orientation``, ``ee_linear_velocity``), which point at the single channel
+    or, on a multi-arm demo, the first one alphabetically. Every existing
+    single-arm caller is unchanged.
+
+    ``demo`` only has to be a mapping of group-name -> mapping, so this is
+    testable without h5py.
+    """
+    channels = [k for k in demo if k == "ee_pose" or k.endswith("_ee_pose")]
+    if not channels:
+        raise KeyError(
+            f"no ee_pose channel in {demo_key} "
+            f"(looked for 'ee_pose' or '*_ee_pose', found {sorted(demo)})"
+        )
+    out: dict = {"ee_channels": {}}
+    for name in channels:
+        group = demo[name]
+        entry = {"position": group["position"][:], "orientation": group["orientation"][:]}
+        if "linear_velocity" in group:
+            entry["linear_velocity"] = group["linear_velocity"][:]
+        out["ee_channels"][name] = entry
+
+    first = out["ee_channels"][sorted(channels)[0]]
+    out["ee_position"] = first["position"]
+    out["ee_orientation"] = first["orientation"]
+    if "linear_velocity" in first:
+        out["ee_linear_velocity"] = first["linear_velocity"]
+    return out
+
+
 def load_demo_data(hdf5_path: str, demo_key: str = "demo_0") -> dict | None:
     """
     Load trajectory data from an HDF5 file.
@@ -75,12 +116,13 @@ def load_demo_data(hdf5_path: str, demo_key: str = "demo_0") -> dict | None:
             # computed from these is difference-based (smoothness, path length,
             # velocity), so the constant root offset cancels and no frame conversion
             # is needed here.
-            data["ee_position"] = demo["ee_pose"]["position"][:]
-            data["ee_orientation"] = demo["ee_pose"]["orientation"][:]
-
-            # Load end-effector linear velocity if available
-            if "linear_velocity" in demo["ee_pose"]:
-                data["ee_linear_velocity"] = demo["ee_pose"]["linear_velocity"][:]
+            # P67: channels come from the robot's `ee_recorder_bodies` label —
+            # "ee_pose" on a single-arm robot, one "<arm>_ee_pose" per arm on a
+            # bimanual one (robolab/robots/bimanual_franka.py). Upstream read
+            # demo["ee_pose"] unconditionally, so a bimanual demo raised KeyError,
+            # the bare `except` below swallowed it, and load_demo_data returned
+            # None — every bimanual run silently produced no metrics at all.
+            data.update(read_ee_channels(demo, demo_key))
 
     except Exception as e:
         print(f"Error loading {hdf5_path}/{demo_key}: {e}")
