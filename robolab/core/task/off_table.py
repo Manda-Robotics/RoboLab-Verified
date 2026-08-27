@@ -40,16 +40,44 @@ def required_groups(params: dict) -> list[tuple[list[str], str, int]]:
     params = params or {}
     if isinstance(params.get("groups"), (list, tuple)):
         out = []
+        dests = []
         for g in params["groups"]:
             if isinstance(g, dict):
                 objs = _names(g.get("object")) + _names(g.get("objects"))
                 if objs:
                     out.append((objs, str(g.get("logical", "all")), int(g.get("K", g.get("k", 1)) or 1)))
+                dests += _destinations(g)
+        # P76: only for a single-group success term (see below).
+        if len(out) == 1:
+            out += [([d], "all", 1) for d in dests]
         return out
     objs = _names(params.get("object")) + _names(params.get("objects"))
     if not objs:
         return []
-    return [(objs, str(params.get("logical", "all")), int(params.get("K", params.get("k", 1)) or 1))]
+    out = [(objs, str(params.get("logical", "all")), int(params.get("K", params.get("k", 1)) or 1))]
+    out += [([d], "all", 1) for d in _destinations(params)]
+    return out
+
+
+def _destinations(params: dict) -> list[str]:
+    """P76: the container / surface a success term places INTO or ONTO.
+
+    If the destination leaves the table the task is unwinnable, exactly as if a
+    target had. PutMugsOnShelf shows this in every rc3 episode: the policy tips the
+    rack off the table, `OBJECT_FELL_OFF_TABLE` fires for the rack, and the episode
+    runs its full 180 s with nothing left to achieve (Finn: "as soon as the object
+    falls off the table with the rack, I think it should be over").
+
+    Scoped deliberately to success terms with a SINGLE group. A multi-group term can
+    have one container per group, and losing one container need not doom a task whose
+    groups combine with `any` / `choose` -- that case needs the loss attributed to its
+    own group, which this structure cannot express. Rather than guess, it is left
+    alone.
+    """
+    out = []
+    for key in ("container", "surface", "containers", "reference_object"):
+        out += _names(params.get(key))
+    return [d for d in out if isinstance(d, str)]
 
 
 def group_lost(fallen: dict[str, torch.Tensor], objs: list[str], logical: str, K: int, n: int, device) -> torch.Tensor:
