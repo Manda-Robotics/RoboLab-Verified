@@ -48,10 +48,15 @@ html, body { background-color: var(--bg-0); color: var(--text-0); }
      a deliberate contrast with the sans wordmark, and no webfont to fetch
      (H-E23: the page must still render on an air-gapped GPU box). */
   font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
-  font-size: 0.4em;
-  font-weight: 700;
+  font-size: 0.42em;
+  font-weight: 800;
   line-height: 1;
   letter-spacing: 0.14em;
+  /* Faux-bold: most mono faces stop at 700 (SF Mono has no 800/900), so asking
+     for a heavier weight alone changes nothing. A hairline stroke in the SAME
+     colour thickens every glyph uniformly. At 0.5 px the miters that made the
+     3 px outline spiky are sub-pixel, so none of that comes back. */
+  -webkit-text-stroke: 0.5px #000;
   text-transform: lowercase;
   /* A solid chip rather than an outline. -webkit-text-stroke miters every join,
      which spikes on mono glyphs at this size, and CSS exposes no
