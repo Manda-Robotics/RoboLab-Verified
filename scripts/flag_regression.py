@@ -29,7 +29,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from reflag import reflag  # noqa: E402
 
 TOL_S = 3.0            # a label's timestamp is a human's scrub position, not a tick
-UNRECORDED = {"TOWED_WITHOUT_GRASP", "DRAG"}   # need contact force (not recorded)
+# Need contact FORCE (P77). Recordings made before P77 hold a per-pad boolean, which
+# cannot separate a tow from an ordinary grasp -- so these stay uncheckable until a
+# run is made with P77 in the build, and are never quietly passed.
+UNRECORDED = {"TOWED_WITHOUT_GRASP", "DRAG"}
 NEEDS_RUN = {"OBJECT_IN_CONTAINER_SUCCESS", "TARGET_LOST"}  # need the ladder / termination re-stepped
 
 
@@ -61,7 +64,7 @@ def main() -> int:
             continue
         if lb["flag"] in UNRECORDED:
             counts["cannot-check"] += 1
-            rows.append(("cannot-check", lb, "needs contact force — not recorded"))
+            rows.append(("cannot-check", lb, "needs contact force — this run predates P77"))
             continue
         if lb["flag"] in NEEDS_RUN:
             counts["cannot-check"] += 1
