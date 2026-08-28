@@ -228,7 +228,14 @@ class GraspTracker:
         # line. It is not emitted yet: see the carry below.
         took_grip = st.attempt_closed & ~was_closed_on_it
         st.grip_step = torch.where(took_grip, env.episode_length_buf, st.grip_step)
+        # Both die with the contact. A grip belongs to the contact episode it happened
+        # in: without this reset a closure that came to nothing is still on the books
+        # and gets stamped onto the next carry, minutes later. rc6 FoodPacking2Cans
+        # env0 showed it -- jaws closed at 6.67 s, nothing came of it, and the line
+        # surfaced attached to the carry at 14.27 s, 7.6 s stale and therefore sorted
+        # in front of the wrong carry.
         st.grip_flagged = st.grip_flagged & contact
+        st.grip_step = torch.where(contact, st.grip_step, torch.full_like(st.grip_step, -1))
 
         # stable grasp: contact for k steps, offset to the hand steady, hand moved
         if len(st.rel_hist) > k:

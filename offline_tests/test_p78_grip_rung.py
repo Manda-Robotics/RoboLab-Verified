@@ -153,3 +153,32 @@ def test_the_grip_is_neutral_not_a_failure():
     """Finn: "object carry should definitely not be red"—the same goes for its rung."""
     assert int(StatusCode.OBJECT_GRIPPED) in NEUTRAL_STATUS_CODES
     assert int(StatusCode.OBJECT_CARRIED) in NEUTRAL_STATUS_CODES
+
+
+def test_a_grip_that_came_to_nothing_does_not_attach_to_a_later_carry():
+    """rc6 FoodPacking2Cans env0: the jaws closed at 6.67 s, the object was not
+    carried, and the grip line resurfaced on the carry at 14.27 s -- 7.6 s stale, so
+    the dashboard drew it in front of the wrong carry. A grip belongs to the contact
+    episode it happened in."""
+    env, s, t = _fresh()
+    kinds = []
+    kinds += _tick(env, t, s, True, closure=0.6)          # jaws close on it...
+    for _ in range(30):                                    # ...and it comes to nothing
+        kinds += _tick(env, t, s, False, closure=0.0)
+    assert "gripped" not in kinds
+    # much later, a carry with an OPEN hand (a shove): it must NOT inherit that grip
+    carry = []
+    for i in range(4):
+        carry += _tick(env, t, s, True, hand=[i * 0.01, 0, 0],
+                       obj=[i * 0.01 + 0.05, 0, 0], closure=0.0)
+    assert "grabbed" in carry and "gripped" not in carry, carry
+
+
+def test_a_fresh_grip_still_attaches_to_the_carry_it_produced():
+    """The reset must not throw away the grip we actually want."""
+    env, s, t = _fresh()
+    kinds = []
+    for i in range(4):
+        kinds += _tick(env, t, s, True, hand=[i * 0.01, 0, 0],
+                       obj=[i * 0.01 + 0.05, 0, 0], closure=0.6)
+    assert kinds.index("gripped") < kinds.index("grabbed")
