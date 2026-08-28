@@ -142,6 +142,8 @@ class _PairState:
         self.towed_flagged = torch.zeros(n, dtype=torch.bool, device=device)  # TOWED_WITHOUT_GRASP raised this episode
         self.contact_start_z = torch.zeros(n, device=device)                  # object height when the current contact began
         self.contact_start_step = torch.zeros(n, dtype=torch.long, device=device)  # episode step when it began (P61 onset stamp)
+        self.grip_flagged = torch.zeros(n, dtype=torch.bool, device=device)        # P78: the grip line is emitted once per carry
+        self.grip_step = torch.full((n,), -1, dtype=torch.long, device=device)     # P78: when the jaws closed on it
         self.last_parting_step = torch.full((n,), -10**9, dtype=torch.long, device=device)  # P73: when it last left the hand
         self.recent_open_cmd = torch.zeros(n, dtype=torch.long, device=device)  # steps since the policy commanded "open"
         self.attempt_count = torch.zeros(n, dtype=torch.long, device=device)   # failed attempts in the open burst
@@ -199,6 +201,8 @@ class GraspTracker:
             st.attempt_closed[fresh] = False
             st.towed_flagged[fresh] = False
             st.contact_start_step[fresh] = 0
+            st.grip_flagged[fresh] = False
+            st.grip_step[fresh] = -1
             st.last_parting_step[fresh] = -10**9
             st.attempt_count[fresh] = 0
             st.towed_now[fresh] = False
@@ -216,7 +220,15 @@ class GraspTracker:
         hand_open = ~hand_closed(env, hand, self.tow_closure)      # essentially fully open
 
         st.contact_streak = torch.where(contact, st.contact_streak + 1, torch.zeros_like(st.contact_streak))
+        was_closed_on_it = st.attempt_closed.clone()
         st.attempt_closed = (st.attempt_closed | closed_attempt) & contact
+
+        # P78: remember WHEN the jaws closed on this object. The signal was already here --
+        # `attempt_closed` means closed while touching THIS object -- it just never became a
+        # line. It is not emitted yet: see the carry below.
+        took_grip = st.attempt_closed & ~was_closed_on_it
+        st.grip_step = torch.where(took_grip, env.episode_length_buf, st.grip_step)
+        st.grip_flagged = st.grip_flagged & contact
 
         # stable grasp: contact for k steps, offset to the hand steady, hand moved
         if len(st.rel_hist) > k:
@@ -250,6 +262,16 @@ class GraspTracker:
         # condition with no object_grabbed step -- showed releases and drops but never a
         # grab (Finn, r3 BowlStackingRightOnLeft: "why is there a drop without a pick?").
         for eid in newly.nonzero(as_tuple=False).flatten().tolist():
+            # P78: grip, then carry, then the ladder's success line. Finn asked for exactly
+            # this order, as an either/or against a failure: "it should either be grip,
+            # carry, and object grab success as three flags, or it should be failed grasp
+            # attempt". So a grip that never becomes a carry is reported by
+            # GRASP_ATTEMPT_FAILED alone -- emitting a grip line there too would put three
+            # lines on a 0.3 s fumble, which is the noise P47 exists to prevent.
+            if int(st.grip_step[eid]) >= 0 and not bool(st.grip_flagged[eid]):
+                self._events.append((eid, obj, hand, "gripped",
+                                     {"onset_step": int(st.grip_step[eid])}))
+                st.grip_flagged[eid] = True
             self._events.append((eid, obj, hand, "grabbed",
                                  {"onset_step": int(st.contact_start_step[eid])}))
 

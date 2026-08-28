@@ -189,7 +189,14 @@ class EventTracker:
             mask[eid] = True
             onset = extra.get("onset_step") if isinstance(extra, dict) else None
             is_container = bool(per_env_containers and obj_name in per_env_containers[eid])
-            if kind == "grabbed":
+            if kind == "gripped":
+                # P78: the rung before the carry. A container is excluded for the same
+                # reason P72 excludes it from attempts: closing on a bin rim is not a grip
+                # anyone wants counted.
+                if not is_container:
+                    events.append((f"'{obj_name}' gripped (jaws closed on it)",
+                                   StatusCode.OBJECT_GRIPPED, mask, onset))
+            elif kind == "grabbed":
                 # P71: the detector reports a physical carry; it is NOT the progress signal.
                 # Emitting it as *_SUCCESS put a green "success" on 28 grasps of objects the
                 # task then flagged as WRONG (Finn: "it's giving an object grab success flag

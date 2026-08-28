@@ -183,6 +183,9 @@ class StatusCode(IntEnum):
                                    # observation, not progress. The ladder's OBJECT_GRABBED_SUCCESS
                                    # is the progress line. Finn saw both and asked what the
                                    # difference was; they were both green and identically named.
+    OBJECT_GRIPPED = 284           # P78: the jaws closed on this object. The rung BEFORE a carry:
+                                   # grip -> carry -> the ladder's success line. A carry with no
+                                   # grip before it is the hand pushing the object, not holding it.
 
     # ============================================================
     # Legacy aliases for backward compatibility
@@ -220,6 +223,7 @@ NEUTRAL_STATUS_CODES: set[int] = {
     int(269),   # SCENE_SETTLING
     int(282),   # TARGET_OBJECT_BUMPED — the policy working on its own target
     int(283),   # OBJECT_CARRIED — a physical observation; the ladder line carries the credit
+    int(284),   # OBJECT_GRIPPED — the jaws closed on it; the ladder line carries the credit
 }
 
 EVENT_STATUS_CODES: set[StatusCode] = {
@@ -239,6 +243,7 @@ EVENT_STATUS_CODES: set[StatusCode] = {
     StatusCode.OBJECT_DROPPED,
     StatusCode.SCENE_SETTLING,
     StatusCode.TARGET_OBJECT_BUMPED,
+    StatusCode.OBJECT_GRIPPED,
     StatusCode.WRONG_OBJECT_PLACED,
     StatusCode.WRONG_OBJECT_PUSHED_IN,
     StatusCode.OBJECT_FELL_OFF_TABLE,

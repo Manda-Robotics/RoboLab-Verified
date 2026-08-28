@@ -39,10 +39,11 @@ class _Script:
 def _kinds(evs):
     """(env, object, kind, count) per event.
 
-    The P60 grasp line is dropped here: these tests are about tows, attempts and
-    release-vs-drop, and every successful carry now also emits a `grabbed` event.
-    `test_p60_grasp_is_emitted_by_the_tracker` covers that one directly."""
-    return [(e[0], e[1], e[3], e[4].get("count")) for e in evs if e[3] != "grabbed"]
+    The P60 `grabbed` and P78 `gripped` lines are dropped here: these tests are about
+    tows, attempts and release-vs-drop, and every successful carry now emits both.
+    `test_p60_grasp_is_emitted_by_the_tracker` and `test_p78_grip_rung.py` cover
+    those two directly."""
+    return [(e[0], e[1], e[3], e[4].get("count")) for e in evs if e[3] not in ("grabbed", "gripped")]
 
 
 def _tick(env, tracker, script, contact, hand=None, obj=None, closure=None, cmd_open=None):
