@@ -36,6 +36,16 @@ parser.add_argument("--amplitude-rad", "--amplitude_rad", type=float, default=0.
                     help="Elbow excursion of the scripted motion. Small on purpose: a big "
                          "swing trips the collision flags and the smoke test then reads "
                          "like a failing evaluation.")
+# These three are NOT in add_common_eval_args -- each runner declares its own, and the
+# constants block below reads all three. Omitting them cost a pod launch: the run got as
+# far as building Isaac and then died on AttributeError: 'Namespace' has no attribute
+# 'record_image_data'.
+parser.add_argument("--enable-verbose", "--enable_verbose", action="store_true",
+                    help="Verbose output (default: False).")
+parser.add_argument("--enable-debug", "--enable_debug", action="store_true",
+                    help="Debug output (default: False).")
+parser.add_argument("--record-image-data", "--record_image_data", action="store_true",
+                    help="Enable proprio image data recording (default: False).")
 
 from robolab.eval.runner import add_common_eval_args, run_evaluation  # noqa: E402
 
