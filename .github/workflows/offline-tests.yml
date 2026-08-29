@@ -36,9 +36,11 @@ jobs:
         run: python -m pytest offline_tests -q
 
       - name: task-definition audit
-        # exits non-zero on a finding; the spawn-state check needs recorded runs that
-        # are not in CI, so unverifiable candidates are reported, not asserted.
-        run: python scripts/audit_task_definitions.py || true
+        # exits non-zero on a CONFLICT (a definition that cannot score what it says);
+        # notes (landmarks a ladder never names, duplicate test classes) are printed only.
+        # The spawn-state check needs recorded runs that are not in CI, so candidates
+        # that need it are listed as NOT asserted rather than reported.
+        run: python scripts/audit_task_definitions.py
 
       - name: scene intersection report
         # differential by design: the rule is "no NEW overlapping pair", so this is

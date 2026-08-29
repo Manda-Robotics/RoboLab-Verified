@@ -45,7 +45,7 @@ def load_episode(output_dir, run, env):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--labels", default="analysis/flag_labels.jsonl")
-    ap.add_argument("--output-dir", default="../RoboLab/output")
+    ap.add_argument("--output-dir", default="output")
     args = ap.parse_args()
 
     labels = [json.loads(l) for l in open(args.labels) if l.strip()]

@@ -256,6 +256,8 @@ SPAWN_NEAR_M = 0.06
 
 def spawn_satisfied(task: dict, obj: str, states_dir: Path) -> tuple[bool, str]:
     """Does `obj` already satisfy the success relation at step 0? (verdict, evidence)."""
+    if states_dir is None:
+        return False, "no --states-dir given"
     func = task.get("success_func")
     if func not in NEAR_GOAL_FUNCS | AWAY_GOAL_FUNCS:
         return False, "unknown predicate"
@@ -304,13 +306,16 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tasks-dir", default="robolab/tasks/benchmark")
     ap.add_argument("--scenes-dir", default="assets/scenes")
-    ap.add_argument("--states-dir", default="../RoboLab/output/isaac60_robolab120_pi05",
-                    help="a run whose step-0 poses give each task's spawn state")
+    ap.add_argument("--states-dir", default=None,
+                    help="a recorded run directory whose step-0 poses give each task's spawn state "
+                         "(optional; without it, candidates that need the spawn state are listed as "
+                         "NOT asserted rather than reported)")
     ap.add_argument("--all-task-dirs", default="robolab/tasks",
                     help="root scanned for duplicate class names (check F)")
     args = ap.parse_args()
 
-    tasks_dir, scenes_dir, states_dir = Path(args.tasks_dir), Path(args.scenes_dir), Path(args.states_dir)
+    tasks_dir, scenes_dir = Path(args.tasks_dir), Path(args.scenes_dir)
+    states_dir = Path(args.states_dir) if args.states_dir else None
     tasks = [t for f in sorted(tasks_dir.glob("*.py")) if f.name != "__init__.py"
              for t in parse_task_file(f)]
 
@@ -443,8 +448,13 @@ def main() -> int:
         print(f"\n## cleared by the spawn-state check (already satisfied before the robot moves) — {len(dismissed)}")
         for line in dismissed:
             print(f"  {line}")
-    print(f"\ntotal findings: {total}")
-    return 1 if total else 0
+    # A-C, D1 and E are conflicts: a definition that cannot score what it says. D2 (a success
+    # term's landmark the ladder never names -- normal for "take X off Y") and F (a duplicate
+    # class name under test_tasks/) are notes. Only conflicts fail the run, so CI can gate on it.
+    conflicts = sum(len(items) for title, items in sections if not title.startswith(("D2", "F ")))
+    notes = total - conflicts
+    print(f"\nconflicts: {conflicts}   notes: {notes}   not asserted: {len(unverified)}")
+    return 1 if conflicts else 0
 
 
 if __name__ == "__main__":

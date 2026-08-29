@@ -67,7 +67,7 @@ open: a quick grasp at ~88 s in `FoodPacking2Cans` env 2 that the detector still
 ## Auditing definitions and scenes without a simulator
 
 ```bash
-scripts/audit_task_definitions.py            # exit 1 on a finding; needs usd-core
+scripts/audit_task_definitions.py            # exit 1 on a conflict; notes are printed only; needs usd-core
 scripts/check_scene_intersections.py         # authored overlaps; differential by design
 scripts/check_rest_heights.py --tasks <T,...>  # drops / rises / rolls at reset, from recordings
 scripts/find_sinking_objects.py output/<run> ...
