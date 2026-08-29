@@ -36,15 +36,19 @@ scene geometry, or any task's success condition. Friction becomes a run paramete
 
 ## Status — read before citing any number
 
-This fork is **not release-verified**. The offline suite (133 tests) runs in CI and is
+This fork is **not release-verified**. The offline suite (221 tests) runs in CI and is
 green, but offline tests are not evidence that a change behaves correctly at runtime:
 two changes in this fork passed every offline test and were wrong on hardware (one
-printed every grasp twice; one made a scene measurably worse and was reverted).
+printed every grasp twice; one made a scene measurably worse and was reverted), and a
+third died two minutes into its first GPU boot on a config-class rule no unit test saw.
 
 `docs/VERIFIED_PATCHES.md` carries a port-readiness table marking each change
-**RUNTIME** / **OFFLINE** / **NONE**. Most are not yet RUNTIME, and roughly 13 of 120
-tasks have been run against the patched code. Treat anything not marked RUNTIME as a
-proposal with evidence, not a verified fix.
+**RUNTIME** / **OFFLINE** / **NONE**, regenerated from `scripts/verify_patches.py`, which
+turns each patch's claim into a PASS / FAIL / N/A predicate over recorded runs (an N/A is
+never a pass). As of 2026-08-28 the event-vocabulary and crediting patches (P61, P71–P77)
+and the friction run parameter (P79) are RUNTIME on the tasks they were run on; about 25
+of the 120 benchmark tasks have been run against patched code, most of them on π0.5
+only. Treat anything not marked RUNTIME as a proposal with evidence, not a verified fix.
 
 Withdrawn claims are kept in the register rather than deleted, with the measurement
 that disproved them.
