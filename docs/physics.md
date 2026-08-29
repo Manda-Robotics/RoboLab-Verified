@@ -49,7 +49,7 @@ chosen so that grasps hold, not measured.
 
 The consequence reviewers saw: edge pinches, one-finger holds and towed objects that a
 real pad would let slip (see `TOWED_WITHOUT_GRASP` in [event_tracking.md](event_tracking.md)
-and the tow analysis in `docs/VERIFIED_PATCHES.md`).
+and the tow analysis in `docs/docs/verified/changes.md.md`).
 
 ### What Verified does: `--friction` (P79)
 
@@ -141,7 +141,7 @@ carries that ever load both pads (`scripts/contact_force_profile.py`, P77).
 `scripts/friction_sweep_report.py output/rc7_*` renders the per-condition table (success
 rate, carries / failed attempts / drops per episode, tows, one-pad carries, and the P79
 verdict of every run, so a condition whose materials did not land is marked rather than
-compared). Results are recorded in `docs/VERIFIED_PATCHES.md` under P79 as they come in.
+compared). Results are recorded in `docs/docs/verified/changes.md.md` under P79 as they come in.
 
 ### Results (rc7, 2026-08-29)
 
@@ -225,7 +225,7 @@ unrealistic behaviour. It is not one, and it is **left unchanged**:
 
 What was checked: the config matches the Isaac Lab source line for line (2026-08-28), and
 the recorded action/joint traces on the rc-series runs show absolute joint targets
-tracked without drift (`docs/VERIFIED_PATCHES.md`, "sanity gate": median hand→target
+tracked without drift (`docs/docs/verified/changes.md.md`, "sanity gate": median hand→target
 distance 1.3 cm on the corpus).
 
 ## See Also
@@ -233,4 +233,4 @@ distance 1.3 cm on the corpus).
 - [Objects](objects.md) — how object materials are authored and catalogued
 - [Robots](robots.md) — robot cfg labels (`friction_bodies`, `ee_recorder_bodies`)
 - [Running Environments](environment_run.md#run_evalpy-cli-reference) — the `--friction` flag
-- `docs/VERIFIED_PATCHES.md` — P79's row, with the measurements
+- `docs/docs/verified/changes.md.md` — P79's row, with the measurements

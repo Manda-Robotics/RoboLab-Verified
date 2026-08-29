@@ -227,6 +227,30 @@ The main results file, located at the top level of the output folder. Uses JSONL
   - `OBJECT_OUT_OF_SCENE`: Object fell off table or moved outside workspace
   - `wrong_objects_grabbed`: List of wrong object names that were grabbed
 
+### Fields added by RoboLab Verified
+
+Per episode, in addition to the upstream fields above:
+
+- `score_peak`: the live monotone subtask score; `score` is judged on the final frame (P34)
+- `success_first_hold_s`, `success_confirmed_s`: when the success predicate first held and when it was confirmed with every target at rest; equal when the object was already still (P30)
+- `physics_artifact`, `towed_objects`: an object moved with an open hand (`TOWED_WITHOUT_GRASP`); the episode is not trustworthy and its grasp credit was withheld (P43)
+- `collateral_placed`: non-target objects released inside a goal container after reset (P36)
+- `early_resets`, `pre_satisfied`: re-resets for terminating within two steps, and whether the episode still did after the cap (P09)
+- `events`: counts per event name, in the vocabulary of [Event Tracking](event_tracking.md) — `GRASP_ATTEMPT_FAILED`, `OBJECT_RELEASED`, `OBJECT_DROPPED`, `OBJECT_CARRIED`, `WRONG_OBJECT_PLACED`, `TARGET_LOST`, … replace the upstream `TARGET_OBJECT_DROPPED` / `OBJECT_GRABBED_FAILURE` pair
+
+`success` is read from the task's `success` term only (upstream took the OR of every non-timeout termination term).
+
+Per run directory:
+
+- `run_complete.json`: written once every task/run finished; a directory without it is partial (P10)
+- `friction_applied.json`: the PhysX friction readback after start-up, per object shape and per finger pad, written on every run (P79); the request is in `env_cfg.json` → `friction`
+
+In the HDF5, group `contact/` per demo: `<object>` `(T, 2)` float32 contact **force** on the left and right finger pad, and `<object>__<destination>` `(T,)` uint8 object-to-container/surface contact (P77).
+
+The per-episode event log `log_<run>_env<env>.json` is schema version 2: each event carries `step` (its onset) and `detected_step` (P61).
+
+The complete diff for downstream tools is [Migration](verified/migration.md).
+
 ## See Also
 
 - [Analysis and Results Parsing](analysis.md) — Scripts for summarizing, comparing, and auditing experiment results

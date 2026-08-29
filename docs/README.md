@@ -1,5 +1,20 @@
 # RoboLab Documentation
 
+## RoboLab Verified
+
+This is the documentation of **RoboLab Verified**, a fork of NVIDIA RoboLab v0.3.1 that
+changes what the benchmark reports, not what it simulates. Start here if you are coming from
+upstream:
+
+- **[Why this fork](verified/README.md)** — the findings that motivated it, what changed by area, what was deliberately left alone, the method
+- **[Changes](verified/changes.md)** — one row per change with its score impact, verification level and evidence
+- **[Findings](verified/findings.md)** — every defect found in upstream, with its measurement, including the ones not fixed
+- **[Migration](verified/migration.md)** — new result fields, new event codes, new files, and the knobs that restore upstream behaviour
+- **[Verification](verified/verification.md)** — the tools that produced the evidence and how to reproduce it
+- **[Physics](physics.md)** — friction as a run parameter, and the arm controller
+
+Everything below is upstream's documentation, updated where the fork changed behaviour.
+
 ## How RoboLab Works
 
 RoboLab dynamically combines **tasks** with user-specified **robot**, **observations**, **actions**, and **simulation parameters** at environment registration time.

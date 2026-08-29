@@ -130,7 +130,7 @@ Subtask(
 > `logical`. A sequence written as a list then completed `object_dropped` at reset (the
 > object is "not in contact" before the robot moves) and credited `object_left_of` while
 > the object was still in the hand — 11 benchmark tasks scored subtask progress that way
-> (VERIFIED_PLAN H-B1, seen in the dashboard as a subgoal reached at 0.07 s).
+> (findings.md H-B1, seen in the dashboard as a subgoal reached at 0.07 s).
 
 ---
 

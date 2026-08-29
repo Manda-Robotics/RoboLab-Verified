@@ -19,9 +19,9 @@ settling reports, and the review dashboard. Two robot embodiments (dual-Franka a
 bimanual ViperX/ALOHA) and a VLM pointing-policy connector are added.
 
 Every change is one commit carrying its own evidence, and the full register with the
-measurement behind each one is in docs/VERIFIED_PATCHES.md. Findings that are
+measurement behind each one is in docs/verified/changes.md. Findings that are
 reported but deliberately NOT changed -- notably the authored scene interpenetration
-and the object friction values -- are recorded in docs/VERIFIED_PLAN.md with the
+and the object friction values -- are recorded in docs/verified/findings.md with the
 reasoning.
 
 Files added by this fork carry the NVIDIA copyright header of the upstream files they

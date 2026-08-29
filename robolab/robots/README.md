@@ -9,6 +9,8 @@ This is the canonical list of robot embodiments that ship with RoboLab. For how 
 | <img src="../../docs/images/robots/droid.png" width="480"> | **DROID**<br>(Franka + Robotiq 2F-85)<br>`droid.py` | `single-arm` `fixed-base` `parallel-jaw` | joint position, absolute EE IK, relative EE IK | wrist |
 | <img src="../../docs/images/robots/franka.png" width="480"> | **Franka Panda**<br>`franka.py`, `franka_high_pd.py` | `single-arm` `fixed-base` `parallel-jaw` | joint position, absolute EE IK, relative EE IK | — |
 | <img src="../../docs/images/robots/kinova_gen3.png" width="480"> | **Kinova Gen3**<br>(Gen3 7-DoF + Robotiq 2F-85)<br>`kinova_gen3.py` | `single-arm` `fixed-base` `parallel-jaw` | joint position | wrist |
+| | **Dual Franka**<br>(2× Franka + Robotiq 2F-85)<br>`bimanual_franka.py` | `bimanual` `fixed-base` `parallel-jaw` | joint position (16-dim) | 2× wrist |
+| | **Bimanual ViperX / ALOHA**<br>`aloha.py`, `bimanual_station.py` | `bimanual` `fixed-base` / `mobile` `parallel-jaw` | joint position (14-dim) | 2× wrist + high |
 
 Gripper convention for all binary gripper actions: a scalar per gripper, `> 0.5` closes, `≤ 0.5` opens.
 Quaternions are `(w, x, y, z)`; absolute IK targets are expressed in the robot root frame, translations in meters.
@@ -32,7 +34,8 @@ arm, plus a 720p wrist camera whose intrinsics are calibrated to match pi05 / Dr
 - **Config classes:** `DroidCfg` (robot + wrist camera + EE frame transformers)
 - **Proprioception:** `ProprioceptionObservationCfg` — arm joint positions, gripper open fraction,
   EE pose (both the gripper mount flange `ee_*` and the rotated control frame `eef_*`)
-- **Contact gripper:** `{"gripper": ...left_inner_finger}`
+- **Contact gripper:** `{"gripper": ["gripper_left", "gripper_right"], ...}` — one sensor per finger pad, `gripper` = either pad
+- **Friction bodies:** `["left_inner_finger", "right_inner_finger"]` — the targets of a `--friction` override ([physics](../../docs/physics.md#friction))
 - **Registrations:** `robolab/registrations/droid/` (jointpos, abs-IK, rel-IK, lighting/background variations)
 
 ```python
@@ -104,3 +107,34 @@ Also in this folder: `delta_actions.py`, a helper that converts a target EE pose
 (delta) pose action — used by trajectory replay, not an action space itself.
 
 The robot stills above are rendered in an empty scene at each robot's reset posture.
+
+## Dual Franka (2× Franka + Robotiq 2F-85)
+
+`tags: bimanual · fixed-base · parallel-jaw · 2× wrist-cam · scripted-only`
+
+Two DROID arms on one table fixture as a single articulation: 16-dim joint-position action
+(`[7 arm, 1 gripper] × 2`), per-arm end-effector recording (`left_ee_pose` / `right_ee_pose`),
+tracking wrist cameras, and the unchanged benchmark predicates (`gripper_name="gripper"` means
+*either* hand; a list means both). Verified with the scripted lift 6 of 6 clean. No released
+checkpoint drives two arms; `policies/bimanual/run.py` runs the scripted client.
+
+- **Config classes:** `BimanualFrankaCfg`
+- **Asset:** `assets/robots/bimanual_franka_robotiq_2f85/` (rebuild with
+  `python assets/robots/_utils/build_bimanual_franka.py`, needs only `usd-core`)
+- **Registrations:** `robolab/registrations/bimanual_franka/`
+- **Smoke-test tasks:** `robolab/tasks/bimanual/` (`--task-dirs bimanual`; outside the benchmark set)
+
+## Bimanual ViperX (ALOHA)
+
+`tags: bimanual · fixed-base or mobile · parallel-jaw · 2× wrist-cam · no working policy`
+
+Two ViperX 300 arms in the opposing (`aloha.py`), station and mobile (`bimanual_station.py`)
+configurations, 14-dim action. The rig runs — arms build, wrist cameras track, per-arm metrics
+record — but **no released policy works on it**: the π0.5 base checkpoint scored 0 of 6
+(coherent reach, twitchy, no grasp). An ALOHA number is a statement about the checkpoint, not
+the rig; see [`README_bimanual.md`](README_bimanual.md) before placing one next to a Franka
+number.
+
+- **Config classes:** `AlohaCfg`, `AlohaGymMatchCfg`, `MobileAlohaCfg`, `BimanualStationCfg`
+- **Registrations:** `robolab/registrations/aloha/`
+- **Run:** `python policies/bimanual/run.py --robot aloha --task AlohaTransferCubeTask --headless`

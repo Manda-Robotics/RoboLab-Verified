@@ -3,8 +3,9 @@
 ## [verified-unreleased] - RoboLab Verified
 
 A fork of NVIDIA RoboLab v0.3.1 focused on evaluation correctness. Every entry below
-is one commit with its own evidence; `docs/VERIFIED_PATCHES.md` carries the
-measurement behind each.
+is one commit with its own evidence; [`docs/verified/changes.md`](docs/verified/changes.md)
+carries the measurement behind each, [`docs/verified/migration.md`](docs/verified/migration.md)
+the schema and vocabulary diff for downstream tools.
 
 ### Added
 
