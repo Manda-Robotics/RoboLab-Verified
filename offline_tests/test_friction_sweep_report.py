@@ -65,3 +65,14 @@ def test_no_match_is_an_error_not_an_empty_table(tmp_path, capsys):
     d = _run(tmp_path, "something_else", [True], [[]])
     sys.argv = ["x", d]
     assert R.main() == 2
+
+
+def test_an_in_flight_or_unreadable_hdf5_degrades_to_na_not_a_traceback(tmp_path):
+    """The report ran while the sync loop was copying rc7_upstream_FoodPacking2Cans and died
+    inside h5py.File on the half-written HDF5."""
+    d = _run(tmp_path, "rc7_0.5_X", [True], [[283]], complete=False)
+    (pathlib.Path(d) / "XTask" / "run_0.hdf5").write_bytes(b"not an hdf5 file")
+    assert R.one_pad_share(d) is None
+    (pathlib.Path(d) / "run_complete.json").write_text("{}")
+    assert R.one_pad_share(d) is None          # complete but unreadable: still no traceback
+    assert "n/a (h5py)" in R.render(R.group_runs([d], R.DEFAULT_PATTERN))

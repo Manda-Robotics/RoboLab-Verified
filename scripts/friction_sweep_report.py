@@ -74,7 +74,12 @@ def one_pad_share(run_dir: str) -> tuple[int, int] | None:
         import contact_force_profile as cfp
     except ImportError:
         return None
-    rows = [r for r in cfp.collect(run_dir) if r["kind"] == "carry"]
+    if not os.path.exists(os.path.join(run_dir, "run_complete.json")):
+        return None           # the HDF5 of a run still being written (or synced) is not readable
+    try:
+        rows = [r for r in cfp.collect(run_dir) if r["kind"] == "carry"]
+    except (OSError, KeyError, ValueError):
+        return None
     if not rows:
         return (0, 0)
     return (sum(1 for r in rows if r["both_pads_frac"] == 0.0), len(rows))
