@@ -96,8 +96,43 @@ def object_of(event: dict) -> str | None:
     return None
 
 
+_CATALOG_CLASS: dict[str, str] | None = None
+
+
+def _catalog_class(name: str) -> str | None:
+    """Catalog class of a scene object name (``bowl_1`` -> ``bowl``), or None if unknown.
+    Read once from assets/objects/object_catalog.json next to this script's repo."""
+    global _CATALOG_CLASS
+    if _CATALOG_CLASS is None:
+        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "assets", "objects", "object_catalog.json")
+        try:
+            _CATALOG_CLASS = {row["name"]: (row.get("class") or "") for row in json.load(open(path))}
+        except (OSError, ValueError):
+            _CATALOG_CLASS = {}
+    for key in (name, name.rsplit("_", 1)[0] if "_" in name else name):
+        if key in _CATALOG_CLASS:
+            return _CATALOG_CLASS[key]
+    return None
+
+
 def looks_like_destination(name: str | None) -> bool:
-    return bool(name) and any(h in name.lower() for h in DEST_HINTS)
+    """Is this scene object a container / fixture rather than something to pick?
+
+    The catalog decides when it knows the object: ``sugar_box`` and ``raisin_box`` are
+    class ``food`` (products, not boxes to put things in) -- the substring "box" alone
+    called them containers and marked rc6b's P72 a regression. Scene-authored names the
+    catalog does not know (``grey_bin``, ``purple_crate``, ``franka_table``) fall back to
+    the name hints.
+    """
+    if not name:
+        return False
+    cls = _catalog_class(name)
+    if cls in ("container", "fixture"):
+        return True
+    if cls not in (None, "", "dishware", "kitchenware", "vase"):
+        return False          # a product (food, condiment, tool, toy, ...) is never a destination
+    return any(h in name.lower() for h in DEST_HINTS)   # plates and bowls: by name, as before
 
 
 # --------------------------------------------------------------------------- #
@@ -265,12 +300,80 @@ def p77_contact_force_recorded(run_dir: str) -> Result:
                       [f"{d} (destination contact)" for d in dests[:2]], len(pads))
 
 
+def _check_applied(applied: dict, tol: float = 1e-3) -> list[str]:
+    """Requested-vs-PhysX comparison for one friction_applied.json (a copy of
+    robolab.core.physics.friction.check_applied, kept here so this script can judge a
+    recording without importing the build that made it)."""
+    req = applied.get("requested") or {}
+    problems = []
+    for name, mat in (req.get("objects") or {}).items():
+        rows = applied.get("objects", {}).get(name)
+        if not rows:
+            problems.append(f"{name}: no PhysX readback")
+            continue
+        for s, d, _r in rows:
+            if abs(s - mat["static"]) > tol or abs(d - mat["dynamic"]) > tol:
+                problems.append(f"{name}: requested {mat['static']}/{mat['dynamic']}, PhysX holds {s}/{d}")
+                break
+    pad = req.get("gripper")
+    for body in req.get("gripper_bodies") or []:
+        rows = applied.get("gripper", {}).get(body)
+        if not isinstance(rows, list) or not rows:
+            problems.append(f"pad {body}: no PhysX readback ({rows})")
+            continue
+        if pad:
+            for s, d, _r in rows:
+                if abs(s - pad["static"]) > tol or abs(d - pad["dynamic"]) > tol:
+                    problems.append(f"pad {body}: requested {pad['static']}/{pad['dynamic']}, PhysX holds {s}/{d}")
+                    break
+    return problems
+
+
+def _coeff_summary(applied: dict) -> str:
+    objs = Counter(f"{row[0]:g}/{row[1]:g}" for rows in applied.get("objects", {}).values() for row in rows[:1])
+    pads = Counter(f"{row[0]:g}/{row[1]:g}" for rows in applied.get("gripper", {}).values()
+                   if isinstance(rows, list) for row in rows[:1])
+    fmt = lambda c: ", ".join(f"{k} x{v}" for k, v in sorted(c.items())) or "none"
+    return f"objects static/dynamic: {fmt(objs)}; pads: {fmt(pads)}"
+
+
+def p79_friction_applied(run_dir: str) -> Result:
+    """P79: what --friction asked for is what PhysX holds after start-up. Judged from
+    friction_applied.json (a PhysX readback), never from env_cfg.json alone."""
+    files = sorted(glob.glob(os.path.join(run_dir, "*", "friction_applied.json")))
+    if not files:
+        return Result("P79", "friction override applied", "N/A",
+                      "no friction_applied.json (recording predates P79)")
+    applied = json.load(open(files[0]))
+    req = applied.get("requested") or {}
+    if req.get("mode", "upstream") == "upstream":
+        return Result("P79", "friction override applied", "N/A",
+                      f"run used the upstream materials; PhysX readback: {_coeff_summary(applied)}")
+    problems = _check_applied(applied)
+    n_obj = len(req.get("objects") or {})
+    n_pad = len(req.get("gripper_bodies") or [])
+    if problems:
+        return Result("P79", "friction override applied", "FAIL",
+                      f"{len(problems)} of {n_obj + n_pad} targets differ from the request ({req.get('spec')})",
+                      problems[:5], n_obj + n_pad)
+    if not req.get("gripper_bodies"):
+        return Result("P79", "friction override applied", "FAIL",
+                      "objects overridden but the robot declared no friction_bodies -- pads still authored",
+                      [], n_obj)
+    return Result("P79", "friction override applied", "PASS",
+                  f"--friction {req.get('spec')}: {n_obj} objects + {n_pad} pad bodies hold the requested "
+                  f"coefficients ({_coeff_summary(applied)})",
+                  [f"{n}: {m['static']}/{m['dynamic']} ({m['source']})" for n, m in list(req["objects"].items())[:3]],
+                  n_obj + n_pad)
+
+
 def report(run_dir: str) -> list[Result]:
     eps = load(run_dir)
     if not eps:
         return [Result("-", "load", "N/A", f"no episode logs under {run_dir} (run still in flight?)")]
     results = [f(eps) for f in PREDICATES]
     results.append(p77_contact_force_recorded(run_dir))
+    results.append(p79_friction_applied(run_dir))
     return results
 
 

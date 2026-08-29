@@ -182,3 +182,16 @@ def test_an_unfinished_run_is_not_reported_as_a_regression(tmp_path):
     d = tmp_path / "rc_inflight"; (d / "T").mkdir(parents=True)
     results = V.report(str(d))
     assert [r.verdict for r in results] == ["N/A"]
+
+
+def test_a_product_named_box_is_not_a_destination():
+    """rc6b FoodPacking2Cans env2: two attempts on 'sugar_box' (catalog class 'food') were
+    reported as a P72 regression because of the 'box' substring."""
+    assert not V.looks_like_destination("sugar_box")
+    assert not V.looks_like_destination("raisin_box")
+    assert V.looks_like_destination("bin_a06")        # catalog: container
+    assert V.looks_like_destination("rack_l04")       # catalog: fixture
+    assert V.looks_like_destination("grey_bin")       # unknown to the catalog -> name hint
+    assert V.looks_like_destination("purple_crate")
+    assert V.looks_like_destination("bowl_1")         # kitchenware: still a destination by name (on-plate/in-bowl tasks)
+    assert V.looks_like_destination("clay_plates")
