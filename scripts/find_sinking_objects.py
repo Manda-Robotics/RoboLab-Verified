@@ -4,7 +4,7 @@
 Reads recorded HDF5 only -- no simulator. An object that loses height while the
 robot has not touched it is either interpenetrating its support at spawn or
 resting on a collider that does not match its visual mesh. Both read to a
-reviewer as "it sank through the shelf" (VERIFIED_PLAN H-R7-3).
+reviewer as "it sank through the shelf" (findings.md H-R7-3).
 
     python scripts/find_sinking_objects.py output/isaac60_robolab120_pi05
 """

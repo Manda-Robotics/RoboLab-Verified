@@ -8,7 +8,7 @@ grab). Upstream derived the first set from ``Subtask.group_names``; that works
 for the dict / ``pick_and_place`` forms, where groups are keyed by object name,
 but the list-of-callables form names its groups ``group1..N`` and the keyword
 form names its single group ``conditions`` — so for those tasks the target
-itself was flagged as a wrong object on every grasp (VERIFIED_PLAN B4, H-B2,
+itself was flagged as a wrong object on every grasp (findings.md B4, H-B2,
 H-R6-12, H-R8-22).
 
 Here the names come from the conditions themselves: every condition is a

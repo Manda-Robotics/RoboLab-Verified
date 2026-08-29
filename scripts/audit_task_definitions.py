@@ -246,7 +246,7 @@ def parse_task_file(path: Path) -> list[dict]:
 # Predicates whose goal is "near the container" vs "away from it". A target that
 # already satisfies its goal relation at spawn needs no action, so a ladder that
 # leaves it out is correct, not a conflict. Ignoring this produced two confident
-# false positives (UnstackRubiksCube, BananasInCrate) that Finn caught by simply
+# false positives (UnstackRubiksCube, BananasInCrate) that the reviewer caught by simply
 # looking at the scene -- the bottom cube already sits on the table 25 cm from the
 # bin, and banana_01 already sits 2 cm from the crate centre.
 NEAR_GOAL_FUNCS = {"object_in_container", "pick_and_place", "object_on_top", "object_on_center"}

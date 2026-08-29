@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Find objects carried while the gripper is essentially OPEN ("stuck to one finger").
 
-VERIFIED_PLAN H-R6-2 / H-R7-1: reviewers repeatedly saw an object move with the
+findings.md H-R6-2 / H-R7-1: reviewers repeatedly saw an object move with the
 hand while the hand was visibly not closed -- "it looks almost like the orange is
 magnetic". The suspected cause is C1: friction is authored at mu = 2.0 on 289 of
 312 objects, which can make single-finger contact a stable hold.

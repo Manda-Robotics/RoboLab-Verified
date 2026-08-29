@@ -325,7 +325,7 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
             })
 
     def judge_final_score(self, eid: int) -> float:
-        """The subtask ladder re-judged on the *final* frame (VERIFIED_PLAN H-B3, A3/A4).
+        """The subtask ladder re-judged on the *final* frame (findings.md H-B3, A3/A4).
 
         The live score only ever goes up: a stage that was credited stays credited
         even if its object is later knocked away (PutTwoMugsOnShelf cosmos3_s2 env 2:

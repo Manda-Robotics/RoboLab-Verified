@@ -21,7 +21,7 @@ from robolab.core.world.world_state import get_world
 logger = logging.getLogger(__name__)
 
 # A termination within the first 2 steps is re-reset this many times before
-# the episode is recorded as `pre_satisfied` (VERIFIED_PLAN H-B12).
+# the episode is recorded as `pre_satisfied` (findings.md H-B12).
 MAX_EARLY_RESETS = 3
 
 

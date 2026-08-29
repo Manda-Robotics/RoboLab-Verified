@@ -1,5 +1,5 @@
 """List-form `Subtask(conditions=[a, b, c])` is a sequence under logical='all'
-and a set of alternatives under 'any'/'choose' (VERIFIED_PATCHES P28 / H-B1)."""
+and a set of alternatives under 'any'/'choose' (changes.md P28 / H-B1)."""
 import sys
 import types
 from functools import partial

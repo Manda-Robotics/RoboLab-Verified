@@ -227,7 +227,7 @@ def sanitize_subtask_conditions(conditions, logical: str = "all") -> dict[str, l
     Historically every list became parallel one-condition groups regardless of `logical`;
     11 benchmark tasks written as sequences then completed `object_dropped` at reset
     (= "not in contact", true before the robot moves) and credited `left_of` while the
-    object was still in the hand (VERIFIED_PLAN H-B1, H-R6-11).
+    object was still in the hand (findings.md H-B1, H-R6-11).
 
     2. conditions = [func1, func2] ---- list notation, assumed to have the same score.
     3. conditions = {func1, func2} ---- set notation, assumed to have the same score.

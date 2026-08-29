@@ -3,7 +3,7 @@ name: offline tests
 # Everything here runs without Isaac Sim and without a GPU. That is deliberate: the
 # evaluation-correctness work is the part of this fork that can be checked cheaply,
 # and it is the part most likely to regress. Runtime behaviour still needs a GPU run
-# and is tracked in docs/VERIFIED_PATCHES.md, not here.
+# and is tracked in docs/verified/changes.md, not here.
 
 on:
   push:

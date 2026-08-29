@@ -2,7 +2,7 @@
 """Re-annotate a recorded episode with the CURRENT flag rules, without a simulator.
 
 The point is regression testing on real episodes: we now have many instances where
-Finn has said what the right flag would be, and re-running the pod to find out
+The reviewer has said what the right flag would be, and re-running the pod to find out
 whether a patch helped costs hours and has twice produced nothing usable.
 
 What can be re-derived from a recorded episode, and what cannot:

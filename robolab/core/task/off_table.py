@@ -2,9 +2,9 @@
 """Objects that leave the table, and the moment a task can no longer succeed.
 
 Upstream only watched *non-target* objects for large displacements, so the
-target can itself go over the edge without a single event (VERIFIED_PLAN
+target can itself go over the edge without a single event (docs/verified/findings.md
 H-B17, H-R7-2 "it actually dropped the can off the table — that would have been
-an interesting flag", H-R8-15/35). Rules (Finn, 2026-08-25):
+an interesting flag", H-R8-15/35). Rules (The reviewer, 2026-08-25):
 
 * any object that falls ``OFF_TABLE_DROP_M`` below its starting height gets one
   ``OBJECT_FELL_OFF_TABLE`` event — a flag, not a verdict;
@@ -65,7 +65,7 @@ def _destinations(params: dict) -> list[str]:
     If the destination leaves the table the task is unwinnable, exactly as if a
     target had. PutMugsOnShelf shows this in every rc3 episode: the policy tips the
     rack off the table, `OBJECT_FELL_OFF_TABLE` fires for the rack, and the episode
-    runs its full 180 s with nothing left to achieve (Finn: "as soon as the object
+    runs its full 180 s with nothing left to achieve (The reviewer: "as soon as the object
     falls off the table with the rack, I think it should be over").
 
     Scoped deliberately to success terms with a SINGLE group. A multi-group term can

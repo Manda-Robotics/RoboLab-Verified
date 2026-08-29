@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Both bimanual rigs are adopted; only one has a working policy.
 
-The ALOHA/ViperX rig is included because Finn wants the embodiment available, with
+The ALOHA/ViperX rig is included because the reviewer wants the embodiment available, with
 its limitation flagged. The flag is the deliverable here: an ALOHA score is a
 statement about the released checkpoint (0/6, out of distribution), not about the rig
 or the benchmark. These tests keep that caveat attached to the code rather than

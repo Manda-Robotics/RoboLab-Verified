@@ -1604,7 +1604,7 @@ function setBreadcrumb(...parts) {
 }
 
 // ---- P70: one task across every experiment ---------------------------------
-// Finn: "you can see all of the tasks being listed here, but you can't click on
+// The reviewer: "you can see all of the tasks being listed here, but you can't click on
 // the tasks ... you see all of the episodes and, obviously, which policy they
 // were on". Nothing new is needed server-side: /api/overview already gives each
 // task's run list, /api/runs each run's policy, ensureEpisodes the rows.
@@ -2211,7 +2211,7 @@ async function renderEpisode(runId, task, envId, runIndex) {
     ep.instruction_type ? chip(`instr: ${ep.instruction_type}`) : null,
     ...(ep.attributes || []).map((a) => chip(a)),
     // When this episode was recorded (newest video mtime) — last in the row,
-    // subtle, full timestamp on hover (Finn: "to the very right after the
+    // subtle, full timestamp on hover (The reviewer: "to the very right after the
     // last flag").
     ep.recorded_at
       ? el('span', { class: 'run-date font-mono self-center', title: new Date(ep.recorded_at * 1000).toLocaleString() },
@@ -2274,7 +2274,7 @@ async function renderEpisode(runId, task, envId, runIndex) {
       // The viewport is recorded from the front-facing mirrored camera in the
       // default registrations: the robot's right is on the viewer's left. Say
       // so on the tile (subtly) — a reviewer once called a left/right task
-      // "broken" because of this (VERIFIED_PLAN D3 / E8).
+      // "broken" because of this (findings.md D3 / E8).
       const cams = ep.viewport_cameras || [];
       const mirroredIdx = v.name === 'viewport' ? cams.findIndex((n) => /mirror/i.test(n)) : -1;
       const mirrorTag = mirroredIdx >= 0

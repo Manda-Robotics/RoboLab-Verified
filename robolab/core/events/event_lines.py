@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""One line per transition (VERIFIED_PATCHES P45).
+"""One line per transition (changes.md P45).
 
 The recorder writes two kinds of lines per env per tick: tracker events
 (grasp attempt / release / drop / tow / wrong object / bump …) and the subtask

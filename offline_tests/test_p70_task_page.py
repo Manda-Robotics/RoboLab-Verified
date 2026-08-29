@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """P70: the results overview's task names open a task page across all experiments.
 
-Finn: "you can see all of the tasks being listed here, but you can't click on the
+The reviewer: "you can see all of the tasks being listed here, but you can't click on the
 tasks … you see all of the episodes and, obviously, which policy they were on."
 
 `joinTaskEpisodes` and `summarisePolicies` are pure, so they are extracted from

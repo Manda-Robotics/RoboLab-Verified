@@ -78,7 +78,7 @@ def one_pad_share(run_dir: str) -> tuple[int, int] | None:
         return None           # the HDF5 of a run still being written (or synced) is not readable
     try:
         rows = [r for r in cfp.collect(run_dir) if r["kind"] == "carry"]
-    except (OSError, KeyError, ValueError):
+    except Exception:      # a half-written HDF5, a stubbed h5py, a schema this build does not know: n/a, not a crash
         return None
     if not rows:
         return (0, 0)

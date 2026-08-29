@@ -5,17 +5,17 @@ Upstream ``object_grabbed`` was "object in contact with the gripper". On the
 Verified corpus 64 % of recorded grabs had an open hand and only ~13 % were
 followed by the object moving with the hand — the rest were touches and failed
 attempts, each producing a grab-success / drop / grab-failure triplet
-(VERIFIED_PLAN B1, B2, B6, F§1, H-R5-4, H-R6-3/4, H-R8-12/17/18).
+(findings.md B1, B2, B6, F§1, H-R5-4, H-R6-3/4, H-R8-12/17/18).
 
-Definition here (Finn, 2026-08-25): the object counts as grasped once it has been
+Definition here (The reviewer, 2026-08-25): the object counts as grasped once it has been
 in contact with the hand for ``GRASP_HOLD_S`` (0.2 s) while its offset to the
 hand changed by less than ``GRASP_COUPLING_M`` (0.5 cm) and the hand itself
 moved at least ``GRASP_HAND_MOVE_M`` (1 cm) — i.e. the hand is carrying it.
 A carry with the hand essentially open (< ``GRASP_TOW_CLOSURE``) **and** the object
 off-centre along the jaw axis (>= ``GRASP_TOW_OFFSET_M``) is ``TOWED_WITHOUT_GRASP``
 — the object stuck to one finger and dragged along, a physics artifact that cannot
-happen in the real world (Finn: an episode with it is bogus). Calibrated on the
-corpus against Finn's verdicts: known tows sit 4-11 cm off-centre at closure 0.00;
+happen in the real world (The reviewer: an episode with it is bogus). Calibrated on the
+corpus against the reviewer's verdicts: known tows sit 4-11 cm off-centre at closure 0.00;
 a can as wide as the aperture reads closure 0.00 but sits centred (a grip); an
 orange reads 0.23 (a grip). Any other carry is a grasp. Contact that ends before a
 carry, with the hand at least partly closed, is one ``GRASP_ATTEMPT_FAILED``. After a grasp, losing contact is ``OBJECT_RELEASED``
@@ -109,7 +109,7 @@ def gripper_open_commanded(env) -> torch.Tensor:
     leaves the hand, so it cannot separate a deliberate release from a slip. The
     action channel can: RoboLab's binary gripper term takes 1 = close, 0 = open
     (``BinaryJointPositionZeroToOneActionCfg``), so the last action's final column is
-    the policy's intent (Finn 2026-08-26: "was this a release on purpose or on
+    the policy's intent (The reviewer 2026-08-26: "was this a release on purpose or on
     accident? how can we reliably tell?"). Falls back to all-False when the action is
     unavailable, in which case the measured-closure rule decides as before."""
     try:
@@ -246,7 +246,7 @@ class GraspTracker:
             hand_moved = torch.zeros(n, device=env.device)
         carry = contact & (st.contact_streak >= k) & (rel_dev < self.coupling_m) & (hand_moved >= self.hand_move_m)
         # A carry with an OPEN hand is not a grasp: it is the object stuck to one
-        # finger and towed (Finn, reviews 06/08 — "looks magnetic", impossible in
+        # finger and towed (The reviewer, reviews 06/08 — "looks magnetic", impossible in
         # the real world; a PhysX high-friction artifact). Flag it once per object
         # and never credit it as a grasp; a real grasp always reads closed here.
         off_centre = jaw_offset(env, obj) >= self.tow_offset
@@ -267,9 +267,9 @@ class GraspTracker:
         # P60: emit the grasp from the tracker. It used to appear only as a subtask-ladder
         # transition line, so the five stacking tasks -- whose ladder is a single placement
         # condition with no object_grabbed step -- showed releases and drops but never a
-        # grab (Finn, r3 BowlStackingRightOnLeft: "why is there a drop without a pick?").
+        # grab (The reviewer, r3 BowlStackingRightOnLeft: "why is there a drop without a pick?").
         for eid in newly.nonzero(as_tuple=False).flatten().tolist():
-            # P78: grip, then carry, then the ladder's success line. Finn asked for exactly
+            # P78: grip, then carry, then the ladder's success line. The reviewer asked for exactly
             # this order, as an either/or against a failure: "it should either be grip,
             # carry, and object grab success as three flags, or it should be failed grasp
             # attempt". So a grip that never becomes a carry is reported by
@@ -292,7 +292,7 @@ class GraspTracker:
                 continue
             # P73: contact flickers as an object leaves the hand. Counting that as a fresh
             # failed attempt produced 10 of 81 attempt lines in rc3, right after a release of
-            # the same object (Finn: "there's often a grasp attempt failed after a release,
+            # the same object (The reviewer: "there's often a grasp attempt failed after a release,
             # which I don't really fully see").
             if int(ep[eid]) - int(st.last_parting_step[eid]) <= burst:
                 continue
@@ -389,7 +389,7 @@ def pad_contact_columns(env, world, object_names) -> dict:
       ``<obj>__<dest>``    (num_envs,) uint8 — in contact with a container/surface.
 
     Forces rather than booleans because a boolean cannot answer the question the
-    labelled data actually asks. Finn labelled six open-hand carries; the three real
+    labelled data actually asks. The reviewer labelled six open-hand carries; the three real
     tows and the two he rejected are indistinguishable by per-pad booleans (both read
     "both pads, closure ~1.0"), and jaw-axis geometry does not separate them either.
     A genuine grip carries real normal force; an object that follows the hand with

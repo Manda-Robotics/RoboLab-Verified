@@ -1,4 +1,4 @@
-"""Target/container extraction from subtask conditions (VERIFIED_PATCHES P14).
+"""Target/container extraction from subtask conditions (changes.md P14).
 
 Pure-Python: builds partials over dummy predicates in the three authoring forms
 RoboLab tasks use, plus an AST sweep over every benchmark task asserting that

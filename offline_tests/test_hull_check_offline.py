@@ -1,4 +1,4 @@
-# Offline tests for the open-top containment cap (VERIFIED_PLAN H-B6).
+# Offline tests for the open-top containment cap (findings.md H-B6).
 # No Isaac, no robolab package import — runs anywhere torch+scipy do:
 #
 #     python robolab/core/task/test_hull_check_offline.py

@@ -3,7 +3,7 @@
 
 P78 makes the grip its own rung, so a pick reads grip -> carry -> the ladder's
 success line. A carry with **no** grip in front of it is the hand pushing the object
-along rather than holding it — Finn's "shove", labelled by eye on the lizard_figurine
+along rather than holding it — the reviewer's "shove", labelled by eye on the lizard_figurine
 and cheez_it clips.
 
 The patched detector cannot be run against an old recording without a GPU, so this

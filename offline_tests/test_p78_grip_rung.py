@@ -1,6 +1,6 @@
 """P78 — the grip is its own rung.
 
-Finn, reviewing rc5 FoodPacking2Cans env0: "we start out with an object carried, an
+The reviewer, reviewing rc5 FoodPacking2Cans env0: "we start out with an object carried, an
 object grabbed success flag, without the object ever being gripped for the first
 time, so that's not great"; "it needs to be grip, carry, and then grab success".
 
@@ -11,7 +11,7 @@ So a successful pick now reads
     OBJECT_GRABBED_SUCCESS   the ladder credits it   (green)
 
 and a failed one reads OBJECT_GRIPPED then GRASP_ATTEMPT_FAILED. A carry with **no**
-grip in front of it is the hand pushing the object along, which is what Finn labelled
+grip in front of it is the hand pushing the object along, which is what the reviewer labelled
 a shove on the lizard_figurine clips.
 """
 import torch
@@ -73,7 +73,7 @@ def test_a_pick_reads_grip_then_carry():
 
 
 def test_a_grip_that_never_becomes_a_carry_is_reported_only_as_a_failure():
-    """Finn's either/or: grip+carry+success, OR failed attempt. Not both — a 0.3 s
+    """The reviewer's either/or: grip+carry+success, OR failed attempt. Not both — a 0.3 s
     fumble producing three lines is the noise P47 exists to prevent."""
     env, s, t = _fresh()
     kinds = _tick(env, t, s, True, closure=0.6)          # closes on it, never moves it
@@ -114,7 +114,7 @@ def test_the_grip_line_is_emitted_once_per_carry_not_once_per_step():
 
 
 def test_the_grip_is_stamped_when_the_jaws_closed_not_when_the_carry_confirmed():
-    """So the dashboard draws it ahead of the carry, which is the order Finn asked for."""
+    """So the dashboard draws it ahead of the carry, which is the order the reviewer asked for."""
     env, s, t = _fresh()
     evs = []
     for i in range(4):
@@ -150,7 +150,7 @@ def test_an_open_hand_brushing_the_object_is_not_a_grip():
 
 
 def test_the_grip_is_neutral_not_a_failure():
-    """Finn: "object carry should definitely not be red"—the same goes for its rung."""
+    """The reviewer: "object carry should definitely not be red"—the same goes for its rung."""
     assert int(StatusCode.OBJECT_GRIPPED) in NEUTRAL_STATUS_CODES
     assert int(StatusCode.OBJECT_CARRIED) in NEUTRAL_STATUS_CODES
 

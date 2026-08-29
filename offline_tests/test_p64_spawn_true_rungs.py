@@ -1,6 +1,6 @@
 """P64: a ladder rung that is already true at reset earns no credit.
 
-Reproducers, both from `isaac60_robolab120_pi05` (Finn confirmed both on the
+Reproducers, both from `isaac60_robolab120_pi05` (The reviewer confirmed both on the
 dashboard, 2026-08-26):
 
   BananasOutOfBinTask env0/env1 — ladder is

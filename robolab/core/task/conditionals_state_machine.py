@@ -130,7 +130,7 @@ class ConditionalsStateMachine:
         The probe used to run on the very first step. That is too early for any rung
         whose predicate needs the object to be AT REST (P46): at step 0 the object is
         still settling, the rung reads False, and it escapes exclusion. BlackItemsInBin
-        is the case Finn found -- the keyboard starts inside grey_bin, but
+        is the case the reviewer found -- the keyboard starts inside grey_bin, but
         ``object_in_container`` only turned true at 0.27 s, after the probe had already
         run, so the subtask was credited in all four envs before the arm moved.
 

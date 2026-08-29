@@ -199,7 +199,7 @@ class EventTracker:
             elif kind == "grabbed":
                 # P71: the detector reports a physical carry; it is NOT the progress signal.
                 # Emitting it as *_SUCCESS put a green "success" on 28 grasps of objects the
-                # task then flagged as WRONG (Finn: "it's giving an object grab success flag
+                # task then flagged as WRONG (The reviewer: "it's giving an object grab success flag
                 # for the wrong object"). OBJECT_CARRIED is neutral; the ladder's
                 # OBJECT_GRABBED_SUCCESS remains the green line that means progress.
                 events.append((f"'{obj_name}' carried (grasp established)",
@@ -213,7 +213,7 @@ class EventTracker:
                 # P61: stamp the burst at the first attempt, not at the flush that
                 # happens GRASP_ATTEMPT_BURST_S later
                 # P72: a brush against a bin or shelf is not a grasp attempt. 14 of 81
-                # attempt lines in rc3 were on a container or fixture (Finn: "I don't think
+                # attempt lines in rc3 were on a container or fixture (The reviewer: "I don't think
                 # this was a grasp attempt on bin"). A genuine attempt on a container is
                 # still reported by the wrong-object machinery.
                 if not is_container:
@@ -298,7 +298,7 @@ class EventTracker:
 
         # --- Gripper fully closed ON NOTHING (batched) ---
         # Upstream flagged every full closure, including the one holding the
-        # object (25 % of the corpus flags — VERIFIED_PLAN B5, H-R5-9, H-R6-6).
+        # object (25 % of the corpus flags — findings.md B5, H-R5-9, H-R6-6).
         # Now: closed AND no scene object in contact with the hand = an air grasp.
         # P66: the event uses its own, strict threshold -- see
         # robolab.constants.GRIPPER_CLOSED_EVENT_THRESHOLD. The predicate's 0.75
@@ -434,7 +434,7 @@ class EventTracker:
             if not active_mask[eid]:
                 continue
             mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device); mask[eid] = True
-            # One flag either way (Finn 2026-08-26: "not sure the distinction is
+            # One flag either way (The reviewer 2026-08-26: "not sure the distinction is
             # necessary… would probably just have placed") — the wording still says
             # whether the hand was carrying it, since grasp detection can miss a carry.
             how = "released inside" if kind == "placed" else "ended up in"
@@ -659,7 +659,7 @@ class EventTracker:
                 continue
 
         # TARGET_OBJECT_DROPPED is superseded by the GraspTracker's OBJECT_RELEASED /
-        # OBJECT_DROPPED (VERIFIED_PLAN B6): the state is still maintained for
+        # OBJECT_DROPPED (findings.md B6): the state is still maintained for
         # re-grab bookkeeping, but nothing is emitted here any more.
         dropped = self._target_was_grabbed & ~any_grabbed & active_mask & ~self._recorded_target_dropped
         if dropped.any():

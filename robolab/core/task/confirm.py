@@ -7,9 +7,9 @@ Verified corpus every recorded success ended with an object still moving (median
 8.9 cm/s at the final frame, 44 % above 10 cm/s, worst 1 m/s) — an object still
 falling into the bin, still sliding on the plate, still attached to a finger — so
 a human reviewer could not tell whether the placement would have survived
-(VERIFIED_PLAN A2, F§3, H-R5-11, H-R6-7, H-R7-6, H-R8-16).
+(findings.md A2, F§3, H-R5-11, H-R6-7, H-R7-6, H-R8-16).
 
-``confirmed_success_term`` wraps a task's ``success`` DoneTerm. Rule (Finn,
+``confirmed_success_term`` wraps a task's ``success`` DoneTerm. Rule (The reviewer,
 2026-08-25): if the target objects are already at rest when the predicate first
 holds, the episode ends right there; if something is still moving, wait until it
 has settled. "At rest" = every target object named by the predicate's parameters

@@ -181,7 +181,7 @@ class StatusCode(IntEnum):
     TARGET_OBJECT_BUMPED = 282     # the policy nudged an object the task is about — expected, not a failure
     OBJECT_CARRIED = 283           # P71: the grasp DETECTOR saw a carry established — a physical
                                    # observation, not progress. The ladder's OBJECT_GRABBED_SUCCESS
-                                   # is the progress line. Finn saw both and asked what the
+                                   # is the progress line. The reviewer saw both and asked what the
                                    # difference was; they were both green and identically named.
     OBJECT_GRIPPED = 284           # P78: the jaws closed on this object. The rung BEFORE a carry:
                                    # grip -> carry -> the ladder's success line. A carry with no
@@ -215,7 +215,7 @@ class StatusCode(IntEnum):
 # run summary (wrong grabs, collisions, displacements, etc.). Consumed by
 # ``robolab.eval.summarize.extract_events_from_log``.
 # Events that describe *what happened* without judging it — the dashboard paints
-# these grey (Finn 2026-08-26: "it should be a grey flag, it's not particularly
+# these grey (The reviewer 2026-08-26: "it should be a grey flag, it's not particularly
 # good or bad").
 NEUTRAL_STATUS_CODES: set[int] = {
     int(256),   # GRIPPER_FULLY_CLOSED — "closed on nothing"

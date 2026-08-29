@@ -76,7 +76,7 @@ DEBUG = False
 VERBOSE = False
 VISUALIZE = False
 ENABLE_SUBTASK_PROGRESS_CHECKING = True
-# Confirmed success (VERIFIED_PLAN A2): an episode is scored a success when the
+# Confirmed success (findings.md A2): an episode is scored a success when the
 # success predicate holds AND every target object has been at rest (slower than
 # SUCCESS_MAX_SPEED m/s) for SUCCESS_REST_S seconds in a row. An object already at
 # rest when the goal is reached ends the episode immediately; a moving one makes
@@ -84,11 +84,11 @@ ENABLE_SUBTASK_PROGRESS_CHECKING = True
 SUCCESS_REST_S = 0.2
 # A *placement* is credited in the subtask ladder only once the object has been at
 # rest (< SUCCESS_MAX_SPEED) for PLACEMENT_REST_S — the same question P30 asks of
-# success, so a bounce through a container no longer scores (VERIFIED_PLAN A2/H-B25;
+# success, so a bounce through a container no longer scores (findings.md A2/H-B25;
 # BananaInBowl v_ env3). 0 restores upstream's credit-on-first-frame.
 PLACEMENT_REST_S = 0.2
 SUCCESS_MAX_SPEED = 0.02
-# A grasp is a carry, not a touch (VERIFIED_PLAN B1; robolab/core/task/grasp.py):
+# A grasp is a carry, not a touch (findings.md B1; robolab/core/task/grasp.py):
 # the object must stay in contact for GRASP_HOLD_S with its offset to the hand
 # changing < GRASP_COUPLING_M while the hand moves >= GRASP_HAND_MOVE_M. A contact
 # that ends earlier with the hand >= GRASP_ATTEMPT_CLOSURE closed is one
@@ -100,7 +100,7 @@ GRASP_HAND_MOVE_M = 0.01
 GRASP_ATTEMPT_CLOSURE = 0.3
 GRASP_RELEASE_CLOSURE = 0.1
 # TOWED_WITHOUT_GRASP: a carry with the hand below GRASP_TOW_CLOSURE closed. Corpus
-# calibration (Finn, 2026-08-25): real grips of wide objects (oranges, cans) sit at
+# calibration (The reviewer, 2026-08-25): real grips of wide objects (oranges, cans) sit at
 # 0.2-0.35 of the closure range, confirmed tows at 0.00; 0.1 separates them.
 # Consecutive failed grasp attempts on the same object within GRASP_ATTEMPT_BURST_S
 # are one line with a count (a fumble at a banana produced 9 lines in 5 s).
@@ -111,11 +111,11 @@ GRASP_TOW_CLOSURE = 0.1
 # wide as the aperture) is a grip; one hanging 4-11 cm off-centre on one finger is a tow.
 GRASP_TOW_OFFSET_M = 0.03
 # ...and the object must actually be off its support: a tow lifts the object clear,
-# a drag slides it along the table (Finn 2026-08-26: "this was more of a drag on the
+# a drag slides it along the table (The reviewer 2026-08-26: "this was more of a drag on the
 # table… tighten it to when the dragged item is basically in the air").
 GRASP_TOW_LIFT_M = 0.02
 GRASP_JAW_BODY = "base_link"
-# Scene settling (VERIFIED_PLAN B12): object motion during the first
+# Scene settling (findings.md B12): object motion during the first
 # SETTLE_WARMUP_S of an episode, for objects the hand is not touching, is the
 # scene settling — reported once per env as SCENE_SETTLING, not as OBJECT_BUMPED
 # / OBJECT_MOVED on the robot's account.

@@ -2,10 +2,10 @@
 """Collateral placement: a non-target object ends up in a goal container.
 
 Success has no exclusivity requirement — "put X in Y" scores 1.0 even if the
-whole table is swept into Y (VERIFIED_PLAN A1: BBQSauceInBin env 3 succeeded
+whole table is swept into Y (findings.md A1: BBQSauceInBin env 3 succeeded
 with the mug, the mustard and the ranch also in the bin; B7: a deliberate
 wrong-object placement only ever showed up as OBJECT_BUMPED). Scores are left
-alone; this module raises one flag per object (Finn, 2026-08-25):
+alone; this module raises one flag per object (The reviewer, 2026-08-25):
 
 * ``WRONG_OBJECT_PLACED``    — a non-target the hand had held is released inside
                                a goal container;

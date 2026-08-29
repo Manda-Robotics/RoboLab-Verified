@@ -181,12 +181,12 @@ class PostStepContactRecorder(RecorderTerm):
     it, a flag change can only be re-verified by re-running the simulator, and the
     one question our own labelled data could not settle -- is the object held by
     ONE pad (a tow) or wedged between BOTH (not a tow) -- is unanswerable after
-    the fact. Finn's labels on six open-hand carries split exactly along that
+    the fact. the reviewer's labels on six open-hand carries split exactly along that
     line while jaw-axis geometry did not separate them at all.
 
     Per object: a (num_envs, 2) float32 of contact FORCE against the left and right
     pads, plus a (num_envs,) uint8 per container/surface the object touches. P77
-    moved from booleans to forces because the booleans could not separate Finn's
+    moved from booleans to forces because the booleans could not separate the reviewer's
     labelled drag and "magnetic" episodes from ordinary grasps; and destination
     contact is what `object_in_container(require_contact_with=True)` reads, without
     which placement flags cannot be recomputed from a recording.

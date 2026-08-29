@@ -1,16 +1,16 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""P71/P72/P73 — the three flag-quality complaints from Finn's rc3 review.
+"""P71/P72/P73 — the three flag-quality complaints from the reviewer's rc3 review.
 
 P71  The detector's grab line was OBJECT_GRABBED_SUCCESS, identical in name and
-     colour to the ladder's progress line. Finn: "there are two object grab
+     colour to the ladder's progress line. The reviewer: "there are two object grab
      success flags... let me know if this was on purpose". Worse, it put a green
      success on 28 grasps of objects the task then flagged as WRONG. It is now
      OBJECT_CARRIED, a neutral physical observation.
-P72  14 of 81 attempt lines were on a container or fixture. Finn: "I don't think
+P72  14 of 81 attempt lines were on a container or fixture. The reviewer: "I don't think
      this was a grasp attempt on bin".
 P73  10 of 81 followed a release of that same object: contact flickers as the
-     object leaves the hand. Finn: "there's often a grasp attempt failed after a
+     object leaves the hand. The reviewer: "there's often a grasp attempt failed after a
      release, which I don't really fully see".
 """
 import torch

@@ -225,7 +225,7 @@ def object_grabbed(
     Delegates to :class:`robolab.core.task.grasp.GraspTracker`: the object has
     been in contact with the hand for ``GRASP_HOLD_S`` while moving with it
     (offset change < ``GRASP_COUPLING_M``, hand moved ≥ ``GRASP_HAND_MOVE_M``).
-    Upstream used contact alone, so every touch was a grasp (VERIFIED_PLAN B1).
+    Upstream used contact alone, so every touch was a grasp (findings.md B1).
     """
     from robolab.core.task.grasp import get_grasp_tracker
     result = get_grasp_tracker(env).grasped(object, gripper_name, env_id=env_id)
@@ -318,7 +318,7 @@ def object_in_container(
     plus a margin (``hull_check.build_local_hull``'s ``open_top_cap_margin``,
     5 cm) — so an object resting slightly proud of a shallow container still
     counts, but one hovering high above it, or sitting on a shelf over it,
-    does not (VERIFIED_PLAN H-B6). Because the check is performed in the
+    does not (findings.md H-B6). Because the check is performed in the
     container's coordinates, the predicate is invariant to container
     orientation — a flipped or tipped container correctly fails.
     """

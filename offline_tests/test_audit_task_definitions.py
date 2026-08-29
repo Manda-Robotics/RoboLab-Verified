@@ -4,7 +4,7 @@
 already satisfies the success relation before the robot moves.
 
 Both cases below were reported as conflicts by the first version of this tool and
-were wrong. Finn checked the scenes and said so: the Rubik's tower's bottom cube
+were wrong. The reviewer checked the scenes and said so: the Rubik's tower's bottom cube
 already sits on the table, and one banana already sits in the crate. Measured
 from the corpus run's step-0 poses: 25 cm from the bin, and 2 cm from the crate
 centre. These are the regression anchors for the spawn-state check.

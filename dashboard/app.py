@@ -145,7 +145,7 @@ def _event_severity(name: str, code: int | None = None) -> str:
             pass
     # Named as well as coded. The coded check above reads NEUTRAL_STATUS_CODES from the
     # *running* interpreter, so a server started before a code was added there colours the
-    # event by its number instead -- which is how OBJECT_CARRIED showed up red for Finn on
+    # event by its number instead -- which is how OBJECT_CARRIED showed up red for the reviewer on
     # a dashboard left running since the day before P71.
     if u in ("GRIPPER_FULLY_CLOSED", "OBJECT_RELEASED", "SCENE_SETTLING", "TARGET_OBJECT_BUMPED",
              "OBJECT_CARRIED", "OBJECT_GRIPPED"):

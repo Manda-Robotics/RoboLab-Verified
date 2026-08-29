@@ -37,7 +37,7 @@ class WhiteMugInCenterOfTableTask(Task):
             # Grab, then place-and-release: the placement check carries
             # require_gripper_detached=True exactly like `success` above. The old third
             # condition, object_dropped (= "not touching the gripper"), is true at spawn and
-            # credited itself at 0.07 s before the robot moved (VERIFIED_PLAN H-B1, H-R6-11).
+            # credited itself at 0.07 s before the robot moved (findings.md H-B1, H-R6-11).
             conditions={
                 "mug": [
                     partial(object_grabbed, object="mug"),

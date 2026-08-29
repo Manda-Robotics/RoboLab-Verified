@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Score re-annotated episodes against Finn's labelled verdicts.
+"""Score re-annotated episodes against the reviewer's labelled verdicts.
 
 `analysis/flag_labels.jsonl` records what a human said the right answer was for a
 specific (run, task, env, time, flag). This replays the current rules over the
@@ -9,7 +9,7 @@ recorded episodes and reports, per label:
     missing        -> the flag must now be PRESENT
     correct        -> the flag must still be there
     correct-absent -> the flag must still NOT be there
-    ambiguous      -> reported, never scored (Finn's "unclear" maps here)
+    ambiguous      -> reported, never scored (the reviewer's "unclear" maps here)
 
 The value is the diff over time: run it after each patch and it says which flag a
 change fixed, and which one it broke. A label whose signal was never recorded is

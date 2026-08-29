@@ -1,5 +1,5 @@
 """A task's success termination and its subtask ladder must agree on where each
-object goes (P11 / VERIFIED_PLAN H-R8-3). Uses scripts/find_task_definition_conflicts.py."""
+object goes (P11 / findings.md H-R8-3). Uses scripts/find_task_definition_conflicts.py."""
 import subprocess
 import sys
 from pathlib import Path

@@ -60,7 +60,7 @@ def build_local_hull(
             the hull) at which the open-top polytope is capped. ``None``
             restores the historical unbounded column — which scored an object
             on a shelf above a bin, or one still falling toward it, as "in the
-            container" (VERIFIED_PLAN H-B6; seen live in H-R5-8 / H-R7-6).
+            container" (findings.md H-B6; seen live in H-R5-8 / H-R7-6).
             The margin is finite but non-zero on purpose: a shallow bowl
             legitimately holds objects whose centroid rests above the rim
             plane (a banana in a bowl), so rim-exact capping would break

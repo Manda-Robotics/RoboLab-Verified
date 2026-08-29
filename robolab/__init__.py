@@ -5,7 +5,7 @@
 RoboLab - A robotics laboratory framework for simulation and experimentation.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.3.1+verified.1"
 __author__ = "RoboLab Team"
 
 # Import constants module to make it available at package level

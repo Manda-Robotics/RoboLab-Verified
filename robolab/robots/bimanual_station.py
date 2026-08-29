@@ -129,7 +129,7 @@ class MobileAlohaCfg:
 
 # The cart body under the plates: top face = the plate (15 cm below the table top),
 # bottom on the canonical ground (-0.697); 0.40 m deep so it stops short of the
-# table's near edge. Without it the arms looked floor-mounted (Finn, 2026-08-25),
+# table's near edge. Without it the arms looked floor-mounted (The reviewer, 2026-08-25),
 # and the real mast camera sees the cart top at the bottom of its frame.
 MobileAlohaCfg.table_fixture = TableFixtureCfg(
     usd_path=os.path.join(ASSET_DIR, "fixtures", "mobile_cart.usda"),

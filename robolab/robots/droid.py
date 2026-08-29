@@ -184,7 +184,7 @@ class WristCameraCfg:
 # IsaacLab ContactSensor requires exactly one prim per env for filter_prim_paths_expr
 # (force_matrix_w) to work, so a regex matching both fingers breaks filtered contact
 # detection. Upstream therefore watched the LEFT pad only — an object touched by the
-# right pad registered no contact at all (VERIFIED_PLAN H-B22; on the pod
+# right pad registered no contact at all (findings.md H-B22; on the pod
 # 2026-08-26 BowlStacking env0/env2 closed on the bowl and were logged "Gripper
 # closed on nothing"). Declare one concrete sensor per pad and an alias group, which
 # the contact layer already supports ("gripper" = either pad).

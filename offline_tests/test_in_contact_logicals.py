@@ -1,4 +1,4 @@
-"""`in_contact` combines per-pair contact with `logical`/`K` (VERIFIED_PATCHES P06).
+"""`in_contact` combines per-pair contact with `logical`/`K` (changes.md P06).
 
 `predicate_logic` imports isaaclab at module level; we stub those imports so the
 pure-Python logic can be exercised without a simulator.

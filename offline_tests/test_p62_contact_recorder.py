@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """P62: per-pad gripper contact is recorded, so a tow can be told from a wedge.
 
-Finn labelled six open-hand carries: the three real tows are held by one pad, and
+The reviewer labelled six open-hand carries: the three real tows are held by one pad, and
 the two he rejected (`redonion`, `tuna_can`) are wedged between both. Jaw-axis
 geometry did not separate those classes at all -- tows measured 1.1/1.2/10.6 cm
 and non-tows 3.9/0.1/2.8 cm. Per-pad contact does, and it was being computed

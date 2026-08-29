@@ -6,7 +6,7 @@ each rigid object's height at step 0 and at ``--after`` seconds, and report
 objects whose *median* drop across episodes exceeds ``--threshold`` (the median
 ignores episodes where the robot moved the object early). An object that falls
 at reset settles under the policy's first actions, fires ``OBJECT_BUMPED`` /
-``OBJECT_MOVED`` for nothing, and can bounce off the table (VERIFIED_PLAN B12,
+``OBJECT_MOVED`` for nothing, and can bounce off the table (findings.md B12,
 C3, H-R5-7, H-R8-8, H-R8-14).
 
     python scripts/check_rest_heights.py --output output --tasks robolab/tasks/benchmark

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """P60 (the tracker emits the grasp) and P61 (lines are stamped at their onset).
 
-Both come from Finn's r3 review. P60: BowlStackingRightOnLeft printed a release
+Both come from the reviewer's r3 review. P60: BowlStackingRightOnLeft printed a release
 and a drop but never a grab, because the grab line was only ever a side effect of
 a subtask ladder containing an `object_grabbed` step -- and that task's ladder is
 a single placement condition. P61: "the grasp attempt is already over and then it

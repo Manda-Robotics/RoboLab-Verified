@@ -337,7 +337,7 @@ class LocalLoader:
         task, from ``env_cfg.json``'s ``observations.viewport_cam`` group. Cached
         per task dir. A name containing ``mirror`` is the front-facing
         ``EgocentricMirroredCameraCfg`` (robot's right appears on the viewer's
-        left — VERIFIED_PLAN D3/E8)."""
+        left — findings.md D3/E8)."""
         cache = self.__dict__.setdefault("_viewport_cam_cache", {})
         key = str(task_dir)
         if key not in cache:

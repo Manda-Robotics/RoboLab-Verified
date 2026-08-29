@@ -9,7 +9,7 @@ stalled on an object it is holding reads as "fully closed". Anchor, measured fro
 wedged between the fingers blocks it -- and 69 of that episode's 74 events are
 GRIPPER_FULLY_CLOSED. At the event threshold of 0.98 it emits none.
 
-Finn 2026-08-26: "I've seen this bug a couple times where the gripper actually
+The reviewer 2026-08-26: "I've seen this bug a couple times where the gripper actually
 wasn't fully closed, so this is also true."
 """
 import math
