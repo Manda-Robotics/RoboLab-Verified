@@ -146,28 +146,27 @@ compared). Results are recorded in `docs/VERIFIED_PATCHES.md` under P79 as they 
 ### Results (rc7, 2026-08-29)
 
 Pod `robolab-verified6` (L40), π0.5 jointpos, 4 envs per task, one process per task,
-30 of 32 runs complete (the last two `realistic` runs were still on the pod when it
-self-stopped; see the ledger). Every override run's `friction_applied.json` PASSes the
+all 32 runs complete. Every override run's `friction_applied.json` PASSes the
 P79 predicate — the coefficients below are what PhysX held, not what was asked for.
 
 | task | upstream (μ 2.0) | 1.0 | 0.5 | realistic (≈0.6) |
 |---|---|---|---|---|
 | BananaInBowl | 3/4 | 3/4 | 3/4 | 3/4 |
 | BlackItemsInBin | 0/4 | 0/4 | 0/4 | 0/4 |
-| BowlStackingRightOnLeft | 0/4 | 0/4 | 1/4 | — |
-| ClutterPumpkin | 0/4 | 0/4 | 0/4 | — |
+| BowlStackingRightOnLeft | 0/4 | 0/4 | 1/4 | 0/4 |
+| ClutterPumpkin | 0/4 | 0/4 | 0/4 | 0/4 |
 | FoodPacking2Cans | 0/4 | 0/4 | 0/4 | 0/4 |
 | FruitsOnion | 1/4 | 2/4 | 3/4 | 2/4 |
 | GrabAFruit | 0/4 | 0/4 | 0/4 | 0/4 |
 | StackWhiteMugs | 1/4 | 1/4 | 1/4 | 2/4 |
-| **success rate** | **5/32 (16 %)** | 6/32 (19 %) | 8/32 (25 %) | 7/24 (29 %) |
-| carries / episode | 2.2 | 1.8 | 1.5 | 1.6 |
+| **success rate** | **5/32 (16 %)** | 6/32 (19 %) | 8/32 (25 %) | 7/32 (22 %) |
+| carries / episode | 2.2 | 1.8 | 1.5 | 1.3 |
 | failed grasp attempts / episode | **1.6** | 5.8 | **7.3** | 7.2 |
-| drops (closed hand) / episode | 0.4 | 0.6 | 0.8 | 1.0 |
-| events / episode | 20.0 | 27.5 | 30.0 | 30.6 |
+| drops (closed hand) / episode | 0.4 | 0.6 | 0.8 | 0.9 |
+| events / episode | 20.0 | 27.5 | 30.0 | 28.2 |
 | tows / physics-artifact episodes | 0 | 0 | 2 | 0 |
 | objects off the table | 4 | 2 | 2 | 1 |
-| one-pad carries | 2/69 (3 %) | 3/59 (5 %) | 2/47 (4 %) | 4/39 (10 %) |
+| one-pad carries | 2/69 (3 %) | 3/59 (5 %) | 2/47 (4 %) | 4/43 (9 %) |
 
 **What it says.**
 
@@ -178,7 +177,7 @@ P79 predicate — the coefficients below are what PhysX held, not what was asked
    supported** on this slice: π0.5's outcomes on these eight tasks are robust to a 4×
    change in μ.
 2. **The behaviour behind the number is not robust.** Failed grasp attempts go 1.6 →
-   7.3 per episode (×4.5), carries 2.2 → 1.5, closed-hand drops 0.4 → 1.0. At realistic
+   7.3 per episode (×4.5), carries 2.2 → 1.5, closed-hand drops 0.4 → 0.9. At realistic
    friction the policy slips and re-grasps far more before reaching the same outcome —
    FoodPacking2Cans alone goes from 26 to 131–149 failed attempts across four episodes,
    ClutterPumpkin from 6 to 57. Every event-based metric this fork reports (attempt
