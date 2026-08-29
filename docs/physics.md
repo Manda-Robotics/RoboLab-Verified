@@ -143,6 +143,61 @@ rate, carries / failed attempts / drops per episode, tows, one-pad carries, and 
 verdict of every run, so a condition whose materials did not land is marked rather than
 compared). Results are recorded in `docs/VERIFIED_PATCHES.md` under P79 as they come in.
 
+### Results (rc7, 2026-08-29)
+
+Pod `robolab-verified6` (L40), π0.5 jointpos, 4 envs per task, one process per task,
+30 of 32 runs complete (the last two `realistic` runs were still on the pod when it
+self-stopped; see the ledger). Every override run's `friction_applied.json` PASSes the
+P79 predicate — the coefficients below are what PhysX held, not what was asked for.
+
+| task | upstream (μ 2.0) | 1.0 | 0.5 | realistic (≈0.6) |
+|---|---|---|---|---|
+| BananaInBowl | 3/4 | 3/4 | 3/4 | 3/4 |
+| BlackItemsInBin | 0/4 | 0/4 | 0/4 | 0/4 |
+| BowlStackingRightOnLeft | 0/4 | 0/4 | 1/4 | — |
+| ClutterPumpkin | 0/4 | 0/4 | 0/4 | — |
+| FoodPacking2Cans | 0/4 | 0/4 | 0/4 | 0/4 |
+| FruitsOnion | 1/4 | 2/4 | 3/4 | 2/4 |
+| GrabAFruit | 0/4 | 0/4 | 0/4 | 0/4 |
+| StackWhiteMugs | 1/4 | 1/4 | 1/4 | 2/4 |
+| **success rate** | **5/32 (16 %)** | 6/32 (19 %) | 8/32 (25 %) | 7/24 (29 %) |
+| carries / episode | 2.2 | 1.8 | 1.5 | 1.6 |
+| failed grasp attempts / episode | **1.6** | 5.8 | **7.3** | 7.2 |
+| drops (closed hand) / episode | 0.4 | 0.6 | 0.8 | 1.0 |
+| events / episode | 20.0 | 27.5 | 30.0 | 30.6 |
+| tows / physics-artifact episodes | 0 | 0 | 2 | 0 |
+| objects off the table | 4 | 2 | 2 | 1 |
+| one-pad carries | 2/69 (3 %) | 3/59 (5 %) | 2/47 (4 %) | 4/39 (10 %) |
+
+**What it says.**
+
+1. **The success rate does not fall when friction drops from 2.0 to 0.5.** If anything it
+   rises (16 → 25 %), but 5/32 against 8/32 is not distinguishable (Fisher p = 0.54; the
+   95 % Beta intervals are 0.07–0.32 and 0.13–0.42). FINDINGS §5's worry — that the
+   published leaderboard is "substantially an artefact of contact tuning" — is **not
+   supported** on this slice: π0.5's outcomes on these eight tasks are robust to a 4×
+   change in μ.
+2. **The behaviour behind the number is not robust.** Failed grasp attempts go 1.6 →
+   7.3 per episode (×4.5), carries 2.2 → 1.5, closed-hand drops 0.4 → 1.0. At realistic
+   friction the policy slips and re-grasps far more before reaching the same outcome —
+   FoodPacking2Cans alone goes from 26 to 131–149 failed attempts across four episodes,
+   ClutterPumpkin from 6 to 57. Every event-based metric this fork reports (attempt
+   counts, drop counts, carries) is therefore friction-dependent, and a comparison of
+   those metrics across runs is only meaningful at one stated `--friction`.
+3. **Fruit at μ 5.0 was hurting, not helping.** FruitsOnion is the one task that moves
+   (1 → 2 → 3 of 4 as μ drops); its onion and lemons are the objects authored at 5.0.
+4. **The "magnetic object" artifact is not friction.** The only two `TOWED_WITHOUT_GRASP`
+   flags in the sweep fired at μ 0.5 (`BlackItemsInBin` env 2 `marker` @ 108.7 s,
+   `ClutterPumpkin` env 1 `orange_01` @ 54.3 s) — the same stuck-to-finger behaviour
+   reviewers labelled at 2.0. It survives a 4× friction cut, so it is a contact/solver
+   problem, not a material one. These are also the first runtime firings of P43.
+
+**Decision.** The default stays `upstream`. The measurement is published with the
+benchmark; anyone comparing *behaviour* (not just success) must state the friction they
+ran at, and `friction_applied.json` in every run directory makes that checkable.
+Statistical power is the caveat: 32 episodes per condition resolves a ~25-point
+difference in success rate, not a 10-point one.
+
 ## The arm controller: gravity off, PD 400/80, EEF offset
 
 `robolab/robots/droid.py` spawns the Franka with `disable_gravity=True`, implicit PD
