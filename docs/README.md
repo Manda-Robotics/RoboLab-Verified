@@ -28,6 +28,7 @@ The core concepts are:
 - **[Event Tracking](event_tracking.md)** — Monitoring task-relevant events during execution
 #### Variations
 - **[Robots](robots.md)** — Robot articulation configs, actuators, and action spaces
+- **[Physics](physics.md)** — What the assets' friction actually is, the `--friction` run parameter (P79), and why the arm's gravity-off / PD 400/80 controller is left as is
 - **[Cameras](camera.md)** — Scene cameras and robot-attached cameras
 - **[Lighting](lighting.md)** — Scene lighting (sphere, directional, and custom lights)
 - **[Backgrounds](background.md)** — HDR/EXR dome light backgrounds

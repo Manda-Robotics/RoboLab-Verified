@@ -246,8 +246,11 @@ AlohaCfg.ee_recorder_bodies = {
     "left_ee_pose": EE_BODY_NAME["left"],
     "right_ee_pose": EE_BODY_NAME["right"],
 }
+# P79 friction override targets (ViperX finger links; declared, not yet read back on a GPU).
+AlohaCfg.friction_bodies = [f"{arm}_{side}_finger_link" for arm in ("left", "right") for side in ("left", "right")]
 AlohaGymMatchCfg.table_fixture = None
 AlohaGymMatchCfg.ee_recorder_bodies = dict(AlohaCfg.ee_recorder_bodies)
+AlohaGymMatchCfg.friction_bodies = list(AlohaCfg.friction_bodies)
 
 
 @configclass

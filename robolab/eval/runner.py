@@ -46,8 +46,24 @@ def _unit_interval(s: str) -> float:
     return v
 
 
+def _friction_arg(text: str) -> str:
+    """Validate --friction at parse time (pure Python), before Isaac boots."""
+    from robolab.core.physics.friction import parse_friction
+    try:
+        parse_friction(text)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e))
+    return text
+
+
 def add_common_eval_args(parser: argparse.ArgumentParser) -> None:
     """Add the shared eval flags. Call this once per runner script."""
+    parser.add_argument("--friction", type=_friction_arg, default="upstream",
+                        help=("Object + finger-pad friction override (P79): 'upstream' (default, the "
+                              "authored USD materials, mostly 2.0), a number (one coefficient for "
+                              "every object and the pads), 'realistic' (bundled per-class table), "
+                              "or a path to a .json table. Recorded in env_cfg.json and "
+                              "friction_applied.json. See docs/physics.md."))
     parser.add_argument("--num-envs", "--num_envs", type=int, default=1,
                         help="Number of environments to spawn.")
     parser.add_argument("--task", nargs="+", default=None,
@@ -161,6 +177,10 @@ def run_evaluation(
 
     import robolab.constants
     from robolab.constants import PACKAGE_DIR, get_timestamp, set_output_dir
+
+    # P79: every runner shares add_common_eval_args, so the friction knob is applied
+    # here rather than in each runner's constants block. Must precede env creation.
+    robolab.constants.FRICTION = getattr(args, "friction", None) or "upstream"
 
     # Line-buffer stdout: with output redirected to a file Python block-buffers,
     # and Isaac often exits before the buffer is flushed, losing the run summary.

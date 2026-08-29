@@ -29,8 +29,9 @@ that have become unwinnable; record the signals needed to re-check a flag decisi
 without re-running the simulator; add two bimanual embodiments and a VLM policy
 connector; ship offline tooling that audits task definitions and scenes.
 
-**Does not:** change the physics, the friction table, the scene geometry, or any task's
-success condition. Where a defect is in the scene rather than the harness, this fork
+**Does not:** change the physics *defaults* -- the friction table, gravity, gains -- the
+scene geometry, or any task's success condition. Friction becomes a run parameter
+(`--friction`, off by default) so its effect can be measured rather than argued. Where a defect is in the scene rather than the harness, this fork
 *reports* it — see "Known and deliberately unchanged" in `CHANGELOG.md`.
 
 ## Status — read before citing any number

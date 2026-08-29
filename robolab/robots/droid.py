@@ -165,6 +165,9 @@ DroidCfg.table_fixture = FRANKA_TABLE_FIXTURE
 # create_recorder_config. "base_link" is the Robotiq 2F-85 gripper base
 # (Gripper/Robotiq_2F_85/base_link).
 DroidCfg.ee_recorder_bodies = {"ee_pose": "base_link"}
+# P79: the finger-pad bodies a `--friction` override is applied to (the two prims that
+# carry the Robotiq PhysicsMaterial in the USD). See docs/physics.md#friction.
+DroidCfg.friction_bodies = ["left_inner_finger", "right_inner_finger"]
 
 
 @configclass

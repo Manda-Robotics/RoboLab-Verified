@@ -191,6 +191,9 @@ BimanualFrankaCfg.ee_recorder_bodies = {
     "left_ee_pose": EE_BODY_NAME["left_arm"],
     "right_ee_pose": EE_BODY_NAME["right_arm"],
 }
+# P79 friction override targets: both pads of both Robotiq hands (declared from the
+# asset builder's link names; not yet read back on a GPU -- see docs/physics.md).
+BimanualFrankaCfg.friction_bodies = [f"{arm}_{side}_inner_finger" for arm in ("left_arm", "right_arm") for side in ("left", "right")]
 
 
 @configclass

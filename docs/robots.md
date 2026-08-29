@@ -85,6 +85,19 @@ MyBimanualCfg.ee_recorder_bodies = {
 }
 ```
 
+### Friction Bodies (optional)
+
+The `friction_bodies` label names the articulation bodies that carry the finger-pad
+collision shapes. A `--friction` override ([physics.md](physics.md#friction)) is applied
+to these bodies as well as to every rigid scene object; without the label the pads keep
+their authored material, a warning is printed, and `verify_patches.py` reports P79 as
+FAIL for the run. Use the link names from the robot USD:
+
+```python
+# DROID: the two prims bound to the Robotiq PhysicsMaterial
+DroidCfg.friction_bodies = ["left_inner_finger", "right_inner_finger"]
+```
+
 ### Label Assignment Rules
 
 Assign the labels **after the class definition — and after any subclasses**,

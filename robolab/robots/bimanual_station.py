@@ -139,6 +139,7 @@ MobileAlohaCfg.ee_recorder_bodies = {
     "left_ee_pose": EE_BODY_NAME["left"],
     "right_ee_pose": EE_BODY_NAME["right"],
 }
+MobileAlohaCfg.friction_bodies = [f"{arm}_{side}_finger_link" for arm in ("left", "right") for side in ("left", "right")]  # P79
 
 
 @configclass
@@ -166,6 +167,7 @@ BimanualStationCfg.ee_recorder_bodies = {
     "left_ee_pose": EE_BODY_NAME["left"],
     "right_ee_pose": EE_BODY_NAME["right"],
 }
+BimanualStationCfg.friction_bodies = [f"{arm}_{side}_finger_link" for arm in ("left", "right") for side in ("left", "right")]  # P79
 
 
 @configclass

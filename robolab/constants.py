@@ -162,6 +162,12 @@ EMIT_PLACED_WITHOUT_LIFT = False
 # OBJECT_FELL_OFF_TABLE flag; TARGET_LOST terminal failure when the success
 # condition can no longer be met (robolab/core/task/off_table.py).
 OFF_TABLE_DROP_M = 0.15
+# P79: object + finger-pad friction as a run parameter. "upstream" leaves the authored
+# USD materials untouched (the benchmark default); a number sets one coefficient on every
+# object and on the robot's `friction_bodies`; "realistic" or a .json path selects a
+# per-class table. Set from `--friction` by robolab.eval.runner.run_evaluation; read by
+# robolab.core.physics.friction.install at env-cfg build time. See docs/physics.md.
+FRICTION = "upstream"
 RECORD_IMAGE_DATA = False
 DEVICE = "cuda:0"
 
