@@ -11,7 +11,7 @@ __pycache__
 **/not_used/**
 **/old/**
 **NOT_USED.py
-**OLD.py
+*_OLD.py
 .venv
 debug/*
 !debug/scripts/
