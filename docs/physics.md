@@ -138,7 +138,10 @@ carries that ever load both pads (`scripts/contact_force_profile.py`, P77).
 | ClutterPumpkin | clutter, bumps, `SCENE_SETTLING` |
 | BowlStackingRightOnLeft | rim grasps of nested bowls |
 
-Results are recorded in `docs/VERIFIED_PATCHES.md` under P79 as they come in.
+`scripts/friction_sweep_report.py output/rc7_*` renders the per-condition table (success
+rate, carries / failed attempts / drops per episode, tows, one-pad carries, and the P79
+verdict of every run, so a condition whose materials did not land is marked rather than
+compared). Results are recorded in `docs/VERIFIED_PATCHES.md` under P79 as they come in.
 
 ## The arm controller: gravity off, PD 400/80, EEF offset
 
