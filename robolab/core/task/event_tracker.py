@@ -316,7 +316,11 @@ class EventTracker:
             except Exception:
                 pass
         closed_on_air = fully_closed & ~holding
-        new_closed = closed_on_air & ~self._recorded_gripper_fully_closed & active_mask
+        # Not during the reset warm-up: the hand's initial pose can read as closed for a
+        # step or two before the policy has acted (seen at step 2 on MarkerInMug).
+        _dt = float(getattr(env, "step_dt", 0.0) or 0.0)
+        _warm = (env.episode_length_buf.float() * _dt) < float(getattr(robolab.constants, "SETTLE_WARMUP_S", 0.0) or 0.0)
+        new_closed = closed_on_air & ~self._recorded_gripper_fully_closed & active_mask & ~_warm
         if new_closed.any():
             events.append(("Gripper closed on nothing", StatusCode.GRIPPER_FULLY_CLOSED, new_closed.clone()))
             self._recorded_gripper_fully_closed |= new_closed

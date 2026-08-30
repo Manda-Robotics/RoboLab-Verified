@@ -279,8 +279,12 @@ class GraspTracker:
                 self._events.append((eid, obj, hand, "gripped",
                                      {"onset_step": int(st.grip_step[eid])}))
                 st.grip_flagged[eid] = True
-            self._events.append((eid, obj, hand, "grabbed",
-                                 {"onset_step": int(st.contact_start_step[eid])}))
+            # The carry's onset is the start of the coupled contact, but never before the
+            # grip: read in step order the log must show grip, then carry.
+            onset = int(st.contact_start_step[eid])
+            if int(st.grip_step[eid]) >= 0:
+                onset = max(onset, int(st.grip_step[eid]))
+            self._events.append((eid, obj, hand, "grabbed", {"onset_step": onset}))
 
         lost = st.grasped & ~contact
         ended_attempt = (~st.grasped) & st.prev_contact & ~contact & ~fresh

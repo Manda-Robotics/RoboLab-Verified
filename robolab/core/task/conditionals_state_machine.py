@@ -660,8 +660,10 @@ class ConditionalsStateMachine:
             # All conditions completed
             return "All conditions completed.", StatusCode.OK
 
-        # Use the first incomplete object for error code
-        obj_name, func_str, current_idx, total_steps, error_code = incomplete_objects[0]
+        # Report the object that got furthest (for "any" ladders the first listed object
+        # is rarely the one the policy worked on: GrabAFruit named the banana while the
+        # orange was the one grabbed).
+        obj_name, func_str, current_idx, total_steps, error_code = max(incomplete_objects, key=lambda t: t[2])
 
         # Format message based on logical mode
         if self.subtask.logical == "any":

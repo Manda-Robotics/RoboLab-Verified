@@ -33,7 +33,7 @@ import sys
 CONTAINER_HINTS = ("bin", "crate", "rack", "shelf", "pail", "box", "table", "plate")
 NEEDS_A_RUN = {
     "P74": "moves the spawn probe to the end of the settle warm-up — the ladder must be re-stepped",
-    "P62+": "tow / drag: needs contact force, which is not recorded",
+    "P62+": "tow / drag: the pad-force discriminator (recorded since P77) is not yet a rule this replay applies",
 }
 
 

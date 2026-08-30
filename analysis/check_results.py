@@ -134,8 +134,9 @@ def diagnose_hdf5(folder_path: str):
         if extra_in_hdf5:
             print(f"  {YELLOW}Extra in HDF5 (not in JSON): {extra_in_hdf5}{RESET}")
 
-        # Show info for each demo
-        for demo_name in available_demos[:5]:  # Limit to first 5
+        # Show info for each demo (first 5), from whichever file holds it
+        demo_files = [(d, hf) for hf in hdf5_files for d in get_available_demos(hf)]
+        for demo_name, hdf5_path in demo_files[:5]:
             info = get_demo_info(hdf5_path, demo_name)
             if info:
                 print(f"    {demo_name}: samples={info.get('num_samples', 'N/A')}, "
@@ -204,8 +205,8 @@ def check_folder(folder_path: str, verbose: bool = False) -> dict:
                 })
             continue
 
-        # Get available demos in HDF5
-        available_demos = get_available_demos(hdf5_path)
+        # Get available demos across the run's HDF5 files
+        available_demos = [d for hf in hdf5_files for d in get_available_demos(hf)]
 
         for ep in episodes:
             results["total"] += 1
@@ -348,7 +349,9 @@ Examples:
 
     for folder in args.folder:
         # Resolve folder path
-        if os.path.isabs(folder):
+        # A path that exists as given (absolute, or relative to the cwd such as
+        # ``output/my_run``) is used as is; a bare run name resolves under output/.
+        if os.path.isabs(folder) or os.path.isdir(folder):
             folder_path = folder
         else:
             folder_path = os.path.join(DEFAULT_OUTPUT_DIR, folder)

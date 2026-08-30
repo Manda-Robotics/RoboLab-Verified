@@ -290,6 +290,17 @@ def _shape_rows(mats) -> list[list[float]]:
     return [[round(float(v), 4) for v in row] for row in mats]
 
 
+def summarise_rows(rows) -> dict:
+    """One line per object for a human: the coefficient pair, the shape count, and
+    whether every shape agrees."""
+    if not isinstance(rows, list) or not rows:
+        return {"shapes": 0}
+    distinct = sorted({(round(r[0], 4), round(r[1], 4), round(r[2], 4)) for r in rows})
+    s, d, r = distinct[0]
+    return {"static": s, "dynamic": d, "restitution": r, "shapes": len(rows), "uniform": len(distinct) == 1,
+            **({"distinct": [list(x) for x in distinct]} if len(distinct) > 1 else {})}
+
+
 def read_applied(env, requested: dict | None = None) -> dict:
     """Read every rigid object's (and the pads') PhysX material properties, env 0.
 
@@ -316,6 +327,8 @@ def read_applied(env, requested: dict | None = None) -> dict:
             i = robot.body_names.index(body)
             start = sum(shapes_per_link[:i])
             out["gripper"][body] = _shape_rows(mats[start:start + shapes_per_link[i]])
+    out["summary"] = {"objects": {n: summarise_rows(r) for n, r in out["objects"].items()},
+                      "gripper": {b: summarise_rows(r) for b, r in out["gripper"].items()}}
     return out
 
 

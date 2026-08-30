@@ -21,6 +21,7 @@ import argparse
 import glob
 import json
 import os
+import re
 import sys
 from collections import Counter
 from dataclasses import dataclass, field
@@ -54,6 +55,10 @@ class Episode:
     success: bool
     final_step: int
     events: list
+
+    @property
+    def task_dir(self) -> str:
+        return os.path.dirname(self.path)
 
     @property
     def label(self) -> str:
@@ -114,6 +119,46 @@ def _catalog_class(name: str) -> str | None:
         if key in _CATALOG_CLASS:
             return _CATALOG_CLASS[key]
     return None
+
+
+_ROLES: dict[str, tuple[set, set]] = {}
+
+
+def task_roles(task_dir: str) -> tuple[set, set]:
+    """(targets, destinations) of the task, read from the run's env_cfg.json.
+
+    The role of an object is the task's, not the object's: in BowlStackingLeftOnRight the
+    pick target is a bowl and the destination is the other bowl. The subtask ladder and
+    the success term name both -- ``object=['bowl_2']``, ``container='bowl_1'`` -- and
+    they are serialised into env_cfg.json, so the verifier reads them from there. Empty
+    sets when the file is absent (an older recording); the name heuristics then apply.
+    """
+    if task_dir in _ROLES:
+        return _ROLES[task_dir]
+    targets, dests = set(), set()
+    path = os.path.join(task_dir, "env_cfg.json")
+    if os.path.exists(path):
+        text = json.dumps(json.load(open(path)).get("subtasks")) + json.dumps(json.load(open(path)).get("terminations", ""))
+        for key, bucket in (("object", targets), ("objects", targets),
+                            ("container", dests), ("containers", dests), ("surface", dests), ("surfaces", dests)):
+            for m in re.finditer(r"\b%s=(\[[^\]]*\]|'[^']*')" % key, text):
+                bucket.update(re.findall(r"'([^']+)'", m.group(1)))
+    _ROLES[task_dir] = (targets, dests)
+    return _ROLES[task_dir]
+
+
+def is_destination(name: str | None, task_dir: str) -> bool:
+    """A container or fixture *for this task*: its declared destinations first, then --
+    for objects the task does not name -- the catalog class and the name hints. A task's
+    own pick target is never a destination, whatever it is called."""
+    if not name:
+        return False
+    targets, dests = task_roles(task_dir)
+    if name in dests:
+        return True
+    if name in targets:
+        return False
+    return looks_like_destination(name)
 
 
 def looks_like_destination(name: str | None) -> bool:
@@ -178,7 +223,7 @@ def p71_no_green_on_tracker_grabs(eps):
 def p72_no_attempts_on_containers(eps):
     """Grasp-attempt tracking skips containers and fixtures."""
     attempts = [(e, ev) for e in eps for ev in e.of(GRASP_ATTEMPT_FAILED)]
-    bad = [(e, ev) for e, ev in attempts if looks_like_destination(object_of(ev))]
+    bad = [(e, ev) for e, ev in attempts if is_destination(object_of(ev), e.task_dir)]
     if bad:
         return Result("P72", "no attempts on containers", "FAIL",
                       f"{len(bad)} of {len(attempts)} attempt lines are on a container or fixture",
