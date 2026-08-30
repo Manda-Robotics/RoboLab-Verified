@@ -29,7 +29,7 @@ jobs:
         # lints, h5py/numpy for the recording checks. Isaac Sim is not needed.
         run: |
           python -m pip install --upgrade pip
-          pip install pytest numpy scipy h5py usd-core
+          pip install pytest numpy scipy h5py pyyaml usd-core
           pip install torch --index-url https://download.pytorch.org/whl/cpu
 
       - name: offline test suite
