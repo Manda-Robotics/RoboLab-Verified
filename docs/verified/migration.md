@@ -16,7 +16,7 @@ Added fields, one row per episode:
 | `towed_objects` | list | the objects behind `physics_artifact` | P43 |
 | `collateral_placed` | int | non-target objects released inside a goal container after reset | P36 |
 | `early_resets`, `pre_satisfied` | int, bool | how often the episode was silently re-reset for terminating within two steps, and whether it still did after the cap | P09 |
-| `events` | dict | counts per event name; the vocabulary is the new one below | — |
+| `events` | dict | counts per event name over every line of the log, ladder lines included | P80 |
 
 `success` is now read from the task's `success` term only. Upstream took the OR of every
 non-timeout termination term, which would have scored a failure term as a win (P38).
@@ -62,6 +62,8 @@ colours by that set first and by name as a fallback.
 | `OBJECT_BUMPED` (258) | threshold 2 cm (was 5 cm); targets included; not emitted while the policy holds the object or within 1 s of releasing it |
 | `OBJECT_STARTED_MOVING` (261), `OBJECT_TIPPED_OVER` (262) | unchanged and effectively dead, as upstream |
 
+The carry's onset is never earlier than the grip's (P84). A ladder line such as `OBJECT_GRABBED_SUCCESS` is emitted again when a rung that had regressed (the object was released) is credited a second time; `score_peak` is unaffected. In `reason`, "step k/n" counts conditions inside the ladder; in the event text, "advanced to step k" is the same index.
+
 A pick-and-place is logged as
 `OBJECT_GRIPPED → OBJECT_CARRIED → OBJECT_GRABBED_SUCCESS → OBJECT_RELEASED → OBJECT_IN_CONTAINER_SUCCESS → SUBTASK_COMPLETED`.
 
@@ -84,7 +86,7 @@ instead of `ee_pose` (upstream's `ee_recorder_bodies` label); `compute_metrics` 
 |---|---|
 | `run_complete.json` | written once every task/run finished; a directory without it is partial (P10) |
 | `env_cfg.json` → `friction` | the requested friction per object, with the catalog class it was resolved from, and the pad material (P79) |
-| `friction_applied.json` | the PhysX readback after start-up, per object shape and per pad body, written on every run, upstream materials included (P79) |
+| `friction_applied.json` | the PhysX readback after start-up: a `summary` per object and pad, then the per-shape rows; written on every run, upstream materials included (P79, P86) |
 | `env_cfg.json` → `renderer`, `policy` | run provenance (upstream 0.3.x) |
 
 ## Task metadata

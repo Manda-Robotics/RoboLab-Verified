@@ -88,8 +88,8 @@ their asset link names but have not yet been read back on a GPU (DROID has).
 - `env_cfg.json` → `friction`: mode, the flag text, per-object requested
   `{static, dynamic, restitution, source}` where `source` names the catalog class the
   value was resolved from, the pad material and the pad body names.
-- `friction_applied.json` (next to it): the PhysX readback after start-up, per object
-  shape and per pad body. It is written under `upstream` too, so the baseline's 2.0 is
+- `friction_applied.json` (next to it): the PhysX readback after start-up, a `summary` per
+  object and pad followed by the per-shape rows. It is written under `upstream` too, so the baseline's 2.0 is
   a measured value.
 
 `scripts/verify_patches.py` compares the two (predicate P79): PASS when every

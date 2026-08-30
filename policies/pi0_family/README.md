@@ -73,3 +73,5 @@ The pi0_family folder also ships controlled-variation runners that wrap the same
 - `run_table_variation.py` — table variations
 
 Each takes the same connection and common eval flags as `run.py`.
+
+The first query of a fresh server compiles the model (~1 min). One `keepalive ping timeout` and a reconnect on that step is expected; see `docs/debug.md`.

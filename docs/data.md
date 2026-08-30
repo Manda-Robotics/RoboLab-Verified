@@ -236,14 +236,15 @@ Per episode, in addition to the upstream fields above:
 - `physics_artifact`, `towed_objects`: an object moved with an open hand (`TOWED_WITHOUT_GRASP`); the episode is not trustworthy and its grasp credit was withheld (P43)
 - `collateral_placed`: non-target objects released inside a goal container after reset (P36)
 - `early_resets`, `pre_satisfied`: re-resets for terminating within two steps, and whether the episode still did after the cap (P09)
-- `events`: counts per event name, in the vocabulary of [Event Tracking](event_tracking.md) — `GRASP_ATTEMPT_FAILED`, `OBJECT_RELEASED`, `OBJECT_DROPPED`, `OBJECT_CARRIED`, `WRONG_OBJECT_PLACED`, `TARGET_LOST`, … replace the upstream `TARGET_OBJECT_DROPPED` / `OBJECT_GRABBED_FAILURE` pair
+- `events`: counts per event name over every line of the episode log, ladder lines included (`OBJECT_GRABBED_SUCCESS`, `SUBTASK_COMPLETED`), in the vocabulary of [Event Tracking](event_tracking.md). Upstream counted a fixed subset, so an episode could read as two releases and no grasp.
+- `timing`: wall-clock totals of the *run* (all envs of the process), repeated in every row of that run
 
 `success` is read from the task's `success` term only (upstream took the OR of every non-timeout termination term).
 
 Per run directory:
 
 - `run_complete.json`: written once every task/run finished; a directory without it is partial (P10)
-- `friction_applied.json`: the PhysX friction readback after start-up, per object shape and per finger pad, written on every run (P79); the request is in `env_cfg.json` → `friction`
+- `friction_applied.json`: the PhysX friction readback after start-up, per object shape and per finger pad, written on every run (P79); the request is in `env_cfg.json` → `friction`. A `summary` block gives one line per object and pad (coefficients, shape count, whether every shape agrees); the raw per-shape rows follow
 
 In the HDF5, group `contact/` per demo: `<object>` `(T, 2)` float32 contact **force** on the left and right finger pad, and `<object>__<destination>` `(T,)` uint8 object-to-container/surface contact (P77).
 

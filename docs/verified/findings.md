@@ -134,4 +134,5 @@ Defects that no change above removes.
   Isaac Sim 5.1, which this fork targets.
 - The confidence intervals the dashboard shows differ from the Beta intervals the docs
   describe in some cells (H-E1, H-E2).
+- `MarkerInMugTask`: the marker in `workdesk.usda` drops 7.1 mm at reset (`scripts/find_sinking_objects.py`, found in the first external trial). Not re-authored; reported like the other unsettled objects.
 - The `H-B` rows under Open items above.

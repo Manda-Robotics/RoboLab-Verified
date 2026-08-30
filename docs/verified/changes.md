@@ -142,6 +142,27 @@ The knobs that restore upstream behaviour for each semantic change are listed in
 | `scripts/friction_sweep_report.py` | The per-condition table of a `--friction` sweep. | h5py (optional) |
 | `scripts/find_task_definition_conflicts.py` | The P11 lint, standalone. | — |
 
+## Fixes from the first external trial (2026-08-29)
+
+A reader with no prior context cloned the published repository, ran six tasks (four outside
+the set the fork had been verified on) and read the outputs the way a new user would. What
+that found, and what changed:
+
+| ID | Change | Level | Evidence |
+|---|---|---|---|
+| P80 | `episode_results.jsonl` → `events` counts every line of the episode log, ladder lines included. | OFFLINE | Upstream's tally kept a fixed subset of codes: a `BananaInBowl` row showed `GRIPPER_HIT_TABLE`, `OBJECT_GRIPPED`, `OBJECT_RELEASED` while its log held the carry and the credit; a `GrabAFruit` episode read as two releases and no grasp. |
+| P81 | `verify_patches.py` P72 decides "container" from the task's own roles (`object=` / `container=` in the run's `env_cfg.json`), falling back to the catalog and name hints only for objects the task does not name. | OFFLINE | `BowlStackingLeftOnRight`: three attempts on the pick target `bowl_2` were reported as attempts on a container, and `--summary` exited 1. |
+| P82 | `analysis/check_results.py` runs: `hdf5_path` was never assigned in either code path (upstream since v0.1.0); a cwd-relative path is no longer prefixed with `output/` a second time. | OFFLINE (subprocess test) | `NameError` on every invocation. The "every source must parse" guard cannot catch a name that is only undefined at run time; the script now has a smoke test. |
+| P83 | `read_results.py --by-instruction-type` is implemented: success per task and instruction type, pooled per type, `--csv`. | OFFLINE | Documented in `analysis.md`; printed "not yet implemented". |
+| P84 | A carry's onset is never stamped earlier than the grip's. | OFFLINE | `OBJECT_CARRIED` at step 99 preceded `OBJECT_GRIPPED` at step 103 in every `BananaInBowl` episode, against the documented order. |
+| P85 | `GRIPPER_FULLY_CLOSED` is not reported during the reset warm-up; `reason` for an `any` ladder names the object that progressed furthest. | OFFLINE | "Gripper closed on nothing" at step 2 on `MarkerInMug`; `GrabAFruit`'s reason named the banana while the orange was the object grabbed. |
+| P86 | `friction_applied.json` carries a per-object `summary` (coefficients, shape count, whether every shape agrees) above the per-shape rows. | OFFLINE | 733 identical rows for one scene. |
+| — | `pyproject.toml`: the CUDA torch index is Linux-only, so `uv sync` resolves on macOS and the no-simulator suite installs on a laptop the documented way. A bare glob (`t*`) in `read_results.py` resolves under `output/` before the cwd. `reflag.py` no longer says contact force is not recorded. README lists the GL/Vulkan packages a bare Linux image needs; `debug.md` lists the benign boot and first-inference messages. | OFFLINE | Reported against the published tree. |
+
+Reported and left as is: the `timing` block is a run-level total repeated per row (upstream
+schema); the dashboard's `/thumb` endpoint has no producer (E2); a ladder line is re-emitted
+when a regressed rung is credited again (documented in [migration.md](migration.md)).
+
 ## Withdrawn, reverted, rejected
 
 Kept with the reason for each.

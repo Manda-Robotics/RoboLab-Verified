@@ -59,7 +59,7 @@ scripts/flag_regression.py --output-dir output               # score against hum
 
 `analysis/flag_labels.jsonl` holds 23 labelled instances from the review sessions: run,
 env, time, flag, verdict (`present` / `absent` / `missing` / `ambiguous`), and the reviewer's
-own words. `flag_regression.py` reports `pass` / `fail` / `cannot-check` per label and
+own words. The labelled recordings (the rc-series runs) are not bundled; on another machine every label reports `no-episode`. `flag_regression.py` reports `pass` / `fail` / `cannot-check` per label and
 explains every `cannot-check` (a rule that needs a re-run, a label that needs a recording with
 pad forces). Current: pass 6, fail 1, cannot-check 13, ambiguous 2. The failure is
 open: a quick grasp at ~88 s in `FoodPacking2Cans` env 2 that the detector still misses.
