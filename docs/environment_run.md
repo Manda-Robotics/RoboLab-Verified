@@ -55,7 +55,7 @@ tag_envs = get_envs(tag=["spatial", "simple"])        # Multiple tags
 
 ## Instruction Type Selection
 
-When a task defines multiple instruction variants (see [task.md — Instruction Variants](task.md#3-instruction-variants)), you can select which variant to use at runtime:
+When a task defines multiple instruction variants (see [task.md — Instruction Variants](task.md#instruction-variants)), you can select which variant to use at runtime:
 
 ```python
 env, env_cfg = create_env(
@@ -386,7 +386,7 @@ The built-in `policies/pi0_family/run.py` supports the full set of evaluation fe
 | `--friction SPEC` | Object + finger-pad friction override: `upstream` (authored USD materials), a number (one coefficient for every object and the pads), `realistic` (bundled per-class table), or a `.json` table. Recorded in `env_cfg.json` and read back from PhysX into `friction_applied.json`. See [Physics](physics.md#friction). | `upstream` |
 | `--randomize-background` | Sample a random non-default background per task at registration time. The chosen texture is recorded in each task's `env_cfg.json`. See [Backgrounds — Per-Run Random Background per Task](background.md#per-run-random-background-per-task). | `False` |
 | `--background-seed N` | Seed for reproducible per-task background sampling. Used with `--randomize-background`. | `None` |
-| `--headless` | Run without live display window. **Recommended for multi-task runs** — see [GPU VRAM leak in non-headless mode](debug.md#gpu-vram-leak-in-non-headless-mode-across-environment-reloads) | `False` |
+| `--headless` | Run without live display window. **Recommended for multi-task runs** — see [GPU VRAM leak in non-headless mode](known_issues.md#gpu-vram-leak-in-non-headless-mode-across-environment-reloads) | `False` |
 | `--enable-verbose` | Verbose output | `False` |
 | `--enable-debug` | Debug output | `False` |
 
