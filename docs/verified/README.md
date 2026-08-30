@@ -106,7 +106,7 @@ verifier that turns every flag change into a PASS / FAIL / N/A predicate over re
 
 ## Status, read before citing a number
 
-The offline suite (221 tests, no simulator) runs in CI and is green. Offline tests are not
+The offline suite (222 tests, no simulator) runs in CI and is green. Offline tests are not
 evidence that a change behaves correctly at runtime: three changes in this fork passed every
 unit test and were wrong on hardware. [changes.md](changes.md) therefore marks every row
 **RUNTIME** (a recorded GPU run demonstrates it, judged by `scripts/verify_patches.py` with a

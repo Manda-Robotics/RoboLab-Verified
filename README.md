@@ -2,7 +2,7 @@
 
 [![offline tests](https://github.com/Manda-Robotics/RoboLab-Verified/actions/workflows/offline-tests.yml/badge.svg)](https://github.com/Manda-Robotics/RoboLab-Verified/actions/workflows/offline-tests.yml)
 
-**RoboLab Verified** is a fork of [NVIDIA RoboLab](https://github.com/NVlabs/RoboLab) v0.3.1 — the task-based simulation benchmark for robot manipulation policies built on [Isaac Lab](https://github.com/isaac-sim/IsaacLab) — that changes what the benchmark **reports**, not what it simulates. Same 120 tasks, same scenes, same success predicates, same physics defaults. What is different is that the numbers and the per-episode event log now mean what they say, and every change carries the measurement that motivated it and the test that guards it.
+RoboLab Verified is a fork of [NVIDIA RoboLab](https://github.com/NVlabs/RoboLab) v0.3.1, a task-based simulation benchmark for robot manipulation policies built on [Isaac Lab](https://github.com/isaac-sim/IsaacLab). The fork keeps upstream's 120 tasks, scenes, success predicates and physics defaults. It changes how episodes are scored, how subtasks are credited, what the event log records, and what the sensors and recordings capture.
 
 <h4 align="center"><a href="docs/verified/README.md">Why this fork</a> · <a href="docs/verified/changes.md">Changes</a> · <a href="docs/verified/findings.md">Findings</a> · <a href="docs/verified/migration.md">Migration</a> · <a href="docs/verified/verification.md">Verification</a></h4>
 
@@ -14,34 +14,34 @@
 
 ## What is different
 
-Running the upstream benchmark and watching episodes frame by frame — rather than reading the summary numbers — turned up defects in the evaluation harness itself. In a 328-episode corpus, 88 of 88 successes ended while a target was still moving; "object grabbed" meant "object touched" (64 % of logged grabs had the hand open); one task completed its subtask ladder at 0.07 s, before the arm moved; four of four "successes" of a stacking task had stacked the wrong bowl. [`docs/verified/findings.md`](docs/verified/findings.md) has every finding with its measurement.
+Inspection of a 328-episode corpus produced with the upstream harness found the following. All 88 successes were declared while a target object was still moving. 64 % of logged "object grabbed" events occurred with the hand open. One task completed its subtask ladder at 0.07 s, before the arm had moved. In four of four successes of a stacking task, the wrong bowl was stacked. Each finding and its measurement is in [`docs/verified/findings.md`](docs/verified/findings.md).
 
-What this fork does about it — one row per change, with its evidence, in [`docs/verified/changes.md`](docs/verified/changes.md):
+The changes by area follow; [`docs/verified/changes.md`](docs/verified/changes.md) documents each one with its evidence.
 
-- **Scoring** — a success is confirmed only once the targets are at rest; an episode ends as a failure once it can no longer succeed (a required object or the destination left the table); containment is capped at the rim.
-- **Subtask crediting** — nothing already true at reset earns credit, nothing is credited before the scene settles or before a placed object comes to rest; `score` is judged on the final frame, `score_peak` keeps the live number.
-- **Event log** — a grasp is a *carry*; a pick reads `OBJECT_GRIPPED → OBJECT_CARRIED → OBJECT_GRABBED_SUCCESS`; releases are told from drops by the commanded gripper; wrong objects delivered into the goal are flagged; an object moving with an open hand marks the episode a physics artifact. Per episode, π0.5's event count fell from 45.5 to 31.0 on the same tasks, and every remaining line names one physical transition.
-- **Sensing and recording** — both finger pads carry a contact sensor (upstream watched one); the HDF5 records per-pad contact force and object-to-destination contact, so flag rules can be re-checked on existing recordings.
-- **Physics** — friction is a run parameter (`--friction`), read back from PhysX into every run directory; the default is upstream's. A 32-episode-per-condition sweep found the success rate insensitive to a 4× change in μ while the behaviour metrics were not ([`docs/physics.md`](docs/physics.md)).
-- **Embodiments and backends** — a dual-Franka rig and a bimanual ViperX (ALOHA) rig, a connector for running a pointing-capable VLM as a policy, and the honest note that no released checkpoint drives two arms well.
-- **Tooling** — offline audits of task definitions and scenes that need no simulator, and a verifier that turns every flag change into a PASS / FAIL / N/A predicate over recorded runs.
+- **Scoring**: a success is confirmed only after the targets are at rest. An episode ends as a failure once it can no longer succeed (a required object or the destination has left the table). Containment is capped at the rim.
+- **Subtask crediting**: conditions already true at reset earn no credit. Nothing is credited before the scene settles or before a placed object comes to rest. `score` is judged on the final frame; `score_peak` keeps the live number.
+- **Event log**: a grasp requires a carry. A pick is logged as `OBJECT_GRIPPED → OBJECT_CARRIED → OBJECT_GRABBED_SUCCESS`. Releases and drops are distinguished by the commanded gripper state. Wrong objects delivered into the goal are flagged. An object moving with an open hand marks the episode as a physics artifact. On the same tasks, π0.5's event count per episode fell from 45.5 to 31.0, and each remaining event corresponds to one physical transition.
+- **Sensing and recording**: both finger pads carry a contact sensor (upstream read one). The HDF5 records per-pad contact force and object-to-destination contact, so flag rules can be re-evaluated on existing recordings.
+- **Physics**: friction is a run parameter (`--friction`), read back from PhysX and written to every run directory. The default is upstream's. In a 32-episode-per-condition sweep, the success rate was insensitive to a 4× change in μ; the behaviour metrics were not ([`docs/physics.md`](docs/physics.md)).
+- **Embodiments and backends**: a dual-Franka rig, a bimanual ViperX (ALOHA) rig, and a connector for running a pointing-capable VLM as a policy. No released checkpoint drives two arms well.
+- **Tooling**: offline audits of task definitions and scenes that run without a simulator, and a verifier that evaluates each flag change as PASS / FAIL / N/A over recorded runs.
 
-**Status.** The offline suite (221 tests) runs in CI. Every change is marked RUNTIME / OFFLINE / NONE by how it was verified; about 25 of the 120 tasks have been run against the patched code, most with π0.5 only. Read [`docs/verified/verification.md`](docs/verified/verification.md) before citing a number, and name the tag when you do.
+Status: the offline suite (222 tests) runs in CI. Each change is marked RUNTIME, OFFLINE or NONE according to how it was verified. About 25 of the 120 tasks have been run against the patched code, most with π0.5 only. [`docs/verified/verification.md`](docs/verified/verification.md) lists the verification status of each change. Numbers reported from this fork should include the tag.
 
 ## Key Features
 
-- **RoboLab-120**: 120 benchmark [tasks](robolab/tasks/README.md) spanning pick-and-place, stacking, rearrangement, tool use, and more — each with language instructions and automated success/failure detection via composable predicates.
-- **Bring your own robot**: tasks are not tied to a specific embodiment — plug in any robot compatible with Isaac Lab. Single-arm DROID, Franka and Kinova ship; so do two bimanual rigs ([`robolab/robots/README.md`](robolab/robots/README.md)).
-- **Rich asset libraries**: [objects](assets/objects/README.md), [scenes](assets/scenes/README.md), and curated [backgrounds](assets/backgrounds/README.md) — everything needed to create new scenes and tasks.
+- **RoboLab-120**: 120 benchmark [tasks](robolab/tasks/README.md) spanning pick-and-place, stacking, rearrangement, tool use, and more, each with language instructions and automated success/failure detection via composable predicates.
+- **Bring your own robot**: tasks are not tied to a specific embodiment; any robot compatible with Isaac Lab can be used. Single-arm DROID, Franka and Kinova ship, along with two bimanual rigs ([`robolab/robots/README.md`](robolab/robots/README.md)).
+- **Rich asset libraries**: [objects](assets/objects/README.md), [scenes](assets/scenes/README.md), and curated [backgrounds](assets/backgrounds/README.md) for creating new scenes and tasks.
 - **AI-enabled workflows**: generate new scenes and tasks from natural language with the [/robolab-scenegen](skills/robolab-scenegen/) and [/robolab-taskgen](skills/robolab-taskgen/) Claude Code skills.
 - **Multi-environment parallel evaluation**: parallel episodes with vectorized conditionals and per-environment termination.
-- **Results dashboard**: a self-contained web [dashboard](docs/dashboard.md) for browsing scenes and tasks, replaying episodes with one transport under every camera and the event timeline as the scrubber, permalinks with `?t=`, and cross-experiment comparison.
+- **Results dashboard**: a self-contained web [dashboard](docs/dashboard.md) for browsing scenes and tasks, replaying episodes (all cameras on one transport, the event timeline as the scrubber, `?t=` permalinks), and comparing experiments.
 
 See the [Ecosystem](docs/ecosystem.md) page for projects built on RoboLab.
 
 ## Getting Started
 
-Requires [uv](https://docs.astral.sh/uv/getting-started/installation/), [Git LFS](https://git-lfs.com) (all `.usd`/`.usda` assets are LFS objects — without it every scene file is a 130-byte pointer stub) and a system `ffmpeg` (used for video recording). The Isaac Sim / Isaac Lab stack is selected at install time via a mutually-exclusive extra — `isaac51` (Isaac Sim 5.1 / Isaac Lab 2.3.2.post1, **recommended**, and the stack every result in this fork was produced on) or `isaac50` (Isaac Sim 5.0 / Isaac Lab 2.2.0). Isaac Sim 5.0 segfaults at startup on NVIDIA drivers ≥ 580; use `isaac51` on current drivers. See [Requirements](#requirements) for hardware.
+Requires [uv](https://docs.astral.sh/uv/getting-started/installation/), [Git LFS](https://git-lfs.com) and a system `ffmpeg` (used for video recording). All `.usd`/`.usda` assets are LFS objects; without Git LFS, each scene file is a 130-byte pointer stub. The Isaac Sim / Isaac Lab stack is selected at install time with one of two mutually exclusive extras: `isaac51` (Isaac Sim 5.1 / Isaac Lab 2.3.2.post1, recommended; every result in this fork was produced on it) or `isaac50` (Isaac Sim 5.0 / Isaac Lab 2.2.0). Isaac Sim 5.0 segfaults at startup on NVIDIA drivers ≥ 580; use `isaac51` on current drivers. See [Requirements](#requirements) for hardware.
 
 ### Installation
 
@@ -57,7 +57,7 @@ uv sync --extra isaac51 --extra test   # Isaac Sim 5.1 / Isaac Lab 2.3.2.post1 (
 # uv sync --extra isaac50 --extra test # Isaac Sim 5.0 / Isaac Lab 2.2.0 (drivers < 580 only)
 ```
 
-`--extra test` pulls in `pytest`; without it the install-verification suite below cannot run.
+`--extra test` installs `pytest`, which the verification suite below requires.
 
 The two stacks cannot coexist in one environment. To keep both available, install each into its own venv via `UV_PROJECT_ENVIRONMENT`:
 
@@ -69,15 +69,15 @@ UV_PROJECT_ENVIRONMENT=.venv-51 uv sync --extra isaac51
 Verify the installation:
 
 ```bash
-python -m pytest offline_tests     # 221 tests, no simulator: the evaluation-correctness suite
+python -m pytest offline_tests     # 222 tests, no simulator: the evaluation-correctness suite
 uv run --no-sync pytest tests/     # boots Isaac Sim: isaaclab importable, all task definitions valid, one full episode runs
 ```
 
-The Isaac suite auto-accepts the NVIDIA Omniverse EULA so the run is fully headless with no prompts. More details at [Debugging → Diagnostic Scripts](docs/debug.md#diagnostic-scripts).
+The Isaac suite auto-accepts the NVIDIA Omniverse EULA, so the run is headless with no prompts. More details at [Debugging → Diagnostic Scripts](docs/debug.md#diagnostic-scripts).
 
-> **Running without activating the venv**: if you don't `source .venv/bin/activate`, prefix every `python` command with `uv run --no-sync` (e.g. `uv run --no-sync pytest tests/`). A bare `uv run` re-syncs the environment to the *default* dependency set first, which silently removes the Isaac extra you just installed.
+> **Running without activating the venv**: if you don't `source .venv/bin/activate`, prefix every `python` command with `uv run --no-sync` (e.g. `uv run --no-sync pytest tests/`). A bare `uv run` first re-syncs the environment to the default dependency set, which removes the Isaac extra you just installed.
 
-> **Long runs**: launch with `python -u` (or `PYTHONUNBUFFERED=1`). With stdout redirected to a file Python block-buffers, and Isaac Sim frequently dies at shutdown before the buffer is flushed. Per-episode results are always flushed to `episode_results.jsonl`, and a finished run writes `run_complete.json` next to it — a run directory without that file is partial.
+> **Long runs**: launch with `python -u` (or `PYTHONUNBUFFERED=1`). With stdout redirected to a file, Python block-buffers, and Isaac Sim frequently dies at shutdown before the buffer is flushed. Per-episode results are always flushed to `episode_results.jsonl`. A finished run writes `run_complete.json` next to it; a run directory without that file is partial.
 
 > **EULA outside the test suite**: when running other entry points (e.g. `policies/pi0_family/run.py`) for the first time, set `export OMNI_KIT_ACCEPT_EULA=Y` once. Cached after first acceptance.
 
@@ -98,15 +98,15 @@ python examples/run_recorded.py --headless
 # output/run_gripper_toggle/<task>/)
 python examples/run_gripper_toggle.py --task BananaInBowlTask --headless
 
-# Drive the dual-Franka rig with the scripted client (proves the two-arm stack turns)
+# Drive the dual-Franka rig with the scripted client
 python policies/bimanual/run.py --task BimanualLiftToteTask --num-envs 2 --headless
 ```
 
-> **Replay**: `run_recorded.py` restores the recorded initial state, replays the recorded actions open-loop, and by default replays with the exact env configuration saved next to the recording (`env_cfg.json`). The recorded outcome is not invariant across simulator versions — contact dynamics evolve between Isaac Sim / Isaac Lab releases (see [Requirements](#requirements)) — and faithful reproduction requires recording and replaying with a single env. See **[Replaying Recorded Episodes](docs/replay.md)**.
+> **Replay**: `run_recorded.py` restores the recorded initial state and replays the recorded actions open-loop, by default with the env configuration saved next to the recording (`env_cfg.json`). The recorded outcome is not invariant across simulator versions, since contact dynamics change between Isaac Sim / Isaac Lab releases (see [Requirements](#requirements)). Faithful reproduction requires recording and replaying with a single env. See [Replaying Recorded Episodes](docs/replay.md).
 
 ### Run with a policy
 
-RoboLab uses a **server-client architecture**: your model runs as a standalone server, and RoboLab connects to it via a lightweight inference client. To quickly test RoboLab, try [π0.5 via OpenPI](policies/pi0_family/README.md) — and serve the **joint-position** checkpoint (`scripts/serve_pi05.sh`); the OpenPI `--env DROID` convenience flag serves delta actions, which this action space does not accept.
+RoboLab uses a server-client architecture: the model runs as a standalone server, and RoboLab connects to it through an inference client. For a quick test, use [π0.5 via OpenPI](policies/pi0_family/README.md) and serve the joint-position checkpoint (`scripts/serve_pi05.sh`). The OpenPI `--env DROID` convenience flag serves delta actions, which this action space does not accept.
 
 ```bash
 cd robolab
@@ -140,7 +140,7 @@ python policies/pi0_family/run.py --policy pi05 --disable-subtask
 python policies/pi0_family/run.py --policy pi05 --output-folder-name my_previous_run
 ```
 
-Run **one process per task**: passing many tasks to one invocation instantiates every task's environments up front and crashes (upstream issue, see [`docs/environment_run.md`](docs/environment_run.md)).
+Run one process per task. Passing several tasks to one invocation instantiates every task's environments up front and crashes (upstream issue, see [`docs/environment_run.md`](docs/environment_run.md)).
 
 ### Check a run
 
@@ -173,7 +173,7 @@ See the full [Benchmark Task Library](robolab/tasks/README.md) for all 120 tasks
 
 ## Dashboard
 
-A self-contained web dashboard for browsing the benchmark (scenes and tasks) and analyzing your experiment results.
+A self-contained web dashboard for browsing the benchmark (scenes and tasks) and analyzing experiment results.
 
 ```bash
 uv run --no-sync robolab-dashboard --host 127.0.0.1
@@ -182,22 +182,22 @@ uv run --no-sync robolab-dashboard --host 127.0.0.1
 
 The dashboard has no authentication; bind it to `127.0.0.1` on shared machines.
 
-See **[docs/dashboard.md](docs/dashboard.md)** for the full feature tour, CLI flags, and the API endpoints under the hood.
+See [docs/dashboard.md](docs/dashboard.md) for the feature tour, CLI flags, and API endpoints.
 
 ## Documentation
 
-Full documentation is at **[docs/README.md](docs/README.md)**, covering:
+Full documentation is at [docs/README.md](docs/README.md), covering:
 
 - **RoboLab Verified**: [why](docs/verified/README.md), [changes](docs/verified/changes.md), [findings](docs/verified/findings.md), [migration](docs/verified/migration.md), [verification](docs/verified/verification.md), [physics](docs/physics.md)
-- [Objects](docs/objects.md), [Scenes](docs/scene.md), [Tasks](docs/task.md) — Creating and managing assets and benchmark tasks
-- [Robots](docs/robots.md), [Cameras](docs/camera.md), [Lighting](docs/lighting.md), [Backgrounds](docs/background.md) — Configuring simulation parameters
-- [Environment Registration](docs/environment_registration.md) — Combining tasks with robot/observation/action configs
-- [Inference Clients](policies/README.md) — Supported open-source models and clients
-- [Replaying Recorded Episodes](docs/replay.md) — Playing back recorded HDF5 episodes faithfully
-- [Analysis and Results](docs/analysis.md), [Data and Output](docs/data.md) — Summarizing, comparing, and auditing results; the output schema
-- [Dashboard](docs/dashboard.md) — Interactive web viewer for benchmark, tasks, scenes, and eval results
+- [Objects](docs/objects.md), [Scenes](docs/scene.md), [Tasks](docs/task.md): creating and managing assets and benchmark tasks
+- [Robots](docs/robots.md), [Cameras](docs/camera.md), [Lighting](docs/lighting.md), [Backgrounds](docs/background.md): configuring simulation parameters
+- [Environment Registration](docs/environment_registration.md): combining tasks with robot/observation/action configs
+- [Inference Clients](policies/README.md): supported open-source models and clients
+- [Replaying Recorded Episodes](docs/replay.md): playing back recorded HDF5 episodes faithfully
+- [Analysis and Results](docs/analysis.md), [Data and Output](docs/data.md): summarizing, comparing, and auditing results; the output schema
+- [Dashboard](docs/dashboard.md): interactive web viewer for benchmark, tasks, scenes, and eval results
 - [Subtask Checking](docs/subtask.md), [Conditionals](docs/task_conditionals.md), [Event Tracking](docs/event_tracking.md)
-- [Ecosystem](docs/ecosystem.md) — Task libraries and projects built on RoboLab
+- [Ecosystem](docs/ecosystem.md): task libraries and projects built on RoboLab
 
 ## Requirements
 
@@ -208,7 +208,7 @@ Full documentation is at **[docs/README.md](docs/README.md)**, covering:
 | Python | 3.11 |
 | Linux | Ubuntu 22.04+ |
 
-> **Note on simulator versions**: Isaac Sim 5.0 and 5.1 ship different PhysX builds, so contact-rich dynamics (grasping, object settling) are not invariant across the two stacks. Results are best compared against runs on the same stack; every recorded run in this fork's documentation is Isaac Sim 5.1. Isaac Sim 6.0 renders the Robotiq gripper incompletely in some scenes ([findings](docs/verified/findings.md#known-defects-not-changed)) and is not supported.
+> **Note on simulator versions**: Isaac Sim 5.0 and 5.1 ship different PhysX builds, so contact-rich dynamics (grasping, object settling) are not invariant across the two stacks. Results are best compared against runs on the same stack. Every recorded run in this fork's documentation is Isaac Sim 5.1. Isaac Sim 6.0 renders the Robotiq gripper incompletely in some scenes ([findings](docs/verified/findings.md#known-defects-not-changed)) and is not supported.
 
 - **Disk space**: ~8 GB (assets account for ~7 GB)
 - **GPU**: NVIDIA RTX GPU required. Recommend 48 GB+ VRAM. See [Isaac Lab's hardware requirements](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html#system-requirements) and the per-task [`num_envs` guide](docs/env_vram_size_guide.md).
@@ -234,8 +234,8 @@ RoboLab is the work of NVIDIA's Seattle Robotics Lab. If you use the benchmark, 
 }
 ```
 
-If your numbers were produced with this fork, say so and name the tag, e.g. "RoboLab Verified (`verified-rc7`, https://github.com/Manda-Robotics/RoboLab-Verified)". The changes that make the two benchmarks differ are listed in [`docs/verified/changes.md`](docs/verified/changes.md).
+If your numbers were produced with this fork, say so and give the tag, e.g. "RoboLab Verified (`verified-rc7`, https://github.com/Manda-Robotics/RoboLab-Verified)". The differences from upstream are listed in [`docs/verified/changes.md`](docs/verified/changes.md).
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) — how changes are documented and verified here, and the upstream acknowledgements.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how changes are documented and verified, and for the upstream acknowledgements.
