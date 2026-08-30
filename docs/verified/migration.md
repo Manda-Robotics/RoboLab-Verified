@@ -1,9 +1,8 @@
-# Migration — what a downstream tool has to know
+# Migration
 
-Everything upstream v0.3.1 wrote is still written. This page lists what is **added**, what
-is **renamed or retired**, and the knobs that put the semantics back to upstream for an
-A/B comparison. Field-level schema documentation lives in [data.md](../data.md); this is
-the diff.
+Everything upstream v0.3.1 wrote is still written. This page lists what is added, what is
+renamed or retired, and the knobs that restore upstream semantics for an A/B comparison.
+Field-level schema documentation is in [data.md](../data.md); this page is the diff.
 
 ## Results row (`episode_results.jsonl`)
 
@@ -13,7 +12,7 @@ Added fields, one row per episode:
 |---|---|---|---|
 | `score_peak` | float | the live monotone subtask score; `score` is now judged on the final frame | P34 |
 | `success_first_hold_s`, `success_confirmed_s` | float or null | when the success predicate first held, and when it was confirmed with the targets at rest; equal when the object was already still | P30 |
-| `physics_artifact` | bool | an object moved with an open hand; the episode is not trustworthy and its grasp credit was withheld | P43 |
+| `physics_artifact` | bool | an object moved with an open hand; the episode is marked unreliable and its grasp credit withheld | P43 |
 | `towed_objects` | list | the objects behind `physics_artifact` | P43 |
 | `collateral_placed` | int | non-target objects released inside a goal container after reset | P36 |
 | `early_resets`, `pre_satisfied` | int, bool | how often the episode was silently re-reset for terminating within two steps, and whether it still did after the cap | P09 |
@@ -24,7 +23,7 @@ non-timeout termination term, which would have scored a failure term as a win (P
 
 ## Episode event log (`log_<run>_env<env>.json`)
 
-`schema_version` is 2. Each event carries `step` (the **onset**, P61), `detected_step` (when
+`schema_version` is 2. Each event carries `step` (the onset, P61), `detected_step` (when
 the detector fired; absent on ladder lines, which have no detection lag), `code`, `name`,
 `info`, `score`.
 
@@ -39,8 +38,8 @@ the detector fired; absent on ladder lines, which have no detection lag), `code`
 | 269 | `SCENE_SETTLING` | objects moved during the 1 s reset warm-up without hand contact; one per env | neutral |
 | 270 | `WRONG_OBJECT_PLACED` | a non-target the hand had held was released inside a goal container | failure |
 | 272 | `OBJECT_FELL_OFF_TABLE` | an object dropped 15 cm below its starting height | failure |
-| 273 | `TARGET_LOST` | the success condition can no longer be met — terminal | failure |
-| 275 | `TOWED_WITHOUT_GRASP` | the object moved with an open hand — physics artifact | failure |
+| 273 | `TARGET_LOST` | the success condition can no longer be met; terminal | failure |
+| 275 | `TOWED_WITHOUT_GRASP` | the object moved with an open hand; physics artifact | failure |
 | 276–281 | `OBJECT_ON_TOP_FAILURE` … `OBJECT_GROUPS_IN_CONTAINERS_FAILURE` | ladder lines named after their predicate instead of `UNKNOWN_FAILURE` | failure |
 | 282 | `TARGET_OBJECT_BUMPED` | the policy nudged an object the task is about | neutral |
 | 283 | `OBJECT_CARRIED` | the grasp detector saw a carry established | neutral |
@@ -63,7 +62,7 @@ colours by that set first and by name as a fallback.
 | `OBJECT_BUMPED` (258) | threshold 2 cm (was 5 cm); targets included; not emitted while the policy holds the object or within 1 s of releasing it |
 | `OBJECT_STARTED_MOVING` (261), `OBJECT_TIPPED_OVER` (262) | unchanged and effectively dead, as upstream |
 
-A pick-and-place therefore reads
+A pick-and-place is logged as
 `OBJECT_GRIPPED → OBJECT_CARRIED → OBJECT_GRABBED_SUCCESS → OBJECT_RELEASED → OBJECT_IN_CONTAINER_SUCCESS → SUBTASK_COMPLETED`.
 
 ## HDF5 (`run_<i>.hdf5`, per `demo_<env>`)
@@ -72,7 +71,7 @@ Added group `contact/`:
 
 | dataset | shape | meaning |
 |---|---|---|
-| `contact/<object>` | `(T, 2)` float32 | contact **force** on the left and right finger pad, N | P77 (P62 recorded booleans) |
+| `contact/<object>` | `(T, 2)` float32 | contact force on the left and right finger pad, N | P77 (P62 recorded booleans) |
 | `contact/<object>__<destination>` | `(T,)` uint8 | the object touches that container / surface | P77 |
 
 The rest of the layout is upstream's. Bimanual rigs record `left_ee_pose` / `right_ee_pose`
@@ -85,7 +84,7 @@ instead of `ee_pose` (upstream's `ee_recorder_bodies` label); `compute_metrics` 
 |---|---|
 | `run_complete.json` | written once every task/run finished; a directory without it is partial (P10) |
 | `env_cfg.json` → `friction` | the requested friction per object, with the catalog class it was resolved from, and the pad material (P79) |
-| `friction_applied.json` | the PhysX readback after start-up — per object shape and per pad body — written on every run, upstream materials included (P79) |
+| `friction_applied.json` | the PhysX readback after start-up, per object shape and per pad body, written on every run, upstream materials included (P79) |
 | `env_cfg.json` → `renderer`, `policy` | run provenance (upstream 0.3.x) |
 
 ## Task metadata
@@ -108,7 +107,7 @@ group, P28) and for the five rewritten Rubik's-cube / mug ladders (P29). Regener
 
 Constants in `robolab/constants.py`. Setting each to the value in the last column restores
 the upstream behaviour of that one change, for a controlled comparison. They are not a
-supported configuration space — the defaults are the benchmark.
+supported configuration space; the defaults define the benchmark.
 
 | constant | default | change | upstream value |
 |---|---|---|---|
@@ -128,7 +127,6 @@ supported configuration space — the defaults are the benchmark.
 | `FRICTION` | `"upstream"` | P79 | `"upstream"` |
 | `open_top_cap_margin` (argument of `build_local_hull`) | 0.05 m | P12 | `None` |
 
-Changes with no knob — the rewritten ladders (P19, P29, P65), the scene height edits (P20,
-P33, P56), the second contact sensor (P48), the target resolution (P14) and the event
-renames — are what upstream should have done; comparing against them means checking out
-upstream.
+The following changes have no knob: the rewritten ladders (P19, P29, P65), the scene height
+edits (P20, P33, P56), the second contact sensor (P48), the target resolution (P14) and the
+event renames. To compare against upstream behaviour for these, check out upstream.

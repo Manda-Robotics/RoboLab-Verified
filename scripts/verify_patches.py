@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Runtime verification for the fork's flag patches.
 
-Every patch in ``docs/docs/verified/changes.md.md`` claims a change in what a *run* emits.
+Every patch in ``docs/verified/changes.md`` claims a change in what a *run* emits.
 This turns each of those claims into a predicate over recorded episode logs so the
 claim is checked, not asserted. Point it at a run directory:
 

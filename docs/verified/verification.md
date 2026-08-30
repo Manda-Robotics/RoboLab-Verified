@@ -1,4 +1,4 @@
-# Verification — how the evidence was produced, and how to reproduce it
+# Verification
 
 Every row in [changes.md](changes.md) carries a verification level. This page defines the
 levels, names the tools that produce them, and states what has and has not been run.
@@ -7,26 +7,26 @@ levels, names the tools that produce them, and states what has and has not been 
 
 | level | meaning | produced by |
 |---|---|---|
-| **RUNTIME** | a recorded GPU run demonstrates the behaviour | `scripts/verify_patches.py` PASS on a patched run **and** FAIL on the same predicate over a pre-patch run of the same task; or a human confirming the flag on a linked episode |
-| **OFFLINE** | unit-tested, or replayed over recorded logs | `offline_tests/`, `scripts/reflag.py` + `scripts/flag_regression.py` |
-| **NONE** | written, never executed | — |
+| RUNTIME | a recorded GPU run demonstrates the behaviour | `scripts/verify_patches.py` PASS on a patched run and FAIL on the same predicate over a pre-patch run of the same task; or a human confirming the flag on a linked episode |
+| OFFLINE | unit-tested, or replayed over recorded logs | `offline_tests/`, `scripts/reflag.py` + `scripts/flag_regression.py` |
+| NONE | written, never executed | — |
 
-Two rules that the tools enforce and the text respects:
+Two rules apply throughout:
 
-1. **N/A is never a pass.** A run in which no episode lost a destination says nothing about
-   `TARGET_LOST`. The verifier reports it as N/A and the summary counts a patch that is N/A
-   everywhere as *untested*.
-2. **A PASS means nothing without a baseline FAIL.** The same predicate is run over the
-   pre-patch recording; a predicate that passes on both has not measured the change.
+1. N/A is not a pass. A run in which no episode lost a destination provides no evidence
+   about `TARGET_LOST`. The verifier reports it as N/A, and the summary counts a patch that
+   is N/A everywhere as untested.
+2. A PASS requires a baseline FAIL. The same predicate is run over the pre-patch
+   recording; a predicate that passes on both has not measured the change.
 
 ## Offline tests
 
-`python -m pytest offline_tests` — 222 tests, no simulator, no GPU, ~5 s. They run in CI
-on every push (`.github/workflows/offline-tests.yml`). Beyond unit tests of each change they
-guard three classes of bug that each cost a GPU launch to discover:
+`python -m pytest offline_tests` runs 222 tests with no simulator and no GPU in ~5 s. They
+run in CI on every push (`.github/workflows/offline-tests.yml`). In addition to unit tests of
+each change, they check three classes of bug that each cost a GPU launch to discover:
 
 - every Python source under `robolab/`, `policies/`, `scripts/`, `dashboard/` must parse;
-- every option a runner reads (`args_cli.<name>`) must be declared by someone;
+- every option a runner reads (`args_cli.<name>`) must be declared;
 - every robot-config label must be shadowed to `None` on the generated scene config, or
   `InteractiveScene` rejects it at boot.
 
@@ -43,12 +43,12 @@ scripts/verify_patches.py --summary output/rc4_* output/rc5_*     # one table ac
 Predicates today: P61 (onset stamping), P71 (tracker grab is neutral), P72 (no attempts on
 containers), P73 (no attempt right after a release), P74 (nothing credited before settle),
 P75 (`PLACED_WITHOUT_LIFT` retired), P76 (a lost destination ends the episode), P77 (contact
-force recorded — needs `h5py`), P79 (friction override applied — judged from the PhysX
-readback, never from the request alone).
+force recorded; needs `h5py`), P79 (friction override applied; judged from the PhysX
+readback only).
 
 Each predicate reads only the run directory: `*/log_*.json`, `run_*.hdf5`,
-`friction_applied.json`. The script deliberately does not import the runtime constants of
-the build it judges, so it can be pointed at a recording made by another version.
+`friction_applied.json`. The script does not import the runtime constants of the build it
+judges, so it can be run on a recording made by another version.
 
 ## Replaying flag rules over recordings
 
@@ -57,11 +57,11 @@ scripts/reflag.py output/<run>                               # re-derive post-pr
 scripts/flag_regression.py --output-dir output               # score against human verdicts
 ```
 
-`analysis/flag_labels.jsonl` holds 23 labelled instances from the review sessions — run,
+`analysis/flag_labels.jsonl` holds 23 labelled instances from the review sessions: run,
 env, time, flag, verdict (`present` / `absent` / `missing` / `ambiguous`), and the reviewer's
 own words. `flag_regression.py` reports `pass` / `fail` / `cannot-check` per label and
 explains every `cannot-check` (a rule that needs a re-run, a label that needs a recording with
-pad forces). Current: pass 6, fail 1, cannot-check 13, ambiguous 2. The failure is real and
+pad forces). Current: pass 6, fail 1, cannot-check 13, ambiguous 2. The failure is
 open: a quick grasp at ~88 s in `FoodPacking2Cans` env 2 that the detector still misses.
 
 ## Auditing definitions and scenes without a simulator
@@ -76,8 +76,7 @@ scripts/find_open_hand_carries.py output/<run> ...
 
 The task audit reads each task's step-0 poses before asserting a success-vs-ladder conflict.
 Over all 120 definitions it finds no real conflict; two earlier candidates were withdrawn when
-the spawn state was read. Candidates it cannot verify are listed as *not asserted*, never
-silently passed.
+the spawn state was read. Candidates it cannot verify are listed as not asserted.
 
 ## What has been run
 
@@ -92,7 +91,8 @@ silently passed.
 
 About 25 of the 120 benchmark tasks have been run against patched code. Most runs are 4
 episodes per task; the friction sweep is 32 episodes per condition, which resolves a
-25-point difference in success rate and not a 10-point one. Nothing here is a leaderboard.
+25-point difference in success rate but not a 10-point one. The runs exist to verify the
+changes; they are too small to rank policies.
 
 ## What has not been run
 
@@ -105,8 +105,8 @@ episodes per task; the friction sweep is 32 episodes per condition, which resolv
 
 The runs above were made on a single 48 GB GPU (L40) with Isaac Sim 5.1 / Isaac Lab
 2.3.2.post1, π0.5 served from the `pi05_droid_jointpos` checkpoint
-(`scripts/serve_pi05.sh` — the `--env DROID` convenience flag serves delta actions, which
+(`scripts/serve_pi05.sh`; the `--env DROID` convenience flag serves delta actions, which
 this action space does not accept), one process per task, 4 envs. A whole-task run takes
-5–17 minutes depending on the episode length. Sanity gate before reading any number from a
-new run: the median hand-to-target distance over the run (1.3 cm on the corpus, 95 % within
-20 cm) — if it is far off, the harness or the checkpoint is wrong, not the patches.
+5–17 minutes depending on the episode length. Sanity check for a new run: the median
+hand-to-target distance over the run (1.3 cm on the corpus, 95 % within 20 cm). A value far
+from that indicates a harness or checkpoint problem.

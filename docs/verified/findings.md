@@ -1,10 +1,10 @@
-# Findings — what was wrong, with the evidence
+# Findings
 
-The register of defects found in upstream RoboLab v0.3.1 by reviewing recorded episodes and
-auditing the code. Identifiers (`A2`, `B1`, `H-B6`, `H-R7-5`, …) are the ones code comments
-and [changes.md](changes.md) refer to: letters A–G are the areas below, `H-B` / `H-E` are
-code-audit candidates (event tracking, dashboard), `H-R<n>` are items from review session
-*n*. Each row says what addressed it, or that nothing did.
+Defects found in upstream RoboLab v0.3.1 by reviewing recorded episodes and auditing the
+code. Identifiers (`A2`, `B1`, `H-B6`, `H-R7-5`, …) are the ones used in code comments and
+[changes.md](changes.md): letters A–G are the areas below, `H-B` / `H-E` are code-audit
+candidates (event tracking, dashboard), `H-R<n>` are items from review session n. Each row
+names the change that addressed it, or states that nothing did.
 
 The corpus figures come from 328 recorded episodes of π0.5 and Cosmos3 across 41 tasks on
 upstream v0.3.1, plus nine human review sessions whose episode-level verdicts are kept in
@@ -17,10 +17,10 @@ upstream v0.3.1, plus nine human review sessions whose episode-level verdicts ar
 | A1 | Success has no exclusivity requirement: "put X in Y" scores 1.0 if the whole table is swept into Y. | `BBQSauceInBin` env 3: success with the mug, mustard and ranch also in the bin. | `WRONG_OBJECT_PLACED` and `collateral_placed` per episode (P36). Success itself unchanged. |
 | A2 | The episode ends on the first frame the predicate holds; a success cannot be verified as stable. | 88 of 88 successes end with an object still moving, 61 % above 10 cm/s; 104 successes with a target trajectory: moving at the final frame in 86 %. | P30 (confirmed success), P46 (placement credit after rest). |
 | A3 | Ordinal subtask progress discards demonstrated capability. | `ToolsPickingHammer` 0/4 with mean subtask score 0.75 reads identically on a leaderboard to `PinkSpoonInPot` 0/4 with 0.00. | `score_peak` alongside `score` (P34); per-stage boxes in the dashboard (P24, P25). |
-| A4 | `reason` reports terminal state, not peak. | 43 % of failures lost progress before the buzzer; 82 % of failures labelled "grasp-stage" have a grab success in their own log. | P34. |
+| A4 | `reason` reports the terminal state; the peak is not reported. | 43 % of failures lost progress before the buzzer; 82 % of failures labelled "grasp-stage" have a grab success in their own log. | P34. |
 | A5 | Containment is loose: a full container height of slack above the rim. | A banana leaning on a bowl's rim is "arguably in or not". | P12 (rim + 5 cm cap), P37 (above the base). |
 | A6 | Counting-task semantics are undefined when one object is already inside. | "Put two bananas in the crate" with one already in. | Not changed; the audit (P11) reads the spawn state so such tasks are not misreported. |
-| A7 | Success can be reached by pushing rather than picking. | `ToolsPickingHammer` env 3: hammer dragged, one tip on the table, never lifted, subtask completed. | A flag was tried (P41) and retired (P75): no true positive in three runs. Open. |
+| A7 | Success can be reached by pushing; no pick is required. | `ToolsPickingHammer` env 3: hammer dragged, one tip on the table, never lifted, subtask completed. | A flag was tried (P41) and retired (P75): no true positive in three runs. Open. |
 
 ## B. Event tracking
 
@@ -44,8 +44,8 @@ upstream v0.3.1, plus nine human review sessions whose episode-level verdicts ar
 | ID | Finding | Evidence | Addressed by |
 |---|---|---|---|
 | C1 | Friction is unrealistically high and static = dynamic everywhere. | Pads 2.0, 289 of 312 objects 2.0, nine fruit 5.0, seven Objaverse objects 10.0; pad–bagel effective μ 6.0. | P79: friction as a run parameter; default unchanged; the sensitivity sweep is in [physics.md](../physics.md). |
-| C2 | Arm has `disable_gravity=True`, PD 400/80, EEF offset (0, 0, 0). | Code read. | Documented, not changed: it is Isaac Lab's reference high-PD configuration ([physics.md](../physics.md)). |
-| C3 | Shipped scenes are not settled. | 62 (task, object) pairs sink at reset, five of them 675–817 mm; objects authored intersecting their container roll at every reset. | P20, P33, P56 for five objects; `SCENE_SETTLING` reports the rest; `scripts/check_scene_intersections.py` lists the authored overlaps. Re-authoring scenes is deliberately out of scope. |
+| C2 | Arm has `disable_gravity=True`, PD 400/80, EEF offset (0, 0, 0). | Code read. | Documented and unchanged: it is Isaac Lab's reference high-PD configuration ([physics.md](../physics.md)). |
+| C3 | Shipped scenes are not settled. | 62 (task, object) pairs sink at reset, five of them 675–817 mm; objects authored intersecting their container roll at every reset. | P20, P33, P56 for five objects; `SCENE_SETTLING` reports the rest; `scripts/check_scene_intersections.py` lists the authored overlaps. Re-authoring scenes is out of scope. |
 | C4 | Ground-plane heights inconsistent (−0.697 canonical vs legacy −0.65). | Upstream CHANGELOG 0.3.1. | Not changed (upstream locks it per scene for replay compatibility). |
 
 ## D. Harness and reproducibility
@@ -94,7 +94,7 @@ upstream v0.3.1, plus nine human review sessions whose episode-level verdicts ar
 
 A line-by-line read of the event tracker, conditionals, state machine and dashboard produced
 the `H-B` / `H-E` rows that [changes.md](changes.md) cites. The ones fixed are listed there.
-These are real and unchanged in this release:
+The following are unchanged in this release:
 
 | ID | Item |
 |---|---|
@@ -102,35 +102,36 @@ These are real and unchanged in this release:
 | H-B5 | `pick_and_place` scores each object as binary; the docs describe a four-step ladder. |
 | H-B7 | `stacked` accepts a leaning or inserted object through the `above_bottom` fallback. |
 | H-B8 | Footprint checks use the world AABB of a rotated box; a plate at 45° is inflated by up to √2. |
-| H-B9 | Directional predicates (`left_of`, `behind`, …) have no minimum separation and use the root pivot, not the centroid. |
+| H-B9 | Directional predicates (`left_of`, `behind`, …) have no minimum separation and use the root pivot instead of the centroid. |
 | H-B10 | `record_final_status` can overwrite a completed state machine's status with a stale error code. |
 | H-B16, H-B18 | `OBJECT_TIPPED_OVER` and `OBJECT_STARTED_MOVING` are effectively dead; per-object events do not re-arm although the docs say they do. |
 | H-B19 | `MULTIPLE_OBJECTS_GRABBED` counts contact with the destination container. |
 | H-B20 | Workspace bounds are hard-coded to a Franka table; shelf and bimanual scenes can fire `OBJECT_OUT_OF_SCENE` spuriously. |
 | H-B21 | Every tracker sub-check swallows all exceptions. |
 | H-B24, H-B26, H-B27 | `object_at`'s release check contradicts its docs for list grippers; `tolerance` is accepted and ignored by the hull predicates; `get_subtask_state` counts stages where the docs show conditions. |
-| H-E1, H-E2 | The dashboard's confidence intervals are Wilson or normal in most cells, not the Beta intervals the docs describe, and exclude the point estimate at 0 % and 100 %. |
+| H-E1, H-E2 | The dashboard's confidence intervals are Wilson or normal in most cells (the docs describe Beta intervals) and exclude the point estimate at 0 % and 100 %. |
 | H-E10 | The dashboard binds to `0.0.0.0` by default and has no authentication; use `--host 127.0.0.1` on shared machines. |
 
 ## Known defects, not changed
 
-Things a user of this fork should know that no change above removes.
+Defects that no change above removes.
 
-- **`PutMugsOnShelf` is not a runnable task** under π0.5: the rack leaves the table in 7 of 8
-  recorded envs within 30 s. P76 stops the clock; it does not make the task achievable.
-  Every published number for this task is a number for an episode that was already over.
-- **Objects authored interpenetrating their containers** roll at reset (`fruits_in_basket`,
+- `PutMugsOnShelf` is not achievable under π0.5: the rack leaves the table in 7 of 8
+  recorded envs within 30 s. P76 ends the episode at that point; the task itself is
+  unchanged. Published numbers for this task come from episodes that were already over.
+- Objects authored interpenetrating their containers roll at reset (`fruits_in_basket`,
   `fruits_out_of_basket`, others listed by `scripts/check_scene_intersections.py`). Reported
   per episode as `SCENE_SETTLING`; the scenes are as upstream authored them.
-- **The "stuck to a finger" artifact.** An object occasionally moves with an open hand
+- The "stuck to a finger" artifact. An object occasionally moves with an open hand
   (object-to-hand distance variance 0.03 mm over 70 mm of motion). It is flagged as
-  `TOWED_WITHOUT_GRASP` and the episode marked `physics_artifact`; it survives a 4× cut in
-  friction, so it is a contact/solver effect, not a material one. Cause not established.
-- **Rigid food.** A bagel is a rigid mesh: a finger through the hole never holds, and the
-  policy's sound real-world strategy is penalised.
-- **Isaac Sim 6.0 renders the Robotiq gripper as detached fragments in some scenes** (a
+  `TOWED_WITHOUT_GRASP` and the episode marked `physics_artifact`. It survives a 4× cut in
+  friction, which rules out the material coefficient; the contact or solver stage remains.
+  Cause not established.
+- Rigid food. A bagel is a rigid mesh: a finger through the hole does not hold, so a
+  strategy that works on a real bagel fails here.
+- Isaac Sim 6.0 renders the Robotiq gripper as detached fragments in some scenes (a
   policy input), observed in three of five sampled tasks and absent in two. Not present on
   Isaac Sim 5.1, which this fork targets.
-- **The confidence intervals the dashboard shows** are not the Beta intervals the docs
-  promise in every cell (H-E1, H-E2).
-- The `H-B` rows marked **open** above.
+- The confidence intervals the dashboard shows differ from the Beta intervals the docs
+  describe in some cells (H-E1, H-E2).
+- The `H-B` rows under Open items above.
