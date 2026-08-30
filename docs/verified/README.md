@@ -3,8 +3,9 @@
 A fork of [NVIDIA RoboLab](https://github.com/NVlabs/RoboLab) v0.3.1. The fork keeps
 upstream's 120 tasks, scenes, success predicates and physics defaults. It changes how episodes
 are scored, how subtasks are credited, what the per-episode event log records, and what the
-sensors and recordings capture. Each change is documented with the measurement behind it and
-the test that covers it.
+sensors and recordings capture. It also adds two bimanual embodiments, a connector for VLM
+policies, offline audit tools and a verifier for recorded runs. Each change is documented with
+the measurement behind it and the test that covers it.
 
 | | |
 |---|---|
@@ -17,24 +18,41 @@ the test that covers it.
 ## Why
 
 Inspection of recorded episodes from the upstream harness found defects in the evaluation
-itself. The measurements are in [findings.md](findings.md).
+itself. In order of how much of the benchmark each one touches. The measurements are in
+[findings.md](findings.md).
 
-- Success fired on the first frame the predicate held. 88 of 88 successes in a 328-episode
-  corpus ended while a target was still moving, 61 % of them faster than 10 cm/s. Whether the
-  object stayed in the bowl was not observed.
-- "Object grabbed" meant "object touched". No closure, lift or coupling was required. 64 % of
-  logged grabs occurred with the hand open, and a fumble at a banana produced three identical
-  lines per step. Reviewers stopped reading the event log.
-- Five of 120 tasks could never report a grasp, because the grasp line was a side effect of a
-  particular subtask ladder shape.
-- `BananasOutOfBin` completed its subtask ladder at 0.07 s, before the arm moved, then flagged
-  its own targets as wrong objects for the rest of the episode.
-- Four of four `BowlStackingRightOnLeft` "successes" had stacked the wrong bowl. Nested
-  identical bowls satisfy `object_in_container` in either order.
-- 62 (task, object) pairs sink into their support at reset, before the robot moves; five of
-  them by more than half a metre.
+- **Every success ended mid-motion.** In all tasks, the episode ends on the first frame the
+  success predicate holds. All 88 recorded successes ended while a target object was still
+  moving, 61 % of them faster than 10 cm/s. Whether the object stayed where it was put was
+  not observed.
+- **"Object grabbed" meant "object touched".** In all tasks, a grasp was contact with one
+  finger pad, with no closure, lift or coupling required. 64 % of logged grabs occurred with
+  the hand open; 62 % of grab-success events fired within a second of a drop. The benchmark's
+  own failure label disagreed with the trajectory in 33 % of Cosmos3 failures and 39 % of
+  π0.5 failures (episodes labelled "never grasped" in which the object was lifted). The
+  worst episode logged 139 grabs, 139 drops and 139 failed grasps, one contact oscillation
+  reported three ways.
+- **Task definitions.** 19 of the 120 tasks could not name their own target, so every grasp
+  of the correct object was flagged as a wrong object. 11 tasks credited a subtask step at
+  reset, 0.07 s into the episode, before the arm moved (`BananasOutOfBin`,
+  `BlackItemsInBin`, `FruitsOrangesOnPlate`, the four spatial Rubik's-cube tasks among them);
+  `BananasOutOfBin` then flagged its own bananas as wrong objects for the rest of the episode.
+  In 5 tasks the ladder could not report a grasp at all. In 3 tasks (`GrabABagel`,
+  `GrabAFruit`, `FoodPackingByColor`) the ladder contradicted the task's own success term.
+  In the two bowl-stacking tasks nested identical bowls satisfy `object_in_container` in
+  either order, and four of four `BowlStackingRightOnLeft` "successes" had stacked the wrong
+  bowl.
+- **Scenes.** In 24 of the 120 tasks at least one object is not at rest at reset: 62 objects
+  sink or roll in the first second, five of them by more than half a metre, and that motion
+  was logged as the robot bumping things.
+- **The event log was unreadable on busy tasks.** Upstream's worst episodes carry 150 to
+  166 events; in one `BlackItemsInBin` episode 69 of 74 events were the same flag. Reviewers
+  stopped reading the log on the food-packing tasks.
+- **Friction is authored at μ 2.0** on the finger pads and on 289 of 312 objects, 5.0 on the
+  fruit and 10.0 on the bagels. Success rate turned out to be insensitive to it
+  ([physics.md](../physics.md)); the behaviour metrics are not.
 
-## What changed
+## Changes
 
 Organised as in [changes.md](changes.md). Numbers are from the runs recorded in
 [verification.md](verification.md).
@@ -56,9 +74,14 @@ OBJECT_GRABBED_SUCCESS`. A failed attempt is one line with a count. A release is
 from a drop by the commanded gripper channel. A bump of the task's own target is a neutral
 note. A non-target delivered into the goal container is `WRONG_OBJECT_PLACED`. An object
 moving with an open hand is `TOWED_WITHOUT_GRASP` and marks the episode as a physics artifact.
-On the same tasks, π0.5's event count per episode fell from 45.5 to 31.0, and each remaining
-line corresponds to one physical transition. Every line is stamped at its onset, with the
-detection time recorded alongside.
+Every line is stamped at its onset, with the detection time recorded alongside.
+
+Effect on the log, π0.5, four episodes per task, upstream harness against this one:
+`FoodPacking2Cans` 68 → 30 events per episode, `ClutterPumpkin` 48 → 39, `StackWhiteMugs`
+20 → 14, `BowlStackingRightOnLeft` 7 → 4. On tasks with few events the count rises
+(`FruitsOnion` 10 → 18, `GrabAFruit` 5 → 19), because a pick is now three lines and every
+failed attempt is recorded. Across the 328-episode corpus, 17 % of all lines were duplicates
+of the same transition on the same tick; the 90th-percentile episode goes from 82 lines to 64.
 
 **Contact sensing and recording.** Both Robotiq pads carry a contact sensor (upstream read
 the left pad only). The HDF5 records per-pad contact force and object-to-destination contact,
@@ -78,17 +101,24 @@ machine.
 `?t=` permalinks, a subgoal checklist that fills with the playhead, a per-task page across
 experiments, runs grouped by policy family, and HTTP range requests so that seeking works.
 
-**Embodiments and policy backends.** A dual-Franka rig and a bimanual ViperX (ALOHA) rig. Each
-is one articulation with per-arm end-effector recording, tracking wrist cameras, and unchanged
-success predicates. A connector for running a pointing-capable VLM as a policy. A scripted
-runner that exercises the two-arm stack end to end. No released checkpoint drives two arms
-well.
+**Embodiments.** A dual-Franka rig and a bimanual ViperX (ALOHA) rig. Each is one
+articulation with per-arm end-effector recording, tracking wrist cameras, and the unchanged
+success predicates. A scripted runner exercises the two-arm stack end to end. No released
+checkpoint drives two arms well.
+
+**VLM and LLM policies.** A connector for running a pointing-capable vision-language model as
+a policy: the model returns an image point and a phase, and a geometric controller does the
+metric work. The controller is released as a separate package,
+[`vlm-pinpoint`](https://github.com/Manda-Robotics/vlm-pinpoint), with a Gemini backend. On
+top-down single-object picks it succeeds: `BananaInBowl` 6 of 6, `BananasInCrate` 5 of 6,
+`OneBottleInSquarePail` 2 of 6, `FruitsOnion` 1 of 6. Driven as Cartesian deltas the same
+model scored 0 of 4.
 
 **Tooling.** Offline audits that need no simulator: task definitions against scene spawn state,
 scene interpenetrations, objects that sink at reset, and open-hand carries. A verifier that
 evaluates each flag change as a PASS / FAIL / N/A predicate over recorded runs.
 
-## What did not change, on purpose
+## We did not change the following
 
 - Task definitions and success predicates, except where a ladder contradicted its own success
   term (`GrabABagel`, `GrabAFruit`, `FoodPackingByColor`, five spatial Rubik's-cube ladders).
@@ -119,6 +149,10 @@ them.
 
 ## Method
 
+This repository came out of the review Manda conducted for its *State of General Policies*
+report, a behavioural comparison of general robot policies on RoboLab. The comparison needed a
+harness whose flags and scores could be trusted; the fixes are the fork.
+
 1. A human reviews a sample of episodes on the dashboard and writes down what the log got
    wrong.
 2. Each complaint becomes an anomaly class with a detector, which is run over the whole
@@ -141,3 +175,10 @@ repository are linked from the top-level [README](../../README.md). This fork tr
 Changes that do not alter benchmark semantics are candidates for upstream pull requests.
 Changes that do alter semantics make this a separate, versioned benchmark and are listed as
 such. Results produced with this fork should say so and give the tag.
+
+## About
+
+RoboLab Verified is maintained by [Manda](https://github.com/Manda-Robotics), which builds
+evaluation infrastructure for robot learning. Issues and pull requests are welcome on the
+[repository](https://github.com/Manda-Robotics/RoboLab-Verified); see
+[CONTRIBUTING](../../CONTRIBUTING.md) for what a change to evaluation semantics needs.
