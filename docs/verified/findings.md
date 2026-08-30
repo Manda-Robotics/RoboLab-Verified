@@ -90,52 +90,27 @@ upstream v0.3.1, plus nine human review sessions whose episode-level verdicts ar
 | G1–G3 | Behavioural feature extraction, anomaly triage and the human-review loop existed only as working scripts. | The review loop is the [method](README.md#method); the detectors that survived ship under `scripts/` ([changes.md](changes.md#tooling-shipped-with-the-fork)). |
 | G4 | The metrics extractor produced `NaN` end-effector path lengths and silently returned `None` for demos without an `ee_pose` group. | P67. |
 
-## Code-audit findings
+## Open items from the code audit
 
-From a line-by-line read of the event tracker, conditionals, state machine and dashboard.
-Rows marked **open** are real and deliberately unchanged in this release; they are the
-starting list for the next one.
+A line-by-line read of the event tracker, conditionals, state machine and dashboard produced
+the `H-B` / `H-E` rows that [changes.md](changes.md) cites. The ones fixed are listed there.
+These are real and unchanged in this release:
 
-### H-B. Event tracking, conditionals, scoring
-
-| ID | Finding | Status |
-|---|---|---|
-| H-B1 | List-form `Subtask(conditions=[…])` builds parallel groups, not a sequence. | P28, P29 |
-| H-B2 | `group1..N` names poison the intended-object set. | P14 |
-| H-B3 | Completed stages latch forever — no regression. | P34 (final-frame judgement); per-step regression deliberately not done |
-| H-B4 | `choose K` means `== K` for terminations and `>= K` for subtasks; docs say "exactly K". | **open** (P13 parked; five benchmark tasks use `choose`) |
-| H-B5 | `pick_and_place` score is binary per object; docs describe a four-step 0.25 ladder. | **open** |
-| H-B6 | Open-top containment is an infinite +z column. | P12 |
-| H-B7 | `stacked` accepts leaning / inside via the `above_bottom` fallback. | **open** |
-| H-B8 | Footprint checks use the world AABB of a rotated OBB (45° plate inflated up to √2). | **open** |
-| H-B9 | Directional predicates have no minimum separation and use the root pivot, not the centroid. | **open** |
-| H-B10 | `record_final_status` can overwrite a completed state machine's status with a stale error code. | **open** (P22 parked, needs evidence on real HDF5s) |
-| H-B11 | `success` was the OR of all non-timeout termination terms; only a term literally named `success` was validated. | P38 (success term only), P65 (`success*` matching) |
-| H-B12 | Episodes terminating within two steps are silently reset and re-run. | P09 |
-| H-B13 | `WRONG_OBJECT_GRABBED` and `GRIPPER_FULLY_CLOSED` are dead on every robot except DROID (no per-robot closure config). | P48 (closure config per pad on DROID); other robots declare their own |
-| H-B14 | `WRONG_OBJECT_DETACHED` emitted with code `OK` and picked as the success reason. | P05 |
-| H-B15 | Six predicates map to `UNKNOWN_SUCCESS/FAILURE`; completion lines named after the first condition. | P45, P45b (codes 276–281, 190) |
-| H-B16 | `OBJECT_TIPPED_OVER` and `OBJECT_STARTED_MOVING` are effectively dead but documented. | **open** (documented as such in [event_tracking.md](../event_tracking.md)) |
-| H-B17 | Movement / out-of-scene events tracked only for non-target objects, "intended" = current stage only. | P38, P51 |
-| H-B18 | Per-object events never re-arm although docs promise it. | **open** (documented) |
-| H-B19 | `MULTIPLE_OBJECTS_GRABBED` counts any contact including the destination container. | **open** |
-| H-B20 | Bump / move / workspace thresholds hard-coded to a Franka table. | P50 (bump 2 cm); workspace bounds **open** for bimanual / shelf scenes |
-| H-B21 | Every tracker sub-check swallows all exceptions. | **open** |
-| H-B22 | On DROID, `object_grabbed` used the *left finger only*. | P48 |
-| H-B23 | `object_in_contact` validates `logical` / `K` then ignores them. | P06 |
-| H-B24 | `object_at`'s release check contradicts its docs for list grippers. | **open** |
-| H-B25 | Ordinal placement latches on the first frame (bounces count). | P46 |
-| H-B26 | `tolerance` accepted but ignored by all hull containment predicates. | **open** |
-| H-B27 | `get_subtask_state` counts stages while docs show condition counts. | **open** (doc) |
-
-### H-E. Dashboard
-
-Items H-E1–H-E36 from the same audit cover confidence-interval maths (Beta CI excludes the
-point estimate at 0 % / 100 %, Wilson and Beta mixed, population vs sample std), double-counted
-resumed runs, silent empty data on malformed inputs, path-traversal on the `task` parameter
-with a `0.0.0.0` default bind, per-request globbing, and CDN-hosted Tailwind / Plotly. The
-ones fixed are listed in [changes.md](changes.md#dashboard); the confidence-interval work
-(P23) is parked. **Bind the dashboard to `127.0.0.1` on shared machines.**
+| ID | Item |
+|---|---|
+| H-B4 | `choose K` means `== K` for terminations and `>= K` for subtasks; the docs say "exactly K". Five benchmark tasks use `choose`. |
+| H-B5 | `pick_and_place` scores each object as binary; the docs describe a four-step ladder. |
+| H-B7 | `stacked` accepts a leaning or inserted object through the `above_bottom` fallback. |
+| H-B8 | Footprint checks use the world AABB of a rotated box; a plate at 45° is inflated by up to √2. |
+| H-B9 | Directional predicates (`left_of`, `behind`, …) have no minimum separation and use the root pivot, not the centroid. |
+| H-B10 | `record_final_status` can overwrite a completed state machine's status with a stale error code. |
+| H-B16, H-B18 | `OBJECT_TIPPED_OVER` and `OBJECT_STARTED_MOVING` are effectively dead; per-object events do not re-arm although the docs say they do. |
+| H-B19 | `MULTIPLE_OBJECTS_GRABBED` counts contact with the destination container. |
+| H-B20 | Workspace bounds are hard-coded to a Franka table; shelf and bimanual scenes can fire `OBJECT_OUT_OF_SCENE` spuriously. |
+| H-B21 | Every tracker sub-check swallows all exceptions. |
+| H-B24, H-B26, H-B27 | `object_at`'s release check contradicts its docs for list grippers; `tolerance` is accepted and ignored by the hull predicates; `get_subtask_state` counts stages where the docs show conditions. |
+| H-E1, H-E2 | The dashboard's confidence intervals are Wilson or normal in most cells, not the Beta intervals the docs describe, and exclude the point estimate at 0 % and 100 %. |
+| H-E10 | The dashboard binds to `0.0.0.0` by default and has no authentication; use `--host 127.0.0.1` on shared machines. |
 
 ## Known defects, not changed
 

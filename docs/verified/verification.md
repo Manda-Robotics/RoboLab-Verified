@@ -99,7 +99,7 @@ episodes per task; the friction sweep is 32 episodes per condition, which resolv
 - The other ~95 tasks under the patched harness.
 - Any policy other than π0.5 under the patched harness (Cosmos3 and Gemini pointing ran on
   earlier revisions).
-- The full 120-task re-baseline that a leaderboard would need.
+- The full 120-task re-run under the patched harness, and the per-task comparison of old and new scores that comes with it. Planned; not yet scheduled.
 
 ## Reproducing
 
