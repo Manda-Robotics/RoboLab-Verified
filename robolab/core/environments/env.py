@@ -21,6 +21,10 @@ from robolab.core.world.world_state import get_world
 
 logger = logging.getLogger(__name__)
 
+# A termination within the first 2 steps is re-reset this many times before
+# the episode is recorded as `pre_satisfied` (findings.md H-B12).
+MAX_EARLY_RESETS = 3
+
 
 class RobolabEnv(ManagerBasedRLEnv):
     """Environment for RoboLab evaluation.
@@ -40,6 +44,7 @@ class RobolabEnv(ManagerBasedRLEnv):
         self._env_results: dict[int, bool] = {}      # env_id -> True (success) / False (truncated)
         self._env_term_step: dict[int, int] = {}      # env_id -> episode step when terminated
         self._has_stepped = False                     # tracks whether step() has been called
+        self._early_resets: dict[int, int] = {}       # env_id -> re-resets after a <=2-step termination
 
     def load_managers(self):
         """Load managers; replace upstream RecorderManager with the streaming-
@@ -94,15 +99,23 @@ class RobolabEnv(ManagerBasedRLEnv):
         for eid in env_ids.tolist():
             if not self._frozen_envs[eid]:
                 ep_len = int(self.episode_length_buf[eid].item())
-                if ep_len <= 2:
-                    # Physics artifact: terminated before the robot could act.
-                    # Reset this env normally so it gets a clean start.
+                if ep_len <= 2 and self._early_resets.get(eid, 0) < MAX_EARLY_RESETS:
+                    # Terminated before the robot could act — usually a physics
+                    # artifact at reset, sometimes a predicate that is already true
+                    # in the authored scene. Reset this env for a clean start, but
+                    # count it and give up after MAX_EARLY_RESETS so a pre-satisfied
+                    # task is recorded instead of silently re-run forever.
+                    n = self._early_resets[eid] = self._early_resets.get(eid, 0) + 1
+                    logger.warning(
+                        "env%d: terminated at step %d before the robot could act (early reset %d/%d)",
+                        eid, ep_len, n, MAX_EARLY_RESETS,
+                    )
                     artifact_ids = torch.tensor([eid], device=self.device, dtype=env_ids.dtype)
                     super()._reset_idx(artifact_ids)
                     get_world(self).reset_predicate_state(artifact_ids)
                     continue
                 self._frozen_envs[eid] = True
-                self._env_results[eid] = bool(self.termination_manager.terminated[eid])
+                self._env_results[eid] = self._success_of(eid)
                 self._env_term_step[eid] = ep_len
                 # Auto-export recording for this env
                 if self.recorder_manager is not None:
@@ -135,12 +148,49 @@ class RobolabEnv(ManagerBasedRLEnv):
         """Get per-env results after termination."""
         results = []
         for eid in range(self.num_envs):
+            step = self._env_term_step.get(eid)
             results.append({
                 'env_id': eid,
                 'success': self._env_results.get(eid),
-                'step': self._env_term_step.get(eid),
+                'step': step,
+                # How often this env terminated within 2 steps and was re-reset
+                # before this episode; `pre_satisfied` when it still did after
+                # the last allowed re-reset (the predicate holds at reset).
+                'early_resets': self._early_resets.get(eid, 0),
+                'pre_satisfied': bool(step is not None and step <= 2),
+                # A2 confirmed success: step the raw predicate first held / was confirmed
+                'success_first_hold_step': self._confirm_step(eid, 'first_hold_step'),
+                'success_confirmed_step': self._confirm_step(eid, 'confirmed_step'),
+                # H-B3: ladder re-judged on the final frame (None when no subtask tracking)
+                'score_final': (getattr(self, '_subtask_final_scores', {}) or {}).get(eid),
+                # A1: distinct non-target objects that entered a goal container (None = no tracking)
+                'collateral_placed': (getattr(self, '_collateral_placed', {}) or {}).get(eid, 0),
+                # TOWED_WITHOUT_GRASP: objects that moved with an open hand — physics artifact, episode not trustworthy
+                'towed_objects': (getattr(self, '_towed_objects', {}) or {}).get(eid, []),
             })
         return results
+
+    def _success_of(self, eid: int) -> bool:
+        """Success = the `success` termination term, not "any non-timeout term"
+        (H-B11) — P38 adds a `target_lost` failure term that must not count."""
+        tm = self.termination_manager
+        try:
+            return bool(tm.get_term("success")[eid])
+        except Exception:
+            return bool(tm.terminated[eid])
+
+    def _confirm_step(self, eid: int, which: str):
+        """Per-env step from the success confirmer (None when not wrapped / not held)."""
+        try:
+            term = self.cfg.terminations.success
+            conf = getattr(term.func, "confirmer", None)
+            t = getattr(conf, which, None)
+            if t is None:
+                return None
+            v = int(t[eid].item())
+            return v if v >= 0 else None
+        except Exception:
+            return None
 
     def reset_eval_state(self):
         """Reset frozen state for next episode batch."""
@@ -148,4 +198,8 @@ class RobolabEnv(ManagerBasedRLEnv):
         self._pre_step_frozen[:] = False
         self._env_results.clear()
         self._env_term_step.clear()
+        self._early_resets.clear()
+        self._subtask_final_scores = {}
+        self._collateral_placed = {}
+        self._towed_objects = {}
         self._has_stepped = False

@@ -2,12 +2,55 @@
 
 ## Unreleased
 
+## [verified-unreleased] - RoboLab Verified
+
+A fork of NVIDIA RoboLab v0.3.1 focused on evaluation correctness. Every entry below
+is one commit with its own evidence; [`docs/verified/changes.md`](docs/verified/changes.md)
+carries the measurement behind each, [`docs/verified/migration.md`](docs/verified/migration.md)
+the schema and vocabulary diff for downstream tools.
+
+### Added
+
+- Two bimanual embodiments: dual-Franka (verified 6/6 clean) and bimanual ViperX /
+  ALOHA (rig verified; **no working policy** -- the released pi05 checkpoint scores
+  0/6, see `robolab/robots/README_bimanual.md`).
+- A connector for running a pointing-capable VLM as a policy; the controller itself
+  stays in its own package and is not vendored here.
+- Offline analysis tooling that needs no simulator: task-definition audit against
+  scene spawn state, scene-intersection report, objects that sink at reset, open-hand
+  carries, and a re-flagger that replays the current rules over recorded episodes and
+  scores them against human verdicts.
+- Per-pad contact force and object-to-container contact are now recorded, so most
+  flag changes can be re-checked against existing recordings instead of a new run.
+- `--friction` on every eval runner (P79): object and finger-pad friction as a run
+  parameter -- `upstream` (default, the authored materials: pads 2.0, 289/312 objects
+  2.0, fruit 5.0, bagels 10.0), a single coefficient, the bundled `realistic` per-class
+  table, or a user table. Applied at start-up through Isaac Lab's material event term;
+  the request lands in `env_cfg.json`, the PhysX readback in `friction_applied.json`.
+  Robot cfgs gain a `friction_bodies` label naming their pad bodies. `docs/physics.md`.
+
 ### Changed
 
-- Episode recordings now default to an inspection-oriented H.264 profile:
-  libx264 `veryfast`, CRF 30, yuv420p, fast-start metadata, and a 960-pixel
-  width cap. `VideoWriter` exposes keyword overrides for workflows that need
-  higher-fidelity source video.
+- The grasp/event vocabulary: a grasp is a carry, releases are distinguished from
+  drops by the commanded gripper channel, failed attempts collapse into one line with
+  a count, and the detector's own grasp line is a neutral observation distinct from
+  the subtask ladder's progress line.
+- Subtask crediting: a ladder rung already satisfied by the scene at reset earns no
+  credit, and nothing is credited before the scene has settled.
+- An episode ends when the success term can no longer be satisfied -- including when
+  its destination container or surface leaves the table.
+
+### Known and deliberately unchanged
+
+- Scene objects are authored interpenetrating in several scenes; PhysX resolves this
+  at reset. Reported at runtime via `SCENE_SETTLING` rather than re-authored.
+- Object friction **defaults** are left at upstream values (pad-object 2.0, up to 6.0
+  for a bagel). The `--friction` override exists so the sensitivity of a result to
+  those values can be measured and published; the default moves only on evidence.
+- The DROID arm keeps `disable_gravity=True` and PD 400/80: that is Isaac Lab's
+  `FRANKA_PANDA_HIGH_PD_CFG`, and gravity-off is the stand-in for the real
+  controller's gravity compensation (`docs/physics.md`).
+
 
 ## [0.3.1] - 2026-08-11
 

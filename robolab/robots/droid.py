@@ -171,6 +171,9 @@ DroidCfg.table_fixture = FRANKA_TABLE_FIXTURE
 # create_recorder_config. "base_link" is the Robotiq 2F-85 gripper base
 # (Gripper/Robotiq_2F_85/base_link).
 DroidCfg.ee_recorder_bodies = {"ee_pose": "base_link"}
+# P79: the finger-pad bodies a `--friction` override is applied to (the two prims that
+# carry the Robotiq PhysicsMaterial in the USD). See docs/physics.md#friction.
+DroidCfg.friction_bodies = ["left_inner_finger", "right_inner_finger"]
 
 
 @configclass
@@ -185,9 +188,27 @@ class WristCameraCfg:
 ########################################################
 
 # IsaacLab ContactSensor requires exactly one prim per env for filter_prim_paths_expr
-# (force_matrix_w) to work. .*_inner_finger matches 2 bodies (left + right) per env,
-# breaking filtered contact detection. Use one finger only.
-contact_gripper = {"gripper": "{ENV_REGEX_NS}/robot/Gripper/Robotiq_2F_85/left_inner_finger"}
+# (force_matrix_w) to work, so a regex matching both fingers breaks filtered contact
+# detection. Upstream therefore watched the LEFT pad only — an object touched by the
+# right pad registered no contact at all (findings.md H-B22; on the pod
+# 2026-08-26 BowlStacking env0/env2 closed on the bowl and were logged "Gripper
+# closed on nothing"). Declare one concrete sensor per pad and an alias group, which
+# the contact layer already supports ("gripper" = either pad).
+contact_gripper = {
+    "gripper": ["gripper_left", "gripper_right"],
+    "gripper_left": "{ENV_REGEX_NS}/robot/Gripper/Robotiq_2F_85/left_inner_finger",
+    "gripper_right": "{ENV_REGEX_NS}/robot/Gripper/Robotiq_2F_85/right_inner_finger",
+}
+
+# Both pads share Robotiq's single actuated joint; declare it for each label so
+# gripper_fully_closed()/gripper_slightly_closed() work for either pad and for the
+# "gripper" group (H-B13: without a declaration the fallback only matched one label).
+import math as _math
+
+gripper_closure_cfg = {
+    "gripper_left": ("finger_joint", 0.0, _math.pi / 4),
+    "gripper_right": ("finger_joint", 0.0, _math.pi / 4),
+}
 
 ########################################################
 # Definitions

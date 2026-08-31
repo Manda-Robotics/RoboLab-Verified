@@ -67,7 +67,7 @@ def auto_register_droid_envs_bg_variations(
         contact_gripper,
     )
     from robolab.variations.backgrounds import find_and_generate_background_config
-    from robolab.variations.camera import EgocentricMirroredCameraCfg
+    from robolab.variations.camera import OverShoulderLeftCameraCfg, EgocentricMirroredCameraCfg, OverShoulderReviewCameraCfg
 
     # Use defaults if not provided
     if backgrounds is None:

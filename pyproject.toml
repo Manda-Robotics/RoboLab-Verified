@@ -3,12 +3,14 @@
 
 [project]
 name = "robolab"
-version = "0.3.1"
-description = "A benchmark for simulation"
+version = "0.3.1+verified.1"
+description = "RoboLab Verified: NVIDIA RoboLab v0.3.1 with a verified evaluation harness"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 license = {text = "Apache-2.0"}
 authors = [{name = "Xuning Yang"}]
+maintainers = [{name = "Manda Robotics"}]
+
 dependencies = [
     # Core
     # IsaacLab + IsaacSim are NOT pinned here: they are mutually-exclusive,
@@ -49,6 +51,11 @@ dependencies = [
     "uvicorn[standard]",
     "jinja2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Manda-Robotics/RoboLab-Verified"
+Upstream = "https://github.com/NVlabs/RoboLab"
+Changes = "https://github.com/Manda-Robotics/RoboLab-Verified/blob/main/docs/verified/changes.md"
 
 [project.optional-dependencies]
 # Mutually-exclusive IsaacLab/IsaacSim stacks. Exactly one must be selected at
@@ -117,8 +124,10 @@ name = "nvidia"
 url = "https://pypi.nvidia.com"
 
 [tool.uv.sources]
-torch = { index = "pytorch-cu128" }
-torchvision = { index = "pytorch-cu128" }
+# The CUDA index has no macOS wheels; on other platforms uv falls back to PyPI, which is
+# enough for the offline suite (no simulator, CPU torch).
+torch = [{ index = "pytorch-cu128", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cu128", marker = "sys_platform == 'linux'" }]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

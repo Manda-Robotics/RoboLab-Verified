@@ -13,7 +13,9 @@ we fall back to those.
 """
 
 import functools
+import json
 import math
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -125,7 +127,7 @@ class EpisodeRow:
     env_id: int
     run_index: int          # the "run" counter inside a multi-run eval (NOT the output dir)
     success: bool
-    score: float | None     # subtask completion ratio (0..1); None if not recorded
+    score: float | None     # subtask ladder judged on the final frame (0..1); None if not recorded
     reason: str | None      # failure reason if success is False
     duration: float
     episode_step: int
@@ -138,6 +140,13 @@ class EpisodeRow:
     videos: list[CameraVideo] = field(default_factory=list)
     last_frame_path: str | None = None   # absolute path, may be None
     has_hdf5: bool = False
+    score_peak: float | None = None      # highest live ladder score (subgoals reached, kept or not) — P34
+    physics_artifact: bool = False       # TOWED_WITHOUT_GRASP fired: an object moved with an open hand
+    recorded_at: float | None = None     # unix time the episode's newest video was written
+    stages_reached: int | None = None    # subtask stages completed (from "Completed subtask k/N" events)
+    stages_total: int | None = None      # N — from the events, else the task's ladder length
+    stage_started: bool = False          # the stage after the last completed one was at least started
+    viewport_cameras: list[str] = field(default_factory=list)  # panels tiled into the viewport mp4, in order
 
 
 @dataclass
@@ -167,6 +176,34 @@ class RunMeta:
     num_episodes: int
     num_success: int
     success_rate: float
+    modified_at: float | None = None   # unix time of the newest episode_results/log file
+    family: str = "Unlabelled"         # policy family for sidebar grouping (see policy_family)
+
+
+def policy_family(policy: str | None) -> str:
+    """Coarse policy family used to group runs in the sidebar: the `policy`
+    label the runner stamps into episode_results (``pi05``, ``pi05_aloha_mobile``,
+    ``gemini_pointing``, ``cosmos3``, ``scripted_bimanual`` …) collapsed to the
+    handful of names a reviewer thinks in (review feedback 2026-08-25: "pi05,
+    Gemini, Aloha, …")."""
+    if not policy:
+        return "Unlabelled"
+    p = policy.lower()
+    if "aloha" in p:
+        return "ALOHA"
+    if p.startswith("gemini"):
+        return "Gemini"
+    if p.startswith("cosmos"):
+        return "Cosmos3"
+    if p.startswith("pi05") or p.startswith("pi0.5"):
+        return "π0.5"
+    if p.startswith("pi0"):
+        return "π0"
+    if p.startswith("gr00t"):
+        return "GR00T"
+    if "scripted" in p:
+        return "Scripted"
+    return policy
 
 
 class LocalLoader:
@@ -200,6 +237,10 @@ class LocalLoader:
                 if meta is not None:
                     runs.append(meta)
                     used_ids.add(meta.run_id)
+        # Newest data first — a run that finished tonight should not hide under
+        # last week's because its name sorts lower (review feedback 2026-08-24:
+        # "there's no episode with today's date", it was 12 rows down).
+        runs.sort(key=lambda r: (-(r.modified_at or 0.0), r.run_id))
         return runs
 
     def _run_meta(self, run_dir: Path, source: Path, used_ids: set[str]) -> RunMeta | None:
@@ -222,7 +263,94 @@ class LocalLoader:
             num_episodes=len(eps),
             num_success=success,
             success_rate=(success / len(eps)) if eps else 0.0,
+            modified_at=self._run_modified_at(run_dir),
+            family=policy_family(policy),
         )
+
+    def _attach_progress(self, task_dir: Path, e: EpisodeRow) -> None:
+        """How far the episode got through the task's subtask ladder, from the
+        recorder's events in ``log_<run>_env<env>.json``: ``Completed subtask
+        '<name>' k/N`` marks stage k reached; an ``advanced … step`` event in the
+        following stage marks it started. ``stages_total`` falls back to the
+        task's static ladder when no stage was completed (so 0/3 reads as 0/3,
+        not 0/?)."""
+        candidates = [task_dir / f"log_{e.run_index}_env{e.env_id}.json", task_dir / f"log_{e.env_id}.json"]
+        log_path = next((p for p in candidates if p.exists()), None)
+        if log_path is None:
+            return
+        try:
+            data = json.loads(log_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            return
+        events = data.get("events") if isinstance(data, dict) else None
+        if not isinstance(events, list):
+            return
+        reached, total, started = 0, None, False
+        for ev in events:
+            info = (ev.get("info") or "") if isinstance(ev, dict) else ""
+            m = re.search(r"Completed subtask '[^']*' (\d+)/(\d+)", info)
+            if m:
+                reached = max(reached, int(m.group(1)))
+                total = int(m.group(2))
+                started = False
+                continue
+            if "advanced" in info and " step" in info:
+                started = True
+        if total is None:
+            ladder = self._ladder_len(e.task)
+            total = ladder
+        e.stages_reached = reached
+        e.stages_total = total
+        e.stage_started = bool(started and (total is None or reached < total))
+
+    def _ladder_len(self, task: str) -> int | None:
+        cache = self.__dict__.setdefault("_ladder_len_cache", {})
+        if task not in cache:
+            try:
+                from dashboard.loaders.catalog import task_subtasks
+                st = task_subtasks(task)
+                cache[task] = len(st) if st else None
+            except Exception:
+                cache[task] = None
+        return cache[task]
+
+    @staticmethod
+    def _run_modified_at(run_dir: Path) -> float | None:
+        """When the run last produced data: newest mtime over the files the eval
+        runner appends to (``episode_results.jsonl``, per-task ``log_*.json``),
+        falling back to the directory itself. Directory mtime alone is wrong —
+        rsync/scp of an old run stamps it 'now'."""
+        candidates = [run_dir / "episode_results.jsonl"]
+        for d in run_dir.iterdir():
+            if d.is_dir():
+                candidates.extend(d.glob("log_*.json"))
+        times = [c.stat().st_mtime for c in candidates if c.exists()]
+        if not times:
+            try:
+                return run_dir.stat().st_mtime
+            except OSError:
+                return None
+        return max(times)
+
+    def _viewport_cameras(self, task_dir: Path) -> list[str]:
+        """Camera names tiled (left to right) into the ``*_viewport.mp4`` of this
+        task, from ``env_cfg.json``'s ``observations.viewport_cam`` group. Cached
+        per task dir. A name containing ``mirror`` is the front-facing
+        ``EgocentricMirroredCameraCfg`` (robot's right appears on the viewer's
+        left — findings.md D3/E8)."""
+        cache = self.__dict__.setdefault("_viewport_cam_cache", {})
+        key = str(task_dir)
+        if key not in cache:
+            names: list[str] = []
+            cfg = task_dir / "env_cfg.json"
+            if cfg.exists():
+                try:
+                    group = json.loads(cfg.read_text()).get("observations", {}).get("viewport_cam", {})
+                    names = [k for k, v in group.items() if isinstance(v, dict)]
+                except Exception:
+                    names = []
+            cache[key] = names
+        return cache[key]
 
     @staticmethod
     def _looks_like_task_dir(d: Path) -> bool:
@@ -297,6 +425,7 @@ class LocalLoader:
         for e in eps:
             has_hdf5_eps = data_has or per_run_has.get(e.run_index, False)
             self._attach_media(task_dir, e, has_hdf5_eps=has_hdf5_eps)
+            self._attach_progress(task_dir, e)
         return eps
 
     @staticmethod
@@ -409,6 +538,8 @@ class LocalLoader:
                 run_index=run_index,
                 success=bool(d.get("success", False)),
                 score=score,
+                score_peak=(float(d["score_peak"]) if d.get("score_peak") is not None else None),
+                physics_artifact=bool(d.get("physics_artifact", False)),
                 reason=d.get("reason"),
                 duration=duration,
                 episode_step=int(d.get("episode_step") or 0),
@@ -467,6 +598,14 @@ class LocalLoader:
             _add("playback", playback)
 
         e.videos = videos
+        times = []
+        for v in videos:
+            try:
+                times.append(Path(v.path).stat().st_mtime)
+            except OSError:
+                pass
+        e.recorded_at = max(times) if times else None
+        e.viewport_cameras = self._viewport_cameras(task_dir)
         if has_hdf5_eps is None:
             has_hdf5_eps = self._hdf5_has_episodes(task_dir / "data.hdf5")
         e.has_hdf5 = has_hdf5_eps

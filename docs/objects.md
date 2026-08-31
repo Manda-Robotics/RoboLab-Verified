@@ -41,7 +41,7 @@ Use simple names (`object_name.usd`). Objects can either live directly in the da
 - **RigidBodyAPI** — Applied to `defaultPrim`. Only one prim in the entire tree should have `RigidBodyAPI`.
 - **Collision** — Use `physxSchema` collision API with `convexDecomposition` (vertices: 256, shrinkwrap: 0.01). Do **not** use `UsdPhysics` collision API.
 - **Mass** — Apply `MassAPI` to `defaultPrim` (use either density or mass).
-- **Friction** — Static and dynamic friction from 2.0–5.0 for reliable grasping.
+- **Friction** — Static and dynamic friction from 2.0–5.0 for reliable grasping. (Note: these are grasp-reliability values, not measured ones — dry rubber on most household surfaces is 0.5–1.0. RoboLab Verified leaves the authored materials as the default and adds a run-time override, `--friction`; see [Physics](physics.md#friction).)
 - **Attributes** — `defaultPrim` should contain `description`, `class`, and `dataset` attributes describing the object.
 - **Textures** — All texture paths must be relative to the USD file. Do not use absolute paths or paths pointing outside the repo.
 

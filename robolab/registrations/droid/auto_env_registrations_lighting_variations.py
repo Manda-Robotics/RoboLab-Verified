@@ -39,7 +39,7 @@ def auto_register_droid_envs_light_intensity(task_dirs=DEFAULT_TASK_SUBFOLDERS, 
         contact_gripper,
     )
     from robolab.variations.backgrounds import find_and_generate_background_config
-    from robolab.variations.camera import EgocentricMirroredCameraCfg
+    from robolab.variations.camera import OverShoulderLeftCameraCfg, EgocentricMirroredCameraCfg, OverShoulderReviewCameraCfg
 
     print(f"Registering tasks in {task_dirs}")
 
@@ -98,7 +98,7 @@ def auto_register_droid_envs_shadows(task_dirs=DEFAULT_TASK_SUBFOLDERS):
         contact_gripper,
     )
     from robolab.variations.backgrounds import find_and_generate_background_config
-    from robolab.variations.camera import EgocentricMirroredCameraCfg
+    from robolab.variations.camera import EgocentricMirroredCameraCfg, OverShoulderReviewCameraCfg
     from robolab.variations.lighting import TopDownDirectionalLightCfg
 
     print(f"Registering tasks in {task_dirs}")
@@ -160,7 +160,7 @@ def auto_register_droid_envs_colored_lights(task_dirs=DEFAULT_TASK_SUBFOLDERS):
         contact_gripper,
     )
     from robolab.variations.backgrounds import find_and_generate_background_config
-    from robolab.variations.camera import EgocentricMirroredCameraCfg
+    from robolab.variations.camera import EgocentricMirroredCameraCfg, OverShoulderReviewCameraCfg
     from robolab.variations.lighting import BlueSphereLightCfg, GreenSphereLightCfg, RedSphereLightCfg
 
     print(f"Registering tasks in {task_dirs}")

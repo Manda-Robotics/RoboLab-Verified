@@ -801,33 +801,36 @@ def check_stacked(
 
 
 # Contact spatial checks
-def in_contact(world, object1: str | list[str], object2: str | list[str], force_threshold: float = 0.1, env_id: int | None = None):
+def in_contact(
+    world,
+    object1: str | list[str],
+    object2: str | list[str],
+    force_threshold: float = 0.1,
+    logical: str = "all",
+    K: int = 1,
+    env_id: int | None = None,
+):
     """
-    Checks if multiple objects are in contact with each other.
-    Returns True (or Tensor) only if ALL pairs are in contact.
+    Checks contact between every (object1, object2) pair and combines the pair
+    results with ``logical`` (``"all"`` by default — the historical behaviour;
+    ``"any"``; or ``"choose"`` with ``K``). Returns bool, or Tensor(N,) when
+    ``env_id`` is None.
     """
     object1 = [object1] if isinstance(object1, str) else list(object1)
     object2 = [object2] if isinstance(object2, str) else list(object2)
 
+    results = [
+        world.in_contact(o1, o2, force_threshold, env_id=env_id)
+        for o1 in object1
+        for o2 in object2
+    ]
     if env_id is not None:
-        results = [
-            world.in_contact(o1, o2, force_threshold, env_id=env_id)
-            for o1 in object1
-            for o2 in object2
-        ]
-        result = all(results)
+        result = evaluate_logicals([bool(r) for r in results], logical, K)
         if DEBUG:
-            print(f"in_contact: all pairs of {object1} and {object2} in contact -> {result}")
+            print(f"in_contact: pairs of {object1} and {object2} in contact (logical={logical}, K={K}) -> {result}")
         return result
-    else:
-        # Vectorized: each world.in_contact returns (N,) tensor
-        results = [
-            world.in_contact(o1, o2, force_threshold, env_id=None)
-            for o1 in object1
-            for o2 in object2
-        ]
-        stacked = torch.stack(results, dim=0)  # (num_pairs, N)
-        return stacked.all(dim=0)  # (N,)
+    # Vectorized: each world.in_contact returns (N,) tensor
+    return evaluate_logicals_vectorized(results, logical, K)
 
 
 def gripper_detached(world, obj: str, gripper_name: str | list[str], env_id: int | None = None):

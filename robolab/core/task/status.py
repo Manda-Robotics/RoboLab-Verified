@@ -59,6 +59,13 @@ class StatusCode(IntEnum):
     OBJECT_AT_SUCCESS = 123
     OBJECT_INSIDE_SUCCESS = 124
     OBJECT_IN_CONTAINER_SUCCESS = 125
+    OBJECT_ON_TOP_SUCCESS = 176
+    OBJECT_ON_BOTTOM_SUCCESS = 177
+    OBJECT_ON_CENTER_SUCCESS = 178
+    OBJECT_PICKED_UP_SUCCESS = 179
+    OBJECTS_PLACED_IN_CONTAINER_IN_ORDER_SUCCESS = 180
+    OBJECT_GROUPS_IN_CONTAINERS_SUCCESS = 181
+    SUBTASK_COMPLETED = 190        # a ladder stage finished (named as such, not after its first condition)
     OBJECT_OUTSIDE_OF_SUCCESS = 126
     OBJECT_ENCLOSED_SUCCESS = 127
     OBJECT_ABOVE_SUCCESS = 128
@@ -155,6 +162,30 @@ class StatusCode(IntEnum):
     TARGET_OBJECT_DROPPED = 263    # Target object was grabbed but is now dropped mid-transport
     GRIPPER_HIT_OBJECT = 264       # Gripper collided with an object (not table)
     MULTIPLE_OBJECTS_GRABBED = 265 # Gripper is in contact with multiple objects
+    GRASP_ATTEMPT_FAILED = 266     # Hand closed on / touched the object but never established a carry
+    OBJECT_RELEASED = 267          # A grasped object left the hand while it was opening (deliberate)
+    OBJECT_DROPPED = 268           # A grasped object left the hand while it stayed closed (slip)
+    SCENE_SETTLING = 269           # Objects moved during the reset warm-up without the hand touching them
+    WRONG_OBJECT_PLACED = 270      # A non-target object the hand had held was released inside a goal container
+    WRONG_OBJECT_PUSHED_IN = 271   # A non-target object entered a goal container without having been held
+    OBJECT_FELL_OFF_TABLE = 272    # An object dropped well below its starting height (over the edge)
+    TARGET_LOST = 273              # The success condition can no longer be met (required target off the table) — terminal
+    PLACED_WITHOUT_LIFT = 274      # A placement was credited for an object that was never carried (dragged / pushed)
+    TOWED_WITHOUT_GRASP = 275      # Object moved with an OPEN hand (stuck to one finger) — physics artifact, episode is bogus
+    OBJECT_ON_TOP_FAILURE = 276
+    OBJECT_ON_BOTTOM_FAILURE = 277
+    OBJECT_ON_CENTER_FAILURE = 278
+    OBJECT_PICKED_UP_FAILURE = 279
+    OBJECTS_PLACED_IN_CONTAINER_IN_ORDER_FAILURE = 280
+    OBJECT_GROUPS_IN_CONTAINERS_FAILURE = 281
+    TARGET_OBJECT_BUMPED = 282     # the policy nudged an object the task is about — expected, not a failure
+    OBJECT_CARRIED = 283           # P71: the grasp DETECTOR saw a carry established — a physical
+                                   # observation, not progress. The ladder's OBJECT_GRABBED_SUCCESS
+                                   # is the progress line. The reviewer saw both and asked what the
+                                   # difference was; they were both green and identically named.
+    OBJECT_GRIPPED = 284           # P78: the jaws closed on this object. The rung BEFORE a carry:
+                                   # grip -> carry -> the ladder's success line. A carry with no
+                                   # grip before it is the hand pushing the object, not holding it.
 
     # ============================================================
     # Legacy aliases for backward compatibility
@@ -183,6 +214,18 @@ class StatusCode(IntEnum):
 # Subset of StatusCodes classified as runtime events worth tallying in a
 # run summary (wrong grabs, collisions, displacements, etc.). Consumed by
 # ``robolab.eval.summarize.extract_events_from_log``.
+# Events that describe *what happened* without judging it — the dashboard paints
+# these grey (The reviewer 2026-08-26: "it should be a grey flag, it's not particularly
+# good or bad").
+NEUTRAL_STATUS_CODES: set[int] = {
+    int(256),   # GRIPPER_FULLY_CLOSED — "closed on nothing"
+    int(267),   # OBJECT_RELEASED — a deliberate release
+    int(269),   # SCENE_SETTLING
+    int(282),   # TARGET_OBJECT_BUMPED — the policy working on its own target
+    int(283),   # OBJECT_CARRIED — a physical observation; the ladder line carries the credit
+    int(284),   # OBJECT_GRIPPED — the jaws closed on it; the ladder line carries the credit
+}
+
 EVENT_STATUS_CODES: set[StatusCode] = {
     StatusCode.WRONG_OBJECT_GRABBED_FAILURE,
     StatusCode.GRIPPER_HIT_TABLE,
@@ -195,4 +238,16 @@ EVENT_STATUS_CODES: set[StatusCode] = {
     StatusCode.GRIPPER_HIT_OBJECT,
     StatusCode.MULTIPLE_OBJECTS_GRABBED,
     StatusCode.GRIPPER_FULLY_CLOSED,
+    StatusCode.GRASP_ATTEMPT_FAILED,
+    StatusCode.OBJECT_RELEASED,
+    StatusCode.OBJECT_DROPPED,
+    StatusCode.SCENE_SETTLING,
+    StatusCode.TARGET_OBJECT_BUMPED,
+    StatusCode.OBJECT_GRIPPED,
+    StatusCode.WRONG_OBJECT_PLACED,
+    StatusCode.WRONG_OBJECT_PUSHED_IN,
+    StatusCode.OBJECT_FELL_OFF_TABLE,
+    StatusCode.TARGET_LOST,
+    StatusCode.PLACED_WITHOUT_LIFT,
+    StatusCode.TOWED_WITHOUT_GRASP,
 }

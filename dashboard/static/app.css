@@ -29,6 +29,53 @@ html, body { background-color: var(--bg-0); color: var(--text-0); }
   cursor: pointer;
 }
 
+/* "verified" sits under the wordmark, right-aligned to it, and takes almost no
+   vertical space of its own -- the 45px topnav is unchanged.
+   The doubled class raises specificity over Tailwind's .text-xl / .text-2xl,
+   which set line-height 1.75rem / 2rem and otherwise open a big gap under the
+   wordmark (and around the mark itself, which inherits it). */
+.brand-wordmark.brand-wordmark {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.05;
+}
+/* Doubled to match .brand-wordmark.brand-wordmark above -- otherwise the base
+   rule outranks this one and the homepage chip right-aligns under "Dashboard"
+   instead of sitting under "RoboLab". */
+.brand-wordmark--start.brand-wordmark--start { align-items: flex-start; }
+.brand-verified.brand-verified {
+  display: block;
+  margin-top: 2px;
+  /* the dashboard's technical face, as used by the metric and code panels --
+     a deliberate contrast with the sans wordmark, and no webfont to fetch
+     (H-E23: the page must still render on an air-gapped GPU box). */
+  font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-size: 0.42em;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  /* Faux-bold: most mono faces stop at 700 (SF Mono has no 800/900), so asking
+     for a heavier weight alone changes nothing. A hairline stroke in the SAME
+     colour thickens every glyph uniformly. At 0.5 px the miters that made the
+     3 px outline spiky are sub-pixel, so none of that comes back. */
+  -webkit-text-stroke: 0.5px #000;
+  text-transform: lowercase;
+  /* A solid chip rather than an outline. -webkit-text-stroke miters every join,
+     which spikes on mono glyphs at this size, and CSS exposes no
+     stroke-linejoin for HTML text -- so the fix is to stop stroking. Same
+     "black on thick white", as a stamp. */
+  color: #000;
+  background: #fff;
+  padding: 2px 6px 1px;
+  border-radius: 3px;
+  /* the light theme has a white page behind it, so the chip needs an edge */
+  border: 1px solid var(--border);
+  /* the trailing letter-space would otherwise sit inside the chip */
+  text-indent: 0.14em;
+  opacity: 1;
+}
+
 /* Dancing robot mark.  The body sways side-to-side, the arms wave in
    opposite phase. Subtle so it doesn't pull focus from the nav. */
 .ribble-icon {
@@ -515,6 +562,135 @@ body.sidebar-resizing { cursor: col-resize; user-select: none; }
   border-bottom: 1px solid var(--border);
   background: var(--bg-0);
   display: flex; align-items: center; gap: 6px;
+}
+/* shared video transport: [play] [time] [event timeline = scrubber] [speed] */
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-2);
+}
+.transport-btn {
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--bg-0);
+  color: var(--text-1);
+  min-width: 2.2rem;
+  padding: 0.15rem 0.4rem;
+  cursor: pointer;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.transport-btn:hover { border-color: var(--accent); color: var(--accent-fg); }
+.transport .events-strip { flex: 1; margin: 0; touch-action: none; }
+.transport-time {
+  font-size: 11px;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.transport-speed {
+  background: var(--bg-0);
+  color: var(--text-1);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font-size: 11px;
+  padding: 0.15rem 0.25rem;
+  cursor: pointer;
+}
+/* per-tile link toggle (linked = driven by the transport) */
+.link-btn {
+  margin-left: 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-2);
+  padding: 1px 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.7;
+}
+.link-btn:hover { opacity: 1; border-color: var(--border-strong); color: var(--text-1); }
+.cam-tile.unlinked .cam-tile-label { border-bottom-color: var(--accent); }
+.cam-tile.unlinked .cam-tile-label .dot { background: var(--accent); }
+.cam-tile.unlinked .link-btn { color: var(--accent-fg); opacity: 1; }
+
+/* subgoal checklist under the language instruction */
+.subgoal-list { display: flex; flex-direction: column; gap: 2px; }
+.subgoal-row {
+  display: flex; align-items: baseline; gap: 0.5rem;
+  font-size: 13px; color: var(--text-0);
+  padding: 2px 0;
+}
+.subgoal-row.never { color: var(--text-1); }
+.subgoal-box {
+  flex: none; width: 13px; height: 13px; align-self: center;
+  border: 1.5px solid var(--border-strong); border-radius: 3px;
+  background: transparent; position: relative;
+  transition: background 120ms linear, border-color 120ms linear;
+}
+.subgoal-box.partial { border-color: var(--text-1); background: linear-gradient(90deg, var(--border-strong) 50%, transparent 50%); }
+.subgoal-box.done { border-color: var(--success); background: var(--success); }
+.subgoal-box.done::after {
+  content: ''; position: absolute; left: 3.5px; top: 0.5px; width: 4px; height: 8px;
+  border: solid #0b0f19; border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+.subgoal-index { color: var(--text-2); font-size: 11px; min-width: 1.2em; }
+.subgoal-conds { color: var(--text-2); font-size: 11px; }
+.subgoal-when { margin-left: auto; color: var(--text-2); font-size: 10px; white-space: nowrap; }
+
+/* task page: progress buckets + per-card stage boxes */
+.bucket-chip { cursor: pointer; border: 1px solid transparent; }
+.bucket-chip:hover { border-color: var(--border-strong); }
+.bucket-chip.active { border-color: var(--accent); color: var(--accent-fg); }
+.stage-boxes { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; }
+.stage-box {
+  width: 9px; height: 9px; border-radius: 2px;
+  border: 1px solid var(--border-strong); background: transparent;
+}
+.stage-box.done { background: var(--success); border-color: var(--success); }
+.stage-box.partial { background: linear-gradient(90deg, var(--border-strong) 50%, transparent 50%); }
+.stage-count { font-size: 10px; color: var(--text-2); margin-left: 3px; }
+
+/* sidebar: policy-family groups + filter */
+.family-row {
+  cursor: pointer; user-select: none;
+  background: var(--bg-1);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px; letter-spacing: 0.02em;
+  color: var(--text-0);
+}
+.family-row:hover { background: var(--bg-2); }
+.family-name { font-weight: 600; }
+.family-stats { font-size: 10px; color: var(--text-2); white-space: nowrap; }
+.sidebar-filter {
+  width: 100%; font-size: 12px; padding: 4px 8px;
+  background: var(--bg-0); color: var(--text-0);
+  border: 1px solid var(--border-strong); border-radius: 6px; outline: none;
+}
+.sidebar-filter:focus { border-color: var(--accent); }
+
+.run-date {
+  flex: none;
+  font-size: 10px;
+  color: var(--text-2);
+  opacity: 0.75;
+  white-space: nowrap;
+}
+.mirror-tag {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-2);
+  opacity: 0.7;
+  white-space: nowrap;
+  cursor: help;
 }
 .cam-tile-label .dot {
   width: 6px; height: 6px; border-radius: 50%;

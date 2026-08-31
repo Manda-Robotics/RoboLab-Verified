@@ -41,7 +41,7 @@ def auto_register_droid_rel_ik_envs(
         contact_gripper,
     )
     from robolab.variations.backgrounds import HomeOfficeBackgroundCfg
-    from robolab.variations.camera import EgocentricMirroredCameraCfg
+    from robolab.variations.camera import OverShoulderLeftCameraCfg, EgocentricMirroredCameraCfg, OverShoulderReviewCameraCfg
     from robolab.variations.lighting import SphereLightCfg
 
     if cameras is None:

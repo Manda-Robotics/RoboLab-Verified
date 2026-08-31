@@ -338,7 +338,7 @@ python robolab/tasks/_utils/generate_task_metadata.py \
 python examples/run_empty.py --task <TaskClassName>
 ```
 
-See [Task Libraries](docs/task_libraries.md) for metadata details and [Environment Registration](docs/environment_registration.md) for how to register and run your task with a policy.
+See [Task Libraries](../../docs/task_libraries.md) for metadata details and [Environment Registration](../../docs/environment_registration.md) for how to register and run your task with a policy.
 
 ---
 

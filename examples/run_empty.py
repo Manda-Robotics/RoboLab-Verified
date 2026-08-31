@@ -53,6 +53,9 @@ parser.add_argument("--task", nargs='+', default=None,
 parser.add_argument("--tag", nargs='+', default=None,
                        help="List of tags of tasks to evaluate on ")
 parser.add_argument("--num-steps", type=int, default=50, help="Number of steps to run the environment for.")
+parser.add_argument("--friction", type=str, default="upstream",
+                    help="P79 friction override to probe (upstream | <number> | realistic | table.json); "
+                         "the PhysX readback lands in <task>/friction_applied.json.")
 
 # parse the arguments
 args_cli, _= parser.parse_known_args()
@@ -70,6 +73,7 @@ from robolab.constants import get_timestamp # noqa
 from robolab.core.logging.results import dump_results_to_file, get_all_env_events, summarize_experiment_results # noqa
 from robolab.core.logging.results import init_experiment, update_experiment_results # noqa
 import robolab.constants # noqa
+robolab.constants.FRICTION = args_cli.friction  # P79: must precede any create_env
 
 # Run automatic factory generation before main
 auto_register_droid_envs()

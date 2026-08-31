@@ -1,5 +1,27 @@
 # Contributions
 
+## RoboLab Verified
+
+This repository is a fork of NVIDIA RoboLab maintained by [Manda Robotics](https://github.com/Manda-Robotics).
+Issues and pull requests against the fork go to
+[Manda-Robotics/RoboLab-Verified](https://github.com/Manda-Robotics/RoboLab-Verified/issues);
+issues about the benchmark itself (tasks, assets, the Isaac Lab integration) are usually
+better raised [upstream](https://github.com/NVlabs/RoboLab/issues), where the acknowledgements
+below belong.
+
+A change to evaluation semantics is accepted here only with three things attached:
+
+1. **The finding** — what the harness got wrong, measured on recorded episodes (a corpus count,
+   or a linked episode a reviewer can open), added to `docs/verified/findings.md`.
+2. **The change** — one commit titled `P<nn>: <what it does>`, a row in
+   `docs/verified/changes.md` stating whether a score can move and the evidence, and an
+   offline test under `offline_tests/` (no simulator).
+3. **The verification** — a recorded run on which `scripts/verify_patches.py` (or a human on a
+   linked episode) shows the new behaviour *and* the old behaviour on the pre-change baseline.
+   Until then the row is marked OFFLINE. An N/A is never a pass.
+
+Everything else — new robots, backgrounds, scenes, tooling — follows the upstream rules below.
+
 ## Acknowledgements
 
 RoboLab is a research project developed and maintained by the [Seattle Robotics Lab (SRL)](https://research.nvidia.com/labs/srl/) at NVIDIA Research, with contributions from across NVIDIA.
@@ -10,7 +32,7 @@ We thank the following additional contributors for their help in building RoboLa
 
 
 ## How to contribute
-If you encounter issues or have suggestions, please open an [Issue](https://github.com/NVlabs/RoboLab/issues) in this repository.
+If you encounter issues or have suggestions, please open an [Issue](https://github.com/Manda-Robotics/RoboLab-Verified/issues) — or [upstream](https://github.com/NVlabs/RoboLab/issues) when it concerns the benchmark itself.
 
 ### What PRs we accept
 

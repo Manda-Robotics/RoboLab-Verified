@@ -189,6 +189,38 @@ class PostStepEndEffectorPoseRecorder(RecorderTerm):
         }
 
 
+class PostStepContactRecorder(RecorderTerm):
+    """P62: record per-pad gripper contact for every rigid object, each step.
+
+    Everything the event logic needs is already in the HDF5 except this. Without
+    it, a flag change can only be re-verified by re-running the simulator, and the
+    one question our own labelled data could not settle -- is the object held by
+    ONE pad (a tow) or wedged between BOTH (not a tow) -- is unanswerable after
+    the fact. the reviewer's labels on six open-hand carries split exactly along that
+    line while jaw-axis geometry did not separate them at all.
+
+    Per object: a (num_envs, 2) float32 of contact FORCE against the left and right
+    pads, plus a (num_envs,) uint8 per container/surface the object touches. P77
+    moved from booleans to forces because the booleans could not separate the reviewer's
+    labelled drag and "magnetic" episodes from ordinary grasps; and destination
+    contact is what `object_in_container(require_contact_with=True)` reads, without
+    which placement flags cannot be recomputed from a recording.
+    """
+
+    def record_post_step(self):
+        from robolab.core.task.grasp import pad_contact_columns  # noqa: PLC0415
+        from robolab.core.world.world_state import get_world  # noqa: PLC0415
+
+        try:
+            world = get_world(self._env)
+        except Exception:
+            return None, None
+        out = pad_contact_columns(self._env, world, list(self._env.scene.rigid_objects))
+        if not out:
+            return None, None
+        return "contact", out
+
+
 class PostStepRobotRootPoseRecorder(RecorderTerm):
     """Recorder term that records the robot root pose at the end of each step.
 
@@ -324,6 +356,13 @@ class InitialStateRecorderCfg(RecorderTermCfg):
 
     class_type: type[RecorderTerm] = InitialStateRecorder
     camera_names: list[str] | None = None
+
+
+@configclass
+class PostStepContactRecorderCfg(RecorderTermCfg):
+    """Configuration for the per-pad contact recorder term (P62)."""
+
+    class_type: type[RecorderTerm] = PostStepContactRecorder
 
 
 @configclass

@@ -190,14 +190,44 @@ def compute_difficulty_score(
     return score, label
 
 
-def sanitize_subtask_conditions(conditions) -> dict[str, list[tuple[Callable, float]]]:
+def _sequence_group_name(conditions) -> str:
+    """Group name for a list-form sequence: the one object every condition is
+    about (``rubiks_cube``), or ``sequence`` when they name none or several."""
+    from functools import partial as _partial
+    objs = set()
+    for c in conditions:
+        f = c[0] if isinstance(c, tuple) else c
+        kw = {}
+        while isinstance(f, _partial):
+            kw = {**f.keywords, **kw}
+            f = f.func
+        for k in ("object", "objects"):
+            v = kw.get(k)
+            if isinstance(v, str):
+                objs.add(v)
+            elif isinstance(v, (list, tuple)):
+                objs.update(x for x in v if isinstance(x, str))
+    return next(iter(objs)) if len(objs) == 1 else "sequence"
+
+
+def sanitize_subtask_conditions(conditions, logical: str = "all") -> dict[str, list[tuple[Callable, float]]]:
     """
     Sanitize the conditions structure.
     Valid conditions structures:
     Single condition (atomic subtask)
     1. conditions = func ---- single task
 
-    These conditions (in set or list notation) is processed as a single group, and is subject to logical ('all', 'any', 'choose')
+    List notation is ORDERED. With logical='all' (the default) a list is ONE group whose
+    conditions are checked sequentially — `[grabbed, left_of, dropped]` means grab, then
+    place left of, then release, exactly like the dict form `{obj: [grabbed, left_of, dropped]}`.
+    With logical='any' / 'choose' a list is a set of alternatives: each condition becomes its
+    own group and `logical` picks between them (`[grabbed(bagel_1), grabbed(bagel_2)]`, any).
+    Set notation is unordered and always yields parallel one-condition groups.
+
+    Historically every list became parallel one-condition groups regardless of `logical`;
+    11 benchmark tasks written as sequences then completed `object_dropped` at reset
+    (= "not in contact", true before the robot moves) and credited `left_of` while the
+    object was still in the hand (findings.md H-B1, H-R6-11).
 
     2. conditions = [func1, func2] ---- list notation, assumed to have the same score.
     3. conditions = {func1, func2} ---- set notation, assumed to have the same score.
@@ -335,6 +365,10 @@ def sanitize_subtask_conditions(conditions) -> dict[str, list[tuple[Callable, fl
                     raise TypeError(f"second element of condition tuple at index {i} must be a number (score)")
                 sanitized_conditions[f"group{i+1}"] = [condition]
 
+            if logical == "all":
+                # Ordered list + 'all' = one sequential group (see docstring).
+                sanitized_conditions = {_sequence_group_name(conditions): list(conditions)}
+
             if robolab.constants.DEBUG:
                 print(f"[Sanitize Subtask Conditions] Converting list of tuples to dict: {conditions} converted to {sanitized_conditions}")
 
@@ -349,6 +383,10 @@ def sanitize_subtask_conditions(conditions) -> dict[str, list[tuple[Callable, fl
                 if not callable(condition):
                     raise TypeError(f"condition at index {i} must be callable, got {type(condition)}")
                 sanitized_conditions[f"group{i+1}"] = [(condition, equal_score)]
+
+            if logical == "all":
+                # Ordered list + 'all' = one sequential group (see docstring).
+                sanitized_conditions = {_sequence_group_name(conditions): [(c, equal_score) for c in conditions]}
 
             if robolab.constants.DEBUG:
                 print(f"[Sanitize Subtask Conditions] Converting list of callables to dict: {conditions} converted to {sanitized_conditions}")

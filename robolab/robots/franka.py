@@ -154,6 +154,7 @@ FrankaCfg.table_fixture = FRANKA_TABLE_FIXTURE
 # EE-pose recorder channels (HDF5 channel name -> EE body name), consumed by
 # create_recorder_config.
 FrankaCfg.ee_recorder_bodies = {"ee_pose": "panda_hand"}
+FrankaCfg.friction_bodies = ["panda_leftfinger", "panda_rightfinger"]  # P79
 
 
 ########################################################

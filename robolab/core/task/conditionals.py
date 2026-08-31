@@ -22,6 +22,7 @@ import robolab.constants
 from robolab.core.task.decorators import atomic, composite
 from robolab.core.task.predicate_logic import *
 from robolab.core.task.predicate_logic import _and, _not, gripper_detached
+from robolab.core.task.rest import at_rest
 from robolab.core.task.subtask import Subtask
 from robolab.core.world.world_state import get_world
 
@@ -207,9 +208,9 @@ def object_in_contact(
         raise ValueError(f"Invalid logical: {logical}")
 
     world = get_world(env)
-    result = in_contact(world, object1, object2, force_threshold=0.1, env_id=env_id)
+    result = in_contact(world, object1, object2, force_threshold=0.1, logical=logical, K=K, env_id=env_id)
     if robolab.constants.DEBUG:
-        print(f"object_in_contact: {object1} and {object2} in contact (logical={logical}) -> {result}")
+        print(f"object_in_contact: {object1} and {object2} in contact (logical={logical}, K={K}) -> {result}")
     return result
 
 @atomic
@@ -219,11 +220,17 @@ def object_grabbed(
     gripper_name: str | list[str] = "gripper",
     env_id: int | None = None,
 ):
-    """Check if an object is currently being grabbed by the gripper (in contact with gripper)."""
-    world = get_world(env)
-    result = in_contact(world, object, gripper_name, env_id=env_id)
+    """Check if an object is grasped — carried, not merely touched.
+
+    Delegates to :class:`robolab.core.task.grasp.GraspTracker`: the object has
+    been in contact with the hand for ``GRASP_HOLD_S`` while moving with it
+    (offset change < ``GRASP_COUPLING_M``, hand moved ≥ ``GRASP_HAND_MOVE_M``).
+    Upstream used contact alone, so every touch was a grasp (findings.md B1).
+    """
+    from robolab.core.task.grasp import get_grasp_tracker
+    result = get_grasp_tracker(env).grasped(object, gripper_name, env_id=env_id)
     if robolab.constants.DEBUG:
-        print(f"object_grabbed: '{object}' in contact with '{gripper_name}' -> {result}")
+        print(f"object_grabbed: '{object}' carried by '{gripper_name}' -> {result}")
     return result
 
 @atomic
@@ -246,11 +253,20 @@ def object_picked_up(
     object: str,
     surface: str,
     distance: float = 0.05,
+    gripper_name: str | list[str] = "gripper",
     env_id: int | None = None,
 ):
-    """Check if object is grabbed and lifted at least `distance` above the surface."""
+    """Check if object is grabbed and lifted at least `distance` above the surface.
+
+    P68: ``gripper_name`` follows the same rules as every other predicate that takes
+    it (``object_on_top``, ``object_in_container``, …) — see
+    ``docs/task_conditionals.md#gripper-names``. A **list** means every listed gripper
+    must hold the object, so a two-armed lift is ``gripper_name=["left", "right"]``.
+    This was the one predicate that did not take the parameter, which left no way to
+    write a two-handed grasp into a success condition. The default is unchanged.
+    """
     result = _and(
-        object_grabbed(env, object, env_id=env_id),
+        object_grabbed(env, object, gripper_name=gripper_name, env_id=env_id),
         object_above(env, object=object, reference_object=surface, env_id=env_id, z_margin=distance)
     )
     if robolab.constants.DEBUG:
@@ -270,6 +286,16 @@ def object_picked_up(
 #
 
 @atomic
+def _object_above_container_base(world, obj: str, container: str, tol: float = 0.01, env_id: int | None = None):
+    """True where the object's root sits at or above the container's root (its base),
+    minus ``tol``. Scalar for ``env_id``, ``(N,)`` bool otherwise."""
+    po, _ = world.get_pose(obj, env_id=env_id)
+    pc, _ = world.get_pose(container, env_id=env_id)
+    if env_id is not None:
+        return bool(po[2] >= pc[2] - tol)
+    return po[:, 2] >= pc[:, 2] - tol
+
+
 def object_in_container(
     env,
     object: str | list[str],
@@ -286,18 +312,28 @@ def object_in_container(
 ):
     """Checks if objects are in an open-top container.
 
-    Geometric check: the object's centroid is transformed into the container's local
-    frame and bounds-checked against the container's local AABB (with one
-    container-height of open-top slack along the container's local +z). Because the
-    check is performed in the container's coordinates, the predicate is invariant to
-    container orientation — a flipped or tipped container correctly fails.
+    Geometric check: the object's hull centroid is transformed into the
+    container's local frame and tested against the container's convex-hull
+    half-spaces with the rim faces replaced by a horizontal cap at rim height
+    plus a margin (``hull_check.build_local_hull``'s ``open_top_cap_margin``,
+    5 cm) — so an object resting slightly proud of a shallow container still
+    counts, but one hovering high above it, or sitting on a shelf over it,
+    does not (findings.md H-B6). Because the check is performed in the
+    container's coordinates, the predicate is invariant to container
+    orientation — a flipped or tipped container correctly fails.
     """
     def condition(world, obj, env_id=None):
-        result = in_opentop_container(
+        # P37 (H-R7-5): the hull test is symmetric for two nested identical
+        # shapes — bowl_1's centroid sits inside bowl_2's cavity whether bowl_2 is
+        # on top or underneath, so "stack the right bowl on the left bowl" scored
+        # 4/4 successes for the inverted stack. An object is only *in* a container
+        # if it is also above the container's base.
+        result = _and(_object_above_container_base(world, obj, container, env_id=env_id), in_opentop_container(
             world, obj, container,
             tolerance=tolerance,
             env_id=env_id,
-        )
+        ))
+        result = _and(result, at_rest(env, obj, env_id=env_id))   # P46: credit a placement only once it settles
         if require_contact_with is True:
             result = _and(result, in_contact(world, obj, container, env_id=env_id))
         elif require_contact_with:
@@ -341,6 +377,7 @@ def object_on_top(
         result = _and(result, centroid_in_footprint(
             world, obj, reference_object, tolerance=tolerance, env_id=env_id
         ))
+        result = _and(result, at_rest(env, obj, env_id=env_id))   # P46
         if require_contact_with is not None:
             result = _and(result, in_contact(world, obj, require_contact_with, env_id=env_id))
         if require_gripper_detached:
@@ -399,6 +436,7 @@ def object_on_center(
     """Checks if objects are centered on reference_object (XY alignment)."""
     def condition(world, obj, env_id=None):
         result = center_of(world, obj, reference_object, tolerance, env_id=env_id)
+        result = _and(result, at_rest(env, obj, env_id=env_id))   # P46
         if require_contact_with is True:
             result = _and(result, in_contact(world, obj, reference_object, env_id=env_id))
         elif require_contact_with:

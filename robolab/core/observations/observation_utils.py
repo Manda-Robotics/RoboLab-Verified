@@ -265,6 +265,22 @@ def generate_obs_cfg(obs_groups: dict[str, ObsGroup]):
 
     return DynamicObservationCfg
 
+def _label_panel(image, name: str):
+    """Burn the camera name into a *copy* of a panel for the tiled recording
+    (P39 / H-R5-3: panels were tiled alphabetically with no labels). Policy inputs
+    are untouched — only ``combined_image`` carries the label."""
+    try:
+        import cv2
+    except ImportError:
+        return image
+    out = np.ascontiguousarray(image).copy()
+    h = out.shape[0]
+    scale = max(0.4, h / 720.0 * 0.7)
+    cv2.putText(out, str(name), (8, int(22 * scale / 0.7)), cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 0), 3, cv2.LINE_AA)
+    cv2.putText(out, str(name), (8, int(22 * scale / 0.7)), cv2.FONT_HERSHEY_SIMPLEX, scale, (255, 255, 255), 1, cv2.LINE_AA)
+    return out
+
+
 def unpack_image_obs(obs, obs_group_name="image_obs", camera_suffix=["_camera", "_cam", "_img", "_image"], scale: float = 1.0, env_id: int = 0):
     """
     Unpack image observations from an observation dictionary.
@@ -299,7 +315,7 @@ def unpack_image_obs(obs, obs_group_name="image_obs", camera_suffix=["_camera", 
             image = tensor.cpu().numpy()
             image_dict[key] = image
             images.append(image)
-    combined_image = np.concatenate(images, axis=1)
+    combined_image = np.concatenate([_label_panel(img, name) for img, name in zip(images, image_dict.keys())], axis=1)
     image_dict["combined_image"] = combined_image
     return image_dict
 
@@ -355,6 +371,6 @@ def unpack_viewport_cams(obs, obs_group_name="viewport_cam", camera_suffix=["_ca
             image = tensor.cpu().numpy()
             viewport_dict[key] = image
             images.append(image)
-    combined_image = np.concatenate(images, axis=1)
+    combined_image = np.concatenate([_label_panel(img, name) for img, name in zip(images, viewport_dict.keys())], axis=1)
     viewport_dict["combined_image"] = combined_image
     return viewport_dict

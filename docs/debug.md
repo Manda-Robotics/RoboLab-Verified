@@ -205,3 +205,13 @@ See [Analysis and Results Parsing](analysis.md) for the full set of analysis scr
 ## Known Issues
 
 See [Known Issues](known_issues.md).
+
+## Benign messages at boot and on the first inference
+
+- `[Error] [carb.graphics-vulkan.plugin] Could not get NGX parameters block because NGX isn't enabled` /
+  `Failed to create NGX context` at Isaac Sim boot: DLSS is not available in a headless container.
+  Rendering is unaffected.
+- On the first policy query of a fresh OpenPI server the server JIT-compiles for about a minute.
+  The `websockets` keepalive times out, the client logs `ConnectionClosedError ... keepalive ping timeout`
+  and `Connection lost, reconnecting (attempt 1/3)`, then continues. One reconnect on the first step is
+  expected; repeated reconnects are not.

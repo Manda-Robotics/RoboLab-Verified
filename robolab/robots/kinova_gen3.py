@@ -218,3 +218,4 @@ contact_gripper = {
 # body name), consumed by create_recorder_config. The Kinova articulation root
 # is also named "base_link", so the gripper base must be named explicitly.
 KinovaGen3Cfg.ee_recorder_bodies = {"ee_pose": END_EFFECTOR_LINK_NAME}
+KinovaGen3Cfg.friction_bodies = ["robotiq_85_left_finger_tip_link", "robotiq_85_right_finger_tip_link"]  # P79

@@ -5,14 +5,16 @@
 
 from collections import defaultdict
 from dataclasses import asdict
+import re
 from pathlib import Path
 
 from fastapi import Body, FastAPI, HTTPException, Query, Request
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from dashboard.loaders.catalog import (
+    task_subtasks,
     build_scene_index,
     default_task_folder,
     filter_scene_prims,
@@ -71,20 +73,96 @@ def _resolve_dt(task_dir: Path, env_id: int, run_index: int) -> float | None:
     return None
 
 
+_RANGE_RE = re.compile(r"^bytes=(\d*)-(\d*)$")
+
+
+def _video_response(path: str | Path, request: Request):
+    """Serve an mp4 with HTTP Range support.
+
+    Starlette < 0.40's ``FileResponse`` ignores ``Range`` and always answers 200 with
+    the whole file. Chromium then treats the stream as non-seekable: scrubbing, event
+    clicks and arrow-key seeks silently snap back to the buffered position until the
+    entire file has downloaded, and Safari refuses to play at all. Browsers need a
+    206 + ``Content-Range`` (and ``Accept-Ranges: bytes`` on the full response).
+    """
+    path = Path(path)
+    size = path.stat().st_size
+    base_headers = {"Accept-Ranges": "bytes"}
+    m = _RANGE_RE.match(request.headers.get("range", "").strip())
+    if not m:
+        return FileResponse(str(path), media_type="video/mp4", headers=base_headers)
+    start_s, end_s = m.groups()
+    if start_s == "" and end_s == "":
+        return FileResponse(str(path), media_type="video/mp4", headers=base_headers)
+    if start_s == "":                      # suffix range: last N bytes
+        length = min(int(end_s), size)
+        start, end = size - length, size - 1
+    else:
+        start = int(start_s)
+        end = min(int(end_s), size - 1) if end_s else size - 1
+    if start >= size or start > end:
+        return Response(status_code=416, headers={"Content-Range": f"bytes */{size}"})
+    length = end - start + 1
+
+    def _iter(chunk: int = 1 << 20):
+        with open(path, "rb") as f:
+            f.seek(start)
+            remaining = length
+            while remaining > 0:
+                buf = f.read(min(chunk, remaining))
+                if not buf:
+                    break
+                remaining -= len(buf)
+                yield buf
+
+    headers = {
+        **base_headers,
+        "Content-Range": f"bytes {start}-{end}/{size}",
+        "Content-Length": str(length),
+    }
+    return StreamingResponse(_iter(), status_code=206, media_type="video/mp4", headers=headers)
+
+
 def _overview_bucket():
     return {"n": 0, "s": 0, "runs": set(), "tasks": set(), "score_means": []}
 
 
-def _event_severity(name: str) -> str:
-    """Map an event name to a severity bucket the frontend can color-code on.
-    Pure name-pattern routing — no hardcoded list of every event in the taxonomy."""
+def _event_severity(name: str, code: int | None = None) -> str:
+    """Map an event to a severity bucket the frontend can color-code on.
+
+    Name tokens first (whole ``_``-separated tokens, so ``WHITE_MUG`` is not a
+    ``HIT``), then the numeric ``StatusCode`` range as the fallback: codes below
+    200 are success-class, 200 and above are failure/warning-class
+    (``robolab/core/task/status.py``)."""
     u = (name or "").upper()
+    toks = set(u.split("_"))
+    if code is not None:
+        try:
+            from robolab.core.task.status import NEUTRAL_STATUS_CODES
+            if int(code) in NEUTRAL_STATUS_CODES:
+                return "neutral"
+        except Exception:
+            pass
+    # Named as well as coded. The coded check above reads NEUTRAL_STATUS_CODES from the
+    # *running* interpreter, so a server started before a code was added there colours the
+    # event by its number instead -- which is how OBJECT_CARRIED showed up red for the reviewer on
+    # a dashboard left running since the day before P71.
+    if u in ("GRIPPER_FULLY_CLOSED", "OBJECT_RELEASED", "SCENE_SETTLING", "TARGET_OBJECT_BUMPED",
+             "OBJECT_CARRIED", "OBJECT_GRIPPED"):
+        return "neutral"
     if u.endswith("_SUCCESS") or u == "OK":
         return "success"
     if u.endswith("_FAILURE"):
         return "failure"
-    if "DROPPED" in u or "WRONG" in u or "HIT" in u:
+    if toks & {"RELEASED", "SETTLING"}:
+        return "neutral"                      # a deliberate release is not a failure
+    if toks & {"DROPPED", "WRONG", "HIT"}:
         return "failure"
+    if code is not None:
+        try:
+            return "success" if int(code) < 200 else "failure"
+        except (TypeError, ValueError):
+            pass
     return "neutral"
 
 
@@ -122,9 +200,10 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
 
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request):
+        # Request-first signature (Starlette >= 0.29); the (name, context) form was
+        # removed in Starlette 0.40 and 500'd on fresh installs.
         return templates.TemplateResponse(
-            "index.html",
-            {"request": request, "asset_version": _asset_version()},
+            request, "index.html", {"asset_version": _asset_version()}
         )
 
     # ---- API: sources -------------------------------------------------------
@@ -281,6 +360,14 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
     def api_tasks(folder: list[str] | None = Query(default=None)):
         return filter_tasks_by_folder(folder)
 
+    @app.get("/api/tasks/{name}/subtasks")
+    def api_task_subtasks(name: str):
+        """The task's subtask ladder in stage order (see catalog.task_subtasks)."""
+        st = task_subtasks(name)
+        if st is None:
+            raise HTTPException(status_code=404, detail=f"no subtask ladder for task {name!r}")
+        return {"task": name, "subtasks": st}
+
     @app.get("/api/tasks/{name}")
     def api_task(name: str):
         t = get_task(name)
@@ -358,9 +445,9 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
         return [asdict(e) for e in eps]
 
     @app.get("/api/runs/{run_id}/tasks/{task}/episodes/{env_id}/run/{run_index}/video")
-    def episode_video(run_id: str, task: str, env_id: int, run_index: int, name: str | None = None):
+    def episode_video(request: Request, run_id: str, task: str, env_id: int, run_index: int, name: str | None = None):
         """Return the requested camera mp4. If ``name`` is omitted, return the first one
-        (prefers ``viewport``)."""
+        (prefers ``viewport``). Honours HTTP Range requests — see ``_video_response``."""
         ep = loader.get_episode(run_id, task, env_id, run_index)
         if ep is None or not ep.videos:
             raise HTTPException(status_code=404, detail="no video for episode")
@@ -368,8 +455,8 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
             match = next((v for v in ep.videos if v.name == name), None)
             if match is None:
                 raise HTTPException(status_code=404, detail=f"no camera named {name!r}")
-            return FileResponse(match.path, media_type="video/mp4")
-        return FileResponse(ep.videos[0].path, media_type="video/mp4")
+            return _video_response(match.path, request)
+        return _video_response(ep.videos[0].path, request)
 
     @app.get("/api/runs/{run_id}/tasks/{task}/episodes/{env_id}/run/{run_index}/thumb")
     def episode_thumb(run_id: str, task: str, env_id: int, run_index: int):
@@ -428,7 +515,7 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
                     "name": ev.get("name") or "",
                     "info": ev.get("info") or "",
                     "score": ev.get("score"),
-                    "severity": _event_severity(ev.get("name") or ""),
+                    "severity": _event_severity(ev.get("name") or "", ev.get("code")),
                 })
         elif isinstance(data, list):
             # legacy: list of per-step status dicts. derive events on status change.

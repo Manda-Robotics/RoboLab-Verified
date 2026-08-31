@@ -18,3 +18,10 @@ By using [Isaac Sim/Lab recommended GPUs](https://docs.isaacsim.omniverse.nvidia
 
 Example run on a 3090:
 <video src="https://github.com/user-attachments/assets/beb3ef86-9c57-454a-bc6c-48e75390fd12" controls width="800"></video>
+
+## Issues found by RoboLab Verified
+
+Defects in the benchmark that the fork documents but does not change — `PutMugsOnShelf`'s
+rack leaving the table, objects authored interpenetrating their containers, the "stuck to a
+finger" contact artifact, rigid food, Isaac Sim 6.0's gripper rendering — are listed with
+their evidence in [Findings → Known defects, not changed](verified/findings.md#known-defects-not-changed).

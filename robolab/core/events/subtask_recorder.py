@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import copy
+import re
+import logging
 from collections.abc import Sequence
 from typing import Any
 
@@ -10,9 +12,33 @@ from isaaclab.managers.recorder_manager import RecorderManagerBaseCfg, RecorderT
 from isaaclab.utils import configclass
 
 import robolab.constants
+from robolab.core.events.event_lines import dedupe_tick, fold_detach_into_release, fold_duplicate_grab_lines
 from robolab.core.task.event_tracker import EventTracker
-from robolab.core.task.status import get_status_name
+from robolab.core.task.target_objects import subtask_targets, task_containers, task_targets
+from robolab.core.task.status import StatusCode, get_status_name
+from robolab.core.task.conditionals_state_machine import ConditionalsStateMachine
 from robolab.core.task.subtask_state_machine import SubtaskStateMachine
+
+
+logger = logging.getLogger(__name__)
+
+
+def judge_ladder_final(subtasks, unnormalized_total: float, csm_factory) -> float:
+    """Score of a subtask ladder judged from one frame: each stage's machine is
+    built by ``csm_factory(i, subtask)`` and stepped once; stage scores are
+    weighted like ``SubtaskStateMachine.get_total_score``."""
+    if not subtasks:
+        return 1.0
+    total = float(unnormalized_total) if unnormalized_total else 1e-9
+    acc = 0.0
+    for i, st in enumerate(subtasks):
+        csm = csm_factory(i, st)
+        try:
+            csm.step()
+        except Exception:
+            pass
+        acc += float(csm.total_score) * float(st.score) / total
+    return max(0.0, min(1.0, acc))
 
 
 class SubtaskCompletionRecorderTerm(RecorderTerm):
@@ -94,19 +120,36 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
         # For event tracking and SM stepping, treat newly-frozen envs as still active
         effective_frozen = frozen_mask & ~newly_frozen
 
-        # Compute per-env intended objects from each env's current CSM
+        # Per-env object roles for the tracker (robolab/core/task/target_objects.py):
+        #   intended   — the *current* stage's targets: drop tracking is on for
+        #                these and bump/move tracking is off (unchanged upstream
+        #                semantics, but read from the conditions' object kwargs
+        #                instead of the group names — list/keyword-form subtasks
+        #                name their groups ``group1``/``conditions``, which made
+        #                the target itself a "wrong object").
+        #   allowed    — every stage's targets: grasping a later stage's target,
+        #                or one whose stage just completed, is not a wrong grab.
+        #   containers — destinations named by the task: brushing the bin while
+        #                releasing into it is not a wrong grab either.
         per_env_intended: list[set[str]] = []
+        per_env_allowed: list[set[str]] = []
+        per_env_containers: list[set[str]] = []
         for eid in range(self._num_envs):
             sm = self.subtask_state_machines[eid]
+            scene_objects = sm.objects_in_scene
             if sm.conditionals_state_machine is not None:
-                per_env_intended.append(set(sm.conditionals_state_machine.subtask.group_names))
+                per_env_intended.append(subtask_targets(sm.conditionals_state_machine.subtask, scene_objects))
             else:
                 per_env_intended.append(set())
+            per_env_allowed.append(task_targets(sm.subtasks, scene_objects))
+            per_env_containers.append(task_containers(sm.subtasks))
 
         # Batch-check events across all envs (newly-frozen envs are still active for this step)
         all_events = self._event_tracker.check_events(
             env=self._env,
             per_env_intended=per_env_intended,
+            per_env_allowed=per_env_allowed,
+            per_env_containers=per_env_containers,
             frozen_mask=effective_frozen,
             verbose=robolab.constants.VERBOSE,
         )
@@ -125,11 +168,13 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
                 score_list.append(self.infos[eid]["score"])
                 continue
 
-            # Filter events for this env: keep (info, status) where env_mask[eid] is True
+            # Filter events for this env: keep (info, status) where env_mask[eid] is True.
+            # Tracker events may carry a 4th element (P61 onset step); the state machine
+            # never sees it.
             env_events = [
-                (info_str, status_code)
-                for info_str, status_code, env_mask in all_events
-                if env_mask[eid]
+                (ev[0], ev[1])
+                for ev in all_events
+                if ev[2][eid]
             ]
 
             sm = self.subtask_state_machines[eid]
@@ -151,17 +196,38 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
                 step_idx = -1
             current_score = float(subtask_state["score"])
 
-            for tracker_info, tracker_code, env_mask in all_events:
+            # P41 (A7): a placement credited for an object the hand never carried
+            # (dragged / pushed into place) gets a flag; scores are untouched.
+            # P75: PLACED_WITHOUT_LIFT is retired. Across three runs it fired exactly four
+            # times -- all four on BlackItemsInBin's keyboard, which counted as "never
+            # carried" only because the keyboard starts inside the bin (the P74 bug). No
+            # true positive has ever been observed. The detector is kept below; flip
+            # EMIT_PLACED_WITHOUT_LIFT to revive it.
+            if getattr(robolab.constants, "EMIT_PLACED_WITHOUT_LIFT", False):
+                try:
+                    self._flag_placements_without_lift(eid, step_idx, current_score, all_status_codes)
+                except Exception:
+                    logger.exception("placed-without-lift check failed")
+
+            tracker_lines = []
+            for ev in all_events:
+                tracker_info, tracker_code, env_mask = ev[0], ev[1], ev[2]
+                onset = ev[3] if len(ev) > 3 else None
                 if env_mask[eid]:
                     code_int = int(tracker_code)
-                    self._events[eid].append({
-                        "step": step_idx,
+                    # P61: a line is stamped where the thing happened, not where the
+                    # detector concluded. `detected_step` keeps the causal timestamp for
+                    # anything that must not look into the future.
+                    tracker_lines.append({
+                        "step": int(onset) if onset is not None else step_idx,
+                        "detected_step": step_idx,
                         "code": code_int,
                         "name": get_status_name(code_int),
                         "info": tracker_info,
                         "score": current_score,
                     })
 
+            ladder_line = None
             cur_sm_state = (int(status_code), info or "")
             if (
                 cur_sm_state != self._prev_sm_state[eid]
@@ -169,14 +235,20 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
                 and int(status_code) != 0
             ):
                 code_int = int(status_code)
-                self._events[eid].append({
+                ladder_line = {
                     "step": step_idx,
                     "code": code_int,
                     "name": get_status_name(code_int),
                     "info": info,
                     "score": current_score,
-                })
+                }
             self._prev_sm_state[eid] = cur_sm_state
+            # P45: one line per transition — drop same-tick twins, name ladder lines
+            # after their predicate (robolab/core/events/event_lines.py)
+            tracker_lines, ladder_line = dedupe_tick(tracker_lines, ladder_line)
+            self._events[eid].extend(tracker_lines)
+            if ladder_line is not None:
+                self._events[eid].append(ladder_line)
 
             # Capture error info before auto-reset can cause regression
             if not sm.is_complete():
@@ -230,10 +302,68 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
         # Return env 0's info for backward compat
         return self.infos[0]
 
+    _PLACEMENT_RE = re.compile(r"success: (object_in_container|object_on_top|object_on_surface|object_on_center|stacked|object_left_of|object_right_of|object_behind|object_in_front_of)\(object=(\w+)")
+
+    def _flag_placements_without_lift(self, eid: int, step_idx: int, score: float, all_status_codes) -> None:
+        from robolab.core.task.grasp import get_grasp_tracker
+        tracker = get_grasp_tracker(self._env)
+        for info, code in all_status_codes or []:
+            m = self._PLACEMENT_RE.search(info or "")
+            if not m:
+                continue
+            obj = m.group(2)
+            st = tracker._pairs.get((obj, "gripper"))
+            carried = st is not None and int(st.last_grasped_step[eid].item()) >= 0
+            if carried:
+                continue
+            self._events[eid].append({
+                "step": step_idx,
+                "code": int(StatusCode.PLACED_WITHOUT_LIFT),
+                "name": get_status_name(int(StatusCode.PLACED_WITHOUT_LIFT)),
+                "info": f"'{obj}' placed without ever being carried (dragged or pushed into place)",
+                "score": score,
+            })
+
+    def judge_final_score(self, eid: int) -> float:
+        """The subtask ladder re-judged on the *final* frame (findings.md H-B3, A3/A4).
+
+        The live score only ever goes up: a stage that was credited stays credited
+        even if its object is later knocked away (PutTwoMugsOnShelf cosmos3_s2 env 2:
+        second mug placed at 70.2 s → score 1.0, first mug out of scene at 70.3 s,
+        episode fails at 180 s with score 1.0). Here every stage's state machine is
+        instantiated fresh and stepped once against the current (terminal) state, so
+        the result is "what the scene shows at the end". The live number is kept as
+        ``score_peak``.
+        """
+        sm = self.subtask_state_machines[eid]
+        if sm.is_complete():
+            return 1.0
+        return judge_ladder_final(sm.subtasks, sm.unnormalized_total_score,
+                                  lambda i, st: ConditionalsStateMachine(env=self._env, env_id=eid, subtask=st,
+                                                                          objects_in_scene=sm.objects_in_scene,
+                                                                          subtask_group_id=i))
+
     def record_final_status(self) -> tuple[str, dict] | tuple[None, None]:
         """Record final status for all envs when episode ends incomplete."""
         if not self.subtask_state_machines:
             return None, None
+        # P47: report any grasp-attempt burst still open at the buzzer
+        try:
+            from robolab.core.task.grasp import get_grasp_tracker
+            get_grasp_tracker(self._env).flush_attempts()
+        except Exception:
+            logger.exception("flushing grasp attempts failed")
+
+        # Final-frame judgement for every env, published on the env for the
+        # results row (env.get_env_results → summarize: score / score_peak).
+        finals = getattr(self._env, "_subtask_final_scores", None)
+        if finals is None:
+            finals = self._env._subtask_final_scores = {}
+        for eid in range(self._num_envs):
+            try:
+                finals[eid] = float(self.judge_final_score(eid))
+            except Exception:
+                logger.exception("final-frame judgement failed for env %d; keeping the live score", eid)
 
         status_list = []
         completed_list = []
@@ -294,9 +424,25 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
             env_id: If None, return list[per-env list[event dict]].
                    If int, return that env's list[event dict].
         """
+        window = self._detach_fold_steps()
+
+        def _clean(evs):
+            evs = sorted(copy.deepcopy(evs), key=lambda e: int(e.get("step", 0)))
+            return fold_duplicate_grab_lines(fold_detach_into_release(evs, window), window)
+
         if env_id is None:
-            return [copy.deepcopy(ev) for ev in self._events]
-        return copy.deepcopy(self._events[env_id])
+            return [_clean(ev) for ev in self._events]
+        return _clean(self._events[env_id])
+
+    def _detach_fold_steps(self) -> int:
+        """P57 window in steps; falls back to 0 (no folding) if dt is unknown."""
+        from robolab.constants import DETACH_FOLD_S  # noqa: PLC0415
+
+        dt = getattr(self._env, "step_dt", None) or getattr(self._env, "physics_dt", None)
+        try:
+            return max(1, round(DETACH_FOLD_S / float(dt))) if dt else 0
+        except (TypeError, ValueError, ZeroDivisionError):
+            return 0
 
     def clear(self):
         """Clear recording buffers.

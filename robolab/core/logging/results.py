@@ -2390,9 +2390,48 @@ def load_task_to_num_subtasks_mapping() -> dict[str, int]:
         mapping[task_name] = int(task.get('num_subtasks', 0))
     return mapping
 
+def instruction_type_pivot(episode_results: list[dict]) -> tuple[list[str], dict[str, dict[str, tuple[int, int]]]]:
+    """``(instruction_types, {task: {instruction_type: (successes, episodes)}})``."""
+    table: dict[str, dict[str, list[int]]] = {}
+    types: set[str] = set()
+    for ep in episode_results:
+        task = ep.get("task_name") or ep.get("env_name") or "?"
+        itype = ep.get("instruction_type") or "default"
+        types.add(itype)
+        cell = table.setdefault(task, {}).setdefault(itype, [0, 0])
+        cell[0] += 1 if ep.get("success") else 0
+        cell[1] += 1
+    order = ["default"] + sorted(t for t in types if t != "default")
+    return order, {t: {k: (v[0], v[1]) for k, v in row.items()} for t, row in table.items()}
+
+
 def summarize_experiments_by_instruction_type(episode_results: list[dict] | str, VERBOSE=False, csv=False, csv_compact=False, show_metrics=True):
-    """Summarize results comparing different instruction types. (Not yet implemented.)"""
-    print("[RoboLab] summarize_experiments_by_instruction_type is not yet implemented.")
+    """Success rate per task and instruction type (default / vague / specific / ...),
+    as a pivot table, with a pooled row per instruction type."""
+    if not isinstance(episode_results, list):
+        episode_results = load_file(episode_results)
+    if not episode_results:
+        print("No episode results found or file is empty.")
+        return
+    types, table = instruction_type_pivot(episode_results)
+    cell = (lambda s, n: f"{s}/{n}") if csv_compact else (lambda s, n: f"{s}/{n} ({100.0 * s / n:.0f}%)")
+    if csv:
+        print(",".join(["task"] + types))
+        for task in sorted(table):
+            print(",".join([task] + [cell(*table[task][t]) if t in table[task] else "" for t in types]))
+    else:
+        width = max(len(t) for t in table) + 2
+        print(f"{'task':<{width}}" + "".join(f"{t:>18}" for t in types))
+        for task in sorted(table):
+            print(f"{task:<{width}}" + "".join(f"{(cell(*table[task][t]) if t in table[task] else '-'):>18}" for t in types))
+    pooled = {t: [0, 0] for t in types}
+    for row in table.values():
+        for t, (s, n) in row.items():
+            pooled[t][0] += s; pooled[t][1] += n
+    if csv:
+        print(",".join(["pooled"] + [cell(*pooled[t]) for t in types]))
+    else:
+        print(f"{'pooled':<{width}}" + "".join(f"{cell(*pooled[t]):>18}" for t in types))
 
 
 DIFFICULTY_LABELS = ('simple', 'moderate', 'complex')

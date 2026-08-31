@@ -53,6 +53,11 @@ def _tally_events(events: list[dict]) -> dict:
     """Tally a v2 events list (each entry has ``code``, ``info``, ...) and
     return ``{event_name: count, ..., wrong_objects_grabbed: [...]}``.
 
+    Every line of the episode log is counted under its name, ladder lines included
+    (``OBJECT_GRABBED_SUCCESS``, ``SUBTASK_COMPLETED``, ...). Upstream counted only the
+    codes in ``EVENT_STATUS_CODES``, so an episode's ``events`` field could show two
+    releases and no grasp while its log held the carry and the credit.
+
     Pure function: works on in-memory event dicts, used by both ``summarize_run``
     (post-episode) and ``extract_events_from_log`` (file-based, v1 or v2).
     """
@@ -61,7 +66,7 @@ def _tally_events(events: list[dict]) -> dict:
 
     for change in events:
         status_code = change.get("code", change.get("status", 0))
-        if status_code not in EVENT_STATUS_CODES:
+        if not status_code:          # OK / unknown: not an event
             continue
 
         event_name = change.get("name") or get_status_name(status_code)
@@ -83,8 +88,8 @@ def _tally_events(events: list[dict]) -> dict:
 
 
 def extract_events_from_log(log_file: str) -> dict:
-    """Read a per-env JSON log (v1 or v2) and tally occurrences of each status
-    code in :data:`EVENT_STATUS_CODES`. For ``WRONG_OBJECT_GRABBED_FAILURE``,
+    """Read a per-env JSON log (v1 or v2) and tally occurrences of each event
+    name. For ``WRONG_OBJECT_GRABBED_FAILURE``,
     also collects the name of each wrong object.
 
     v1 logs are dense per-step lists; v2 logs are sparse event arrays under a
@@ -157,6 +162,13 @@ def build_run_summary(
         "success": env_result["success"],
         "episode_step": env_result["step"],
         "duration": env_result["step"] * dt if env_result["step"] else 0,
+        "early_resets": env_result.get("early_resets", 0),
+        "pre_satisfied": env_result.get("pre_satisfied", False),
+        "collateral_placed": env_result.get("collateral_placed", 0),
+        "towed_objects": list(env_result.get("towed_objects") or []),
+        "physics_artifact": bool(env_result.get("towed_objects")),
+        "success_first_hold_s": (env_result["success_first_hold_step"] * dt) if env_result.get("success_first_hold_step") is not None else None,
+        "success_confirmed_s": (env_result["success_confirmed_step"] * dt) if env_result.get("success_confirmed_step") is not None else None,
         "dt": dt,
         "metrics": traj_metrics or {},
         "events": events or {},
@@ -171,6 +183,11 @@ def build_run_summary(
         # per-event score in the v2 events log).
         if final_score is not None:
             summary["score"] = final_score
+        # H-B3: `score` is the ladder judged on the final frame; the live (monotone)
+        # number is kept as `score_peak` — subgoals reached vs subgoals kept.
+        summary["score_peak"] = summary.get("score")
+        if env_result.get("score_final") is not None:
+            summary["score"] = float(env_result["score_final"])
         elif events_list:
             summary["score"] = events_list[-1].get("score")
         else:

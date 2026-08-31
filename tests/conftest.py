@@ -62,6 +62,9 @@ def env_name_arg(request):
     return request.config.getoption("--env-name")
 
 
+_EXIT_STATUS = 0
+
+
 def pytest_sessionfinish(session, exitstatus):
     """Close Isaac Sim without letting its ``SystemExit(0)`` mask failures."""
     if exitstatus:

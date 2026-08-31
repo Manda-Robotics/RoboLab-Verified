@@ -3,7 +3,10 @@
 
 from typing import Any
 
+import logging
 import torch
+
+import robolab.constants
 
 from robolab.core.task.conditionals import (
     get_wrong_object_grabbed,
@@ -13,8 +16,12 @@ from robolab.core.task.conditionals import (
     object_upright,
 )
 from robolab.core.task.predicate_logic import in_contact
+from robolab.core.task.collateral import CollateralTracker
 from robolab.core.task.status import StatusCode
 from robolab.core.world.world_state import get_world
+
+
+logger = logging.getLogger(__name__)
 
 
 class EventTracker:
@@ -45,7 +52,7 @@ class EventTracker:
         self,
         num_envs: int = 1,
         device: torch.device = None,
-        bump_threshold: float = 0.05,
+        bump_threshold: float = 0.02,   # 5 cm missed real knocks (wooden_bowl nudged 2.8 cm, pod 2026-08-26)
         move_threshold: float = 0.50,
         velocity_threshold: float = 0.05,
         workspace_center: tuple[float, float, float] = (0.55, 0.0, 0.5),
@@ -71,6 +78,9 @@ class EventTracker:
         # Per-env bool tensors
         self._recorded_gripper_hit_table = torch.zeros(N, dtype=torch.bool, device=dev)
         self._recorded_gripper_fully_closed = torch.zeros(N, dtype=torch.bool, device=dev)
+        self._was_warm = torch.ones(N, dtype=torch.bool, device=dev)          # inside the reset warm-up window
+        self._collateral = CollateralTracker(N, dev)                            # A1 / B7: non-targets entering goal containers
+        self._settling: dict[int, dict[str, float]] = {}                     # env_id -> {object: displacement} seen during warm-up
         self._recorded_multiple_grab = torch.zeros(N, dtype=torch.bool, device=dev)
         self._target_was_grabbed = torch.zeros(N, dtype=torch.bool, device=dev)
         self._recorded_target_dropped = torch.zeros(N, dtype=torch.bool, device=dev)
@@ -90,6 +100,10 @@ class EventTracker:
         idx = torch.tensor(env_ids, dtype=torch.long, device=self.device)
         self._recorded_gripper_hit_table[idx] = False
         self._recorded_gripper_fully_closed[idx] = False
+        self._was_warm[idx] = True
+        self._collateral.reset_envs(idx.tolist() if hasattr(idx, "tolist") else list(idx))
+        for i in (idx.tolist() if hasattr(idx, "tolist") else list(idx)):
+            self._settling.pop(int(i), None)
         self._recorded_multiple_grab[idx] = False
         self._target_was_grabbed[idx] = False
         self._recorded_target_dropped[idx] = False
@@ -119,13 +133,21 @@ class EventTracker:
         ignore_objects: list[str] = None,
         upright_objects: list[str] = None,
         verbose: bool = False,
+        per_env_allowed: list[set[str]] | None = None,
+        per_env_containers: list[set[str]] | None = None,
     ) -> list[tuple[str, StatusCode, torch.Tensor]]:
         """
         Check for events across all envs using batched queries.
 
         Args:
             env: The environment object
-            per_env_intended: Per-env sets of intended target object names
+            per_env_intended: Per-env sets of the current stage's target object names
+                (drop tracking on, bump/move tracking off)
+            per_env_allowed: Per-env sets of objects the policy may grasp without a
+                WRONG_OBJECT_GRABBED — every stage's targets. Defaults to
+                ``per_env_intended``.
+            per_env_containers: Per-env destination objects; never reported as a
+                wrong grab (the hand touches the bin while releasing into it).
             frozen_mask: (num_envs,) bool tensor, True for frozen envs to skip
             ignore_objects: Objects to ignore (default: ["table"])
             upright_objects: Objects that should remain upright
@@ -146,14 +168,105 @@ class EventTracker:
 
         world = get_world(env)
 
-        # --- Wrong object grabbed (per-env loop, returns string) ---
+        if per_env_allowed is None:
+            per_env_allowed = per_env_intended
+        if per_env_containers is None:
+            per_env_containers = [set() for _ in range(self.num_envs)]
+
+        # --- Grasp attempts / releases / drops (from the shared GraspTracker) ---
+        from robolab.core.task.grasp import get_grasp_tracker
+        tracker = get_grasp_tracker(env)
+        for obj_name in sorted(set().union(*per_env_intended) | set().union(*per_env_allowed) if per_env_allowed else set().union(*per_env_intended)):
+            try:
+                tracker.update(obj_name, "gripper")
+            except Exception:
+                continue
+        step_dt = float(getattr(env, "step_dt", 0.0) or 1 / 15)
+        for eid, obj_name, hand, kind, extra in tracker.pop_events():
+            if frozen_mask[eid]:
+                continue
+            mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+            mask[eid] = True
+            onset = extra.get("onset_step") if isinstance(extra, dict) else None
+            is_container = bool(per_env_containers and obj_name in per_env_containers[eid])
+            if kind == "gripped":
+                # P78: the rung before the carry. A container is excluded for the same
+                # reason P72 excludes it from attempts: closing on a bin rim is not a grip
+                # anyone wants counted.
+                if not is_container:
+                    events.append((f"'{obj_name}' gripped (jaws closed on it)",
+                                   StatusCode.OBJECT_GRIPPED, mask, onset))
+            elif kind == "grabbed":
+                # P71: the detector reports a physical carry; it is NOT the progress signal.
+                # Emitting it as *_SUCCESS put a green "success" on 28 grasps of objects the
+                # task then flagged as WRONG (The reviewer: "it's giving an object grab success flag
+                # for the wrong object"). OBJECT_CARRIED is neutral; the ladder's
+                # OBJECT_GRABBED_SUCCESS remains the green line that means progress.
+                events.append((f"'{obj_name}' carried (grasp established)",
+                               StatusCode.OBJECT_CARRIED, mask, onset))
+            elif kind == "attempt_failed":
+                n = int(extra.get("count", 1))
+                span = (int(extra.get("last_step", 0)) - int(extra.get("first_step", 0))) * step_dt
+                info = (f"Grasp attempt on '{obj_name}' failed (contact lost before a carry was established)"
+                        if n <= 1 else
+                        f"Grasp attempts on '{obj_name}' failed ×{n} over {span:.1f}s (contact never became a carry)")
+                # P61: stamp the burst at the first attempt, not at the flush that
+                # happens GRASP_ATTEMPT_BURST_S later
+                # P72: a brush against a bin or shelf is not a grasp attempt. 14 of 81
+                # attempt lines in rc3 were on a container or fixture (The reviewer: "I don't think
+                # this was a grasp attempt on bin"). A genuine attempt on a container is
+                # still reported by the wrong-object machinery.
+                if not is_container:
+                    events.append((info, StatusCode.GRASP_ATTEMPT_FAILED, mask,
+                                   int(extra.get("first_step", 0)) or None))
+            elif kind == "released":
+                events.append((f"'{obj_name}' released (hand opened)", StatusCode.OBJECT_RELEASED, mask))
+            elif kind == "towed":
+                events.append((f"'{obj_name}' towed without a grasp — moving with an OPEN hand (stuck to a finger; physics artifact, episode is not trustworthy)", StatusCode.TOWED_WITHOUT_GRASP, mask))
+            else:
+                events.append((f"'{obj_name}' dropped (left the closed hand)", StatusCode.OBJECT_DROPPED, mask))
+            if verbose:
+                print(f"[EventTracker] env{eid}: {events[-1][0]}")
+
+        # publish towed objects for the results row (episode is bogus if non-empty)
+        try:
+            env._towed_objects = {eid: sorted(v) for eid, v in tracker.towed_objects().items()}
+        except Exception:
+            pass
+
+        # --- Off the table (P38): any object, one flag; TARGET_LOST when the task is unrecoverable ---
+        try:
+            events.extend(self._check_off_table_batched(env, ignore_set, active_mask, verbose))
+        except Exception:
+            logger.exception("off-table check failed")
+
+        # --- Collateral placement: a non-target enters a goal container (A1, B7) ---
+        try:
+            events.extend(self._check_collateral_batched(env, tracker, per_env_allowed, per_env_containers, ignore_set, active_mask, verbose))
+        except Exception:
+            logger.exception("collateral placement check failed")
+
+        # --- Wrong object grabbed (P44): a *carry* (GraspTracker) of an object that is
+        # not a target. Upstream used contact + a closure gate, which fired on every
+        # touch of a decoy (FruitsGreenLimesOnPlate cosmos3_s2 env 0: six flags on the
+        # lemon in 13 s, five of them touches). ---
+        scene_objs = [o for o in (getattr(env.cfg, "contact_object_list", None) or []) if o not in ignore_set]
         for eid in range(self.num_envs):
             if frozen_mask[eid]:
                 continue
-            wrong_obj = get_wrong_object_grabbed(env, list(per_env_intended[eid]), env_id=eid)
+            wrong_obj = None
+            for o in scene_objs:
+                if o in per_env_allowed[eid] or o in per_env_containers[eid]:
+                    continue
+                try:
+                    if tracker.grasped(o, "gripper", env_id=eid):
+                        wrong_obj = o
+                        break
+                except Exception:
+                    continue
             if wrong_obj is not None:
                 if self._recorded_wrong_object_grab[eid] != wrong_obj:
-                    info = f"Wrong object grabbed: '{wrong_obj}' (target objects: {list(per_env_intended[eid])})"
+                    info = f"Wrong object grabbed: '{wrong_obj}' (target objects: {sorted(per_env_allowed[eid])})"
                     mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
                     mask[eid] = True
                     events.append((info, StatusCode.WRONG_OBJECT_GRABBED, mask))
@@ -165,7 +278,7 @@ class EventTracker:
                     info = f"Wrong object that was grabbed is now detached: '{self._recorded_wrong_object_grab[eid]}'"
                     mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
                     mask[eid] = True
-                    events.append((info, StatusCode.OK, mask))
+                    events.append((info, StatusCode.WRONG_OBJECT_DETACHED, mask))
                     if verbose:
                         print(f"[EventTracker] env{eid}: {info}")
                 self._recorded_wrong_object_grab[eid] = None
@@ -183,17 +296,53 @@ class EventTracker:
         cleared = ~hit_table & self._recorded_gripper_hit_table & active_mask
         self._recorded_gripper_hit_table &= ~cleared
 
-        # --- Gripper fully closed (batched) ---
-        fully_closed = gripper_fully_closed(env, env_id=None)  # (N,) bool
-        new_closed = fully_closed & ~self._recorded_gripper_fully_closed & active_mask
+        # --- Gripper fully closed ON NOTHING (batched) ---
+        # Upstream flagged every full closure, including the one holding the
+        # object (25 % of the corpus flags — findings.md B5, H-R5-9, H-R6-6).
+        # Now: closed AND no scene object in contact with the hand = an air grasp.
+        # P66: the event uses its own, strict threshold -- see
+        # robolab.constants.GRIPPER_CLOSED_EVENT_THRESHOLD. The predicate's 0.75
+        # default is shared with gripper_slightly_closed and is left alone.
+        fully_closed = gripper_fully_closed(
+            env, env_id=None,
+            closed_threshold=float(getattr(robolab.constants, "GRIPPER_CLOSED_EVENT_THRESHOLD", 0.75)),
+        )  # (N,) bool
+        holding = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+        hand_candidates = [o for o in (getattr(env.cfg, "contact_object_list", None) or []) if o not in ignore_set]
+        for eid in fully_closed.nonzero(as_tuple=False).flatten().tolist():
+            try:
+                if world.get_objects_in_contact_with("gripper", hand_candidates, env_id=eid):
+                    holding[eid] = True
+            except Exception:
+                pass
+        closed_on_air = fully_closed & ~holding
+        # Not during the reset warm-up: the hand's initial pose can read as closed for a
+        # step or two before the policy has acted (seen at step 2 on MarkerInMug).
+        _dt = float(getattr(env, "step_dt", 0.0) or 0.0)
+        _warm = (env.episode_length_buf.float() * _dt) < float(getattr(robolab.constants, "SETTLE_WARMUP_S", 0.0) or 0.0)
+        new_closed = closed_on_air & ~self._recorded_gripper_fully_closed & active_mask & ~_warm
         if new_closed.any():
-            events.append(("Gripper fully closed", StatusCode.GRIPPER_FULLY_CLOSED, new_closed.clone()))
+            events.append(("Gripper closed on nothing", StatusCode.GRIPPER_FULLY_CLOSED, new_closed.clone()))
             self._recorded_gripper_fully_closed |= new_closed
             if verbose:
                 envs = new_closed.nonzero(as_tuple=False).squeeze(-1).tolist()
                 print(f"[EventTracker] envs {envs}: Gripper fully closed")
         cleared = ~fully_closed & self._recorded_gripper_fully_closed & active_mask
         self._recorded_gripper_fully_closed &= ~cleared
+
+        # --- Reset warm-up: motion in the first SETTLE_WARMUP_S with the hand not
+        # touching the object is the scene settling, not a robot bump (B12).
+        step_dt = float(getattr(env, "step_dt", 0.0) or 0.0)
+        warm = (env.episode_length_buf.float() * step_dt) < float(getattr(robolab.constants, "SETTLE_WARMUP_S", 0.0) or 0.0)
+        just_left_warmup = self._was_warm & ~warm & active_mask
+        for eid in just_left_warmup.nonzero(as_tuple=False).flatten().tolist():
+            moved = self._settling.pop(eid, None)
+            if moved:
+                desc = ", ".join(f"{o} {d:.3f}m" for o, d in sorted(moved.items(), key=lambda kv: -kv[1]))
+                mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device); mask[eid] = True
+                events.append((f"Scene settling at reset (no contact with the hand): {desc}", StatusCode.SCENE_SETTLING, mask))
+        self._was_warm = warm.clone()
+        self._warm_now = warm
 
         # --- Movement transitions (batched per object) ---
         movement_events = self._check_movement_transitions_batched(
@@ -234,6 +383,72 @@ class EventTracker:
 
         return events
 
+    def _check_off_table_batched(self, env, ignore_set, active_mask, verbose):
+        from robolab.core.task.off_table import get_monitor, required_groups, task_lost
+        mon = get_monitor(env)
+        objs = [o for o in (getattr(env.cfg, "contact_object_list", None) or []) if o not in ignore_set]
+        fallen = mon.fallen_masks(objs)
+        events = []
+        for o, f in fallen.items():
+            flagged = mon.flagged.setdefault(o, torch.zeros(self.num_envs, dtype=torch.bool, device=self.device))
+            new = f & ~flagged & active_mask
+            if new.any():
+                events.append((f"'{o}' fell off the table", StatusCode.OBJECT_FELL_OFF_TABLE, new.clone()))
+                flagged |= new
+        try:
+            groups = required_groups(dict(getattr(env.cfg.terminations.success, "params", {}) or {}))
+        except Exception:
+            groups = []
+        if groups:
+            lost = task_lost(fallen, groups, self.num_envs, self.device) & ~mon.lost_flagged & active_mask
+            for eid in lost.nonzero(as_tuple=False).flatten().tolist():
+                gone = [o for o, f in fallen.items() if bool(f[eid])]
+                mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device); mask[eid] = True
+                events.append((f"Target lost: {', '.join(gone)} off the table — the task can no longer succeed", StatusCode.TARGET_LOST, mask))
+            mon.lost_flagged |= lost
+        return events
+
+    def _check_collateral_batched(self, env, tracker, per_env_allowed, per_env_containers, ignore_set, active_mask, verbose):
+        """One flag per non-target object that enters a goal container after the
+        warm-up: WRONG_OBJECT_PLACED if the hand held it recently, else
+        WRONG_OBJECT_PUSHED_IN. Objects inside at reset never count."""
+        from robolab.core.task.conditionals import object_in_container
+        containers = sorted(set().union(*per_env_containers)) if per_env_containers else []
+        if not containers:
+            return []
+        targets = set().union(*per_env_allowed) if per_env_allowed else set()
+        scene_objs = list((getattr(env.cfg, "contact_object_list", None) or []))
+        candidates = [o for o in scene_objs if o not in ignore_set and o not in targets and o not in containers]
+        if not candidates:
+            return []
+        warm = getattr(self, "_warm_now", None)
+        if warm is None:
+            warm = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+        inside = {}
+        for c in containers:
+            for o in candidates:
+                try:
+                    r = object_in_container(env, object=o, container=c, env_id=None)
+                except Exception:
+                    continue
+                inside[(o, c)] = r if isinstance(r, torch.Tensor) else torch.as_tensor(r, dtype=torch.bool, device=self.device).reshape(-1)
+        held = {o: tracker.recently_held(o, "gripper") for o in candidates}
+        events = []
+        for eid, obj, cont, kind in self._collateral.update(inside, warm, held):
+            if not active_mask[eid]:
+                continue
+            mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device); mask[eid] = True
+            # One flag either way (The reviewer 2026-08-26: "not sure the distinction is
+            # necessary… would probably just have placed") — the wording still says
+            # whether the hand was carrying it, since grasp detection can miss a carry.
+            how = "released inside" if kind == "placed" else "ended up in"
+            events.append((f"Wrong object placed: '{obj}' {how} '{cont}' (not a target)", StatusCode.WRONG_OBJECT_PLACED, mask))
+            if verbose:
+                print(f"[EventTracker] env{eid}: {events[-1][0]}")
+        # publish the count for the results row
+        env._collateral_placed = {eid: len(v) for eid, v in self._collateral.collateral.items()}
+        return events
+
     def _check_movement_transitions_batched(
         self, env, per_env_intended, ignore_set, active_mask, verbose
     ) -> list[tuple[str, StatusCode, torch.Tensor]]:
@@ -245,9 +460,19 @@ class EventTracker:
             if obj not in ignore_set
         ]
 
+        # H-B17 / P51: movement is tracked for EVERY object, targets included — a
+        # target knocked across the table used to produce no event at all. What is
+        # suppressed instead is movement *the policy is doing on purpose*: while the
+        # object is grasped, and briefly after it is released (the grasp/release
+        # events already say that).
+        from robolab.core.task.grasp import get_grasp_tracker
+        grasp_tracker = get_grasp_tracker(env)
         for obj_name in objects_to_check:
-            not_intended = self._get_not_intended_mask(obj_name, per_env_intended)
-            eligible = not_intended & active_mask
+            try:
+                handled = grasp_tracker.grasped(obj_name, "gripper") | grasp_tracker.recently_held(obj_name, "gripper", within_s=1.0)
+            except Exception:
+                handled = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+            eligible = active_mask & ~handled
 
             if not eligible.any():
                 continue
@@ -284,6 +509,18 @@ class EventTracker:
                     start_pos = self._position_when_started_moving[obj_name]
                     displacement = torch.norm(current_pos - start_pos, dim=-1)  # (N,)
 
+                    # warm-up diversion: not touched by the hand → settling, not a bump
+                    warm_now = getattr(self, "_warm_now", None)
+                    if warm_now is not None and bool((stopped_with_start & warm_now).any()):
+                        try:
+                            touched = in_contact(world, obj_name, "gripper", env_id=None)
+                        except Exception:
+                            touched = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+                        settling = stopped_with_start & warm_now & ~touched & (displacement >= self.bump_threshold)
+                        for eid in settling.nonzero(as_tuple=False).flatten().tolist():
+                            prev = self._settling.get(eid, {}).get(obj_name, 0.0)
+                            self._settling.setdefault(eid, {})[obj_name] = max(prev, float(displacement[eid]))
+                        stopped_with_start = stopped_with_start & ~settling
                     moved_mask = stopped_with_start & (displacement >= self.move_threshold)
                     if moved_mask.any():
                         avg_disp = displacement[moved_mask].mean().item()
@@ -299,11 +536,15 @@ class EventTracker:
                     bumped_mask = stopped_with_start & (displacement >= self.bump_threshold) & (displacement < self.move_threshold)
                     if bumped_mask.any():
                         avg_disp = displacement[bumped_mask].mean().item()
-                        events.append((
-                            f"Object bumped: '{obj_name}' nudged {avg_disp:.3f}m",
-                            StatusCode.OBJECT_BUMPED,
-                            bumped_mask.clone()
-                        ))
+                        # P52: nudging an object the task is about is the policy doing
+                        # its job — a neutral note, not a red flag.
+                        is_target = ~self._get_not_intended_mask(obj_name, per_env_intended)
+                        for code, mask_sel, label in (
+                            (StatusCode.TARGET_OBJECT_BUMPED, bumped_mask & is_target, "Target object bumped"),
+                            (StatusCode.OBJECT_BUMPED, bumped_mask & ~is_target, "Object bumped"),
+                        ):
+                            if mask_sel.any():
+                                events.append((f"{label}: '{obj_name}' nudged {avg_disp:.3f}m", code, mask_sel.clone()))
                         if verbose:
                             envs = bumped_mask.nonzero(as_tuple=False).squeeze(-1).tolist()
                             print(f"[EventTracker] envs {envs}: Object bumped: '{obj_name}'")
@@ -421,18 +662,12 @@ class EventTracker:
             except Exception:
                 continue
 
-        # Detect drop: was grabbed -> now not grabbed
+        # TARGET_OBJECT_DROPPED is superseded by the GraspTracker's OBJECT_RELEASED /
+        # OBJECT_DROPPED (findings.md B6): the state is still maintained for
+        # re-grab bookkeeping, but nothing is emitted here any more.
         dropped = self._target_was_grabbed & ~any_grabbed & active_mask & ~self._recorded_target_dropped
         if dropped.any():
-            events.append((
-                "Target object dropped during transport",
-                StatusCode.TARGET_OBJECT_DROPPED,
-                dropped.clone()
-            ))
             self._recorded_target_dropped |= dropped
-            if verbose:
-                envs = dropped.nonzero(as_tuple=False).squeeze(-1).tolist()
-                print(f"[EventTracker] envs {envs}: Target object dropped")
 
         self._target_was_grabbed = any_grabbed
 

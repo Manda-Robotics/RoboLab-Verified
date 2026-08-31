@@ -23,6 +23,10 @@ the simulation app.
 from __future__ import annotations
 
 import argparse
+import json
+import os
+import sys
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Callable
 
 from robolab.constants import DEFAULT_TASK_SUBFOLDERS
@@ -42,8 +46,24 @@ def _unit_interval(s: str) -> float:
     return v
 
 
+def _friction_arg(text: str) -> str:
+    """Validate --friction at parse time (pure Python), before Isaac boots."""
+    from robolab.core.physics.friction import parse_friction
+    try:
+        parse_friction(text)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e))
+    return text
+
+
 def add_common_eval_args(parser: argparse.ArgumentParser) -> None:
     """Add the shared eval flags. Call this once per runner script."""
+    parser.add_argument("--friction", type=_friction_arg, default="upstream",
+                        help=("Object + finger-pad friction override (P79): 'upstream' (default, the "
+                              "authored USD materials, mostly 2.0), a number (one coefficient for "
+                              "every object and the pads), 'realistic' (bundled per-class table), "
+                              "or a path to a .json table. Recorded in env_cfg.json and "
+                              "friction_applied.json. See docs/physics.md."))
     parser.add_argument("--num-envs", "--num_envs", type=int, default=1,
                         help="Number of environments to spawn.")
     parser.add_argument("--task", nargs="+", default=None,
@@ -112,6 +132,26 @@ def add_common_eval_args(parser: argparse.ArgumentParser) -> None:
                               "--renderer pathtracing."))
 
 
+def write_run_complete_marker(output_dir: str, episode_results: list[dict]) -> str:
+    """Write ``<output_dir>/run_complete.json`` once every task/run has finished.
+
+    Per-episode rows are already flushed to ``episode_results.jsonl`` as they
+    happen; this marker is the only durable signal that the run reached its end
+    (as opposed to Isaac dying at shutdown, a pod being stopped, or the process
+    being killed). Tooling should treat a run directory without it as partial.
+    """
+    tasks = sorted({r.get("env_name") or r.get("task_name") or "" for r in episode_results if r})
+    payload = {
+        "tasks": len([t for t in tasks if t]),
+        "episodes": len(episode_results),
+        "finished_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    path = os.path.join(output_dir, "run_complete.json")
+    with open(path, "w") as f:
+        json.dump(payload, f, indent=2)
+    return path
+
+
 def run_evaluation(
     args: argparse.Namespace,
     *,
@@ -137,6 +177,17 @@ def run_evaluation(
 
     import robolab.constants
     from robolab.constants import PACKAGE_DIR, get_timestamp, set_output_dir
+
+    # P79: every runner shares add_common_eval_args, so the friction knob is applied
+    # here rather than in each runner's constants block. Must precede env creation.
+    robolab.constants.FRICTION = getattr(args, "friction", None) or "upstream"
+
+    # Line-buffer stdout: with output redirected to a file Python block-buffers,
+    # and Isaac often exits before the buffer is flushed, losing the run summary.
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except (AttributeError, ValueError):
+        pass
     from robolab.core.environments.factory import get_envs
     from robolab.core.environments.runtime import create_env
     from robolab.core.logging.results import (
@@ -289,3 +340,4 @@ def run_evaluation(
         env.close()
 
     summarize_experiment_results(episode_results, show_timing=True)
+    write_run_complete_marker(output_dir, episode_results)

@@ -1,0 +1,48 @@
+name: offline tests
+
+# Everything here runs without Isaac Sim and without a GPU. That is deliberate: the
+# evaluation-correctness work is the part of this fork that can be checked cheaply,
+# and it is the part most likely to regress. Runtime behaviour still needs a GPU run
+# and is tracked in docs/verified/changes.md, not here.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install test dependencies
+        # torch (CPU) for the tensor-level detector tests, usd-core for the scene
+        # lints, scipy for the hull check,
+        # lints, h5py/numpy for the recording checks. Isaac Sim is not needed.
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest numpy scipy h5py pyyaml usd-core
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: offline test suite
+        run: python -m pytest offline_tests -q
+
+      - name: task-definition audit
+        # exits non-zero on a CONFLICT (a definition that cannot score what it says);
+        # notes (landmarks a ladder never names, duplicate test classes) are printed only.
+        # The spawn-state check needs recorded runs that are not in CI, so candidates
+        # that need it are listed as NOT asserted rather than reported.
+        run: python scripts/audit_task_definitions.py
+
+      - name: scene intersection report
+        # differential by design: the rule is "no NEW overlapping pair", so this is
+        # informational in CI and compared by hand on a scene change.
+        run: python scripts/check_scene_intersections.py || true

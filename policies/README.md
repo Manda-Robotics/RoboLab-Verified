@@ -2,7 +2,7 @@
 
 RoboLab uses a **server-client architecture**: your model runs as a standalone server process, and RoboLab connects to it through a lightweight inference client during evaluation.
 
-For writing your own inference client, see [Evaluating a New Policy](../docs/policy.md). For the full run CLI reference, see [Running Environments](../docs/environment_run.md#run-cli-reference).
+For writing your own inference client, see [Evaluating a New Policy](../docs/policy.md). For the full run CLI reference, see [Running Environments](../docs/environment_run.md#run_evalpy-cli-reference).
 
 ## Shipped policy clients
 
@@ -15,4 +15,10 @@ For writing your own inference client, see [Evaluating a New Policy](../docs/pol
 | [`g05_droid/`](g05_droid/README.md) | G0.5-DROID | [Checkpoint](https://huggingface.co/OpenGalaxea/G05), [Code](https://github.com/OpenGalaxea/GalaxeaVLA) |
 | [`dreamzero/`](dreamzero/README.md) | DreamZero-DROID | [Code](https://github.com/dreamzero0/dreamzero), [Paper](https://arxiv.org/abs/2602.15922) |
 | [`volo/`](volo/README.md) | VoLoAgent | [Website](https://chicychen.github.io/VoLo/), [Code](https://github.com/NVlabs/RoboVoLo), [Paper](https://arxiv.org/abs/2606.07723) |
-| [`xiaomi_robotics_1_robocasa/`](xiaomi_robotics_1_robocasa/README.md) | Xiaomi-Robotics-1-RoboCasa (cross-benchmark adapter) | [Checkpoint](https://huggingface.co/XiaomiRobotics/Xiaomi-Robotics-1-RoboCasa), [Code](https://github.com/XiaomiRobotics/Xiaomi-Robotics-1) |
+| [`xiaomi_robotics_1_robocasa/`](xiaomi_robotics_1_robocasa/README.md) | WIP: Xiaomi-Robotics-1-RoboCasa (cross-benchmark adapter) | [Checkpoint](https://huggingface.co/XiaomiRobotics/Xiaomi-Robotics-1-RoboCasa), [Code](https://github.com/XiaomiRobotics/Xiaomi-Robotics-1) |
+| [`vlm_pinpoint/`](vlm_pinpoint/connector.py) | A pointing-capable VLM as a policy (the model returns an image point and a phase; a geometric controller does the metric work). Connector only — the controller is the `vlm-pinpoint` package | [Code](https://github.com/Manda-Robotics/vlm-pinpoint) |
+| [`bimanual/`](bimanual/run.py) | Scripted client for the dual-Franka and ALOHA rigs — proves the two-arm stack turns end to end; not a policy | [Robots](../robolab/robots/README.md) |
+
+**π0.5 on the DROID joint-position action space** needs the `pi05_droid_jointpos`
+checkpoint: `scripts/serve_pi05.sh`. OpenPI's `--env DROID` convenience flag serves delta
+actions, and the arm wanders without ever approaching the object.

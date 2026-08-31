@@ -1,8 +1,10 @@
-<h1><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/ribble.gif"><img src="docs/images/ribble-dark.gif" alt="" height="42" align="absmiddle" /></picture> RoboLab</h1>
+<h1><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/ribble.gif"><img src="docs/images/ribble-dark.gif" alt="" height="42" align="absmiddle" /></picture> RoboLab Verified</h1>
 
-[🌐 Website](https://research.nvidia.com/labs/srl/projects/robolab) · [📄 Paper](https://arxiv.org/abs/2604.09860) · [🏆 Leaderboard](https://research.nvidia.com/labs/srl/projects/robolab/leaderboard.html)
+[![offline tests](https://github.com/Manda-Robotics/RoboLab-Verified/actions/workflows/offline-tests.yml/badge.svg)](https://github.com/Manda-Robotics/RoboLab-Verified/actions/workflows/offline-tests.yml)
 
-**RoboLab** is a task-based evaluation benchmark for robot manipulation policies built on [NVIDIA Isaac Lab](https://github.com/isaac-sim/IsaacLab). It provides 100+ manipulation tasks with automated success detection, a server-client policy architecture, and multi-environment parallel evaluation — designed for reproducible, large-scale benchmarking of generalist robot policies in simulation.
+RoboLab Verified is a fork of [NVIDIA RoboLab](https://github.com/NVlabs/RoboLab) v0.3.1, a task-based simulation benchmark for robot manipulation policies built on [Isaac Lab](https://github.com/isaac-sim/IsaacLab). The fork keeps upstream's 120 tasks, scenes, success predicates and physics defaults. It changes how episodes are scored, how subtasks are credited, what the event log records, and what the sensors and recordings capture.
+
+<h4 align="center"><a href="docs/verified/README.md">Why this fork</a> · <a href="docs/verified/changes.md">Changes</a> · <a href="docs/verified/findings.md">Findings</a> · <a href="docs/verified/migration.md">Migration</a> · <a href="docs/verified/verification.md">Verification</a></h4>
 
 <h4 align="center"><a href="assets/objects/README.md">Objects</a> · <a href="assets/scenes/README.md">Scenes</a> · <a href="robolab/tasks/README.md">Tasks</a> · <a href="robolab/robots/README.md">Robots</a> · <a href="policies/README.md">Policy Clients</a></h4>
 
@@ -10,18 +12,30 @@
   <img src="docs/images/robolab.png" alt="RoboLab Overview" width="800"/>
 </div>
 
-## News
+## What is different
 
-- **[2026/08]** 🔥 [**RoboVoLo**](https://github.com/NVlabs/RoboVoLo) is released — a task library from the [VoLo](https://chicychen.github.io/VoLo/) project extending RoboLab with long-horizon and reasoning-heavy manipulation tasks, evaluated via the bundled [VoLo policy backend](policies/volo/README.md).
+Inspection of a 328-episode corpus produced with the upstream harness found the following. All 88 successes were declared while a target object was still moving. 64 % of logged "object grabbed" events occurred with the hand open. One task completed its subtask ladder at 0.07 s, before the arm had moved. In four of four successes of a stacking task, the wrong bowl was stacked. Each finding and its measurement is in [`docs/verified/findings.md`](docs/verified/findings.md).
+
+The changes by area follow; [`docs/verified/changes.md`](docs/verified/changes.md) documents each one with its evidence.
+
+- **Scoring**: a success is confirmed only after the targets are at rest. An episode ends as a failure once it can no longer succeed (a required object or the destination has left the table). Containment is capped at the rim.
+- **Subtask crediting**: conditions already true at reset earn no credit. Nothing is credited before the scene settles or before a placed object comes to rest. `score` is judged on the final frame; `score_peak` keeps the live number.
+- **Event log**: a grasp requires a carry. A pick is logged as `OBJECT_GRIPPED → OBJECT_CARRIED → OBJECT_GRABBED_SUCCESS`. Releases and drops are distinguished by the commanded gripper state. Wrong objects delivered into the goal are flagged. An object moving with an open hand marks the episode as a physics artifact. On the same tasks, π0.5's event count per episode fell from 45.5 to 31.0, and each remaining event corresponds to one physical transition.
+- **Sensing and recording**: both finger pads carry a contact sensor (upstream read one). The HDF5 records per-pad contact force and object-to-destination contact, so flag rules can be re-evaluated on existing recordings.
+- **Physics**: friction is a run parameter (`--friction`), read back from PhysX and written to every run directory. The default is upstream's. In a 32-episode-per-condition sweep, the success rate was insensitive to a 4× change in μ; the behaviour metrics were not ([`docs/physics.md`](docs/physics.md)).
+- **Embodiments and backends**: a dual-Franka rig, a bimanual ViperX (ALOHA) rig, and a connector for running a pointing-capable VLM as a policy. No released checkpoint drives two arms well.
+- **Tooling**: offline audits of task definitions and scenes that run without a simulator, and a verifier that evaluates each flag change as PASS / FAIL / N/A over recorded runs.
+
+Status: the offline suite (222 tests) runs in CI. Each change is marked RUNTIME, OFFLINE or NONE according to how it was verified. About 25 of the 120 tasks have been run against the patched code, most with π0.5 only. [`docs/verified/verification.md`](docs/verified/verification.md) lists the verification status of each change. Numbers reported from this fork should include the tag.
 
 ## Key Features
 
-- **RoboLab-120**: An initial set of 120 brand new benchmark [tasks](robolab/tasks/README.md) spanning pick-and-place, stacking, rearrangement, tool use, and more — each with language instructions and automated success/failure detection via composable predicates.
-- **Bring your own robot**: Tasks are not tied to a specific robot embodiment, so you can plug in any robot compatible with IsaacLab!
-- **Rich Asset Libraries**: See a list of [objects](assets/objects/README.md), [scenes](assets/scenes/README.md), and curated [backgrounds](assets/backgrounds/README.md) — everything you need to create new scenes and new tasks for your own evaluation needs.
-- **AI-Enabled Workflows**: Generate new scenes and tasks **in minutes** using natural language with the [/robolab-scenegen](skills/robolab-scenegen/) and [/robolab-taskgen](skills/robolab-taskgen/) Claude Code skills.
-- **Multi-Environment Parallel Evaluation**: Run multiple episodes in parallel across environments with vectorized conditionals and per-environment termination.
-- **Results Dashboard with Episode Videos and Cross-Experiment Analysis**: A self-contained web [dashboard](docs/dashboard.md) for browsing scenes/tasks, replaying episode videos, and comparing results across experiments.
+- **RoboLab-120**: 120 benchmark [tasks](robolab/tasks/README.md) spanning pick-and-place, stacking, rearrangement, tool use, and more, each with language instructions and automated success/failure detection via composable predicates.
+- **Bring your own robot**: tasks are not tied to a specific embodiment; any robot compatible with Isaac Lab can be used. Single-arm DROID, Franka and Kinova ship, along with two bimanual rigs ([`robolab/robots/README.md`](robolab/robots/README.md)).
+- **Rich asset libraries**: [objects](assets/objects/README.md), [scenes](assets/scenes/README.md), and curated [backgrounds](assets/backgrounds/README.md) for creating new scenes and tasks.
+- **AI-enabled workflows**: generate new scenes and tasks from natural language with the [/robolab-scenegen](skills/robolab-scenegen/) and [/robolab-taskgen](skills/robolab-taskgen/) Claude Code skills.
+- **Multi-environment parallel evaluation**: parallel episodes with vectorized conditionals and per-environment termination.
+- **Results dashboard**: a self-contained web [dashboard](docs/dashboard.md) for browsing scenes and tasks, replaying episodes (all cameras on one transport, the event timeline as the scrubber, `?t=` permalinks), and comparing experiments.
 
 See the [Ecosystem](docs/ecosystem.md) page for projects built on RoboLab.
 
@@ -32,8 +46,12 @@ Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and a sys
 ### Installation
 
 ```bash
-sudo apt install ffmpeg
-git clone <repo_url>
+sudo apt install ffmpeg git-lfs
+# On a bare Linux image (a cloud GPU box without a desktop) Isaac Sim also needs the
+# GL/Vulkan runtime; without libegl1/libvulkan1 it crashes at RTX renderer init:
+# sudo apt install libegl1 libgl1 libglvnd0 libopengl0 libglx0 libgles2 libglu1-mesa libxt6 libvulkan1 vulkan-tools
+git lfs install
+git clone https://github.com/Manda-Robotics/RoboLab-Verified.git robolab
 cd robolab
 uv venv --python 3.12
 source .venv/bin/activate
@@ -49,14 +67,18 @@ UV_PROJECT_ENVIRONMENT=.venv-60 uv sync --python 3.12 --extra isaac60
 UV_PROJECT_ENVIRONMENT=.venv-51 uv sync --python 3.11 --extra isaac51
 ```
 
-Verify installation:
+Verify the installation:
+
 ```bash
-uv run pytest tests/
+python -m pytest offline_tests     # 222 tests, no simulator: the evaluation-correctness suite
+uv run --no-sync pytest tests/     # boots Isaac Sim: isaaclab importable, all task definitions valid, one full episode runs
 ```
 
-This runs the install-verification suite end-to-end: isaaclab importable, all task definitions valid, env factory populated, one full episode runs. The suite auto-accepts the NVIDIA Omniverse EULA so the run is fully headless with no prompts. More details at [Debugging → Diagnostic Scripts](docs/debug.md#diagnostic-scripts).
+The Isaac suite auto-accepts the NVIDIA Omniverse EULA, so the run is headless with no prompts. More details at [Debugging → Diagnostic Scripts](docs/debug.md#diagnostic-scripts).
 
-> **Running without activating the venv**: if you don't `source .venv/bin/activate`, prefix every `python` command with `uv run` (e.g. `uv run pytest tests/`).
+> **Running without activating the venv**: if you don't `source .venv/bin/activate`, prefix every `python` command with `uv run --no-sync` (e.g. `uv run --no-sync pytest tests/`). A bare `uv run` first re-syncs the environment to the default dependency set, which removes the Isaac extra you just installed.
+
+> **Long runs**: launch with `python -u` (or `PYTHONUNBUFFERED=1`). With stdout redirected to a file, Python block-buffers, and Isaac Sim frequently dies at shutdown before the buffer is flushed. Per-episode results are always flushed to `episode_results.jsonl`. A finished run writes `run_complete.json` next to it; a run directory without that file is partial.
 
 > **EULA outside the test suite**: when running other entry points (e.g. `policies/pi0_family/run.py`) for the first time, set `export OMNI_KIT_ACCEPT_EULA=Y` once. Cached after first acceptance.
 
@@ -66,6 +88,9 @@ This runs the install-verification suite end-to-end: isaaclab importable, all ta
 # Run an empty episode with random actions
 python examples/run_empty.py --headless
 
+# Same, with a friction override, and read back what PhysX holds (docs/physics.md)
+python examples/run_empty.py --task BananaInBowlTask --headless --friction 0.5
+
 # Playback recorded demonstration data
 python examples/run_recorded.py --headless
 
@@ -73,20 +98,22 @@ python examples/run_recorded.py --headless
 # the gripper action path; saves sensor + viewport video to
 # output/run_gripper_toggle/<task>/)
 python examples/run_gripper_toggle.py --task BananaInBowlTask --headless
+
+# Drive the dual-Franka rig with the scripted client
+python policies/bimanual/run.py --task BimanualLiftToteTask --num-envs 2 --headless
 ```
 
-> **Replay**: `run_recorded.py` restores the recorded initial state, replays the recorded actions open-loop, and by default replays with the exact env configuration saved next to the recording (`env_cfg.json`). Note that the recorded outcome is not invariant across simulator versions — contact dynamics evolve between IsaacSim/IsaacLab releases (see [Requirements](#requirements)) — and faithful reproduction requires recording and replaying with a single env. See **[Replaying Recorded Episodes](docs/replay.md)** for the full guide, including replaying your own recordings, `--env-config`, and `--validate-states`.
+> **Replay**: `run_recorded.py` restores the recorded initial state and replays the recorded actions open-loop, by default with the env configuration saved next to the recording (`env_cfg.json`). The recorded outcome is not invariant across simulator versions, since contact dynamics change between Isaac Sim / Isaac Lab releases (see [Requirements](#requirements)). Faithful reproduction requires recording and replaying with a single env. See [Replaying Recorded Episodes](docs/replay.md).
 
 ### Run with a policy
 
-RoboLab uses a **server-client architecture**: your model runs as a standalone server, and RoboLab connects to it via a lightweight inference client. To quickly test RoboLab, try [Pi0.5 via OpenPI](policies/pi0_family/README.md).
-
-Quick run after install in the RoboLab terminal, to see it working:
+RoboLab uses a server-client architecture: the model runs as a standalone server, and RoboLab connects to it through an inference client. For a quick test, use [π0.5 via OpenPI](policies/pi0_family/README.md) and serve the joint-position checkpoint (`scripts/serve_pi05.sh`). The OpenPI `--env DROID` convenience flag serves delta actions, which this action space does not accept.
 
 ```bash
 cd robolab
-uv run python policies/pi0_family/run.py --policy pi05 --task BananaInBowlTask --num-envs 10
+uv run --no-sync python policies/pi0_family/run.py --policy pi05 --task BananaInBowlTask --num-envs 10
 ```
+
 Use the [dashboard](#dashboard) to view the output written to your local folder.
 
 ### Common CLI Options
@@ -104,12 +131,27 @@ python policies/pi0_family/run.py --policy pi05 --tag semantics
 # Run 12 parallel episodes per task
 python policies/pi0_family/run.py --policy pi05 --headless --num-envs 12
 
+# Run at a stated friction (upstream | <mu> | realistic | table.json); recorded in the run directory
+python policies/pi0_family/run.py --policy pi05 --headless --friction realistic
+
 # Disable subtask progress tracking (on by default; drops score/reason from results)
 python policies/pi0_family/run.py --policy pi05 --disable-subtask
 
 # Resume a previous run (skips completed episodes)
 python policies/pi0_family/run.py --policy pi05 --output-folder-name my_previous_run
 ```
+
+Run one process per task. Passing several tasks to one invocation instantiates every task's environments up front and crashes (upstream issue, see [`docs/environment_run.md`](docs/environment_run.md)).
+
+### Check a run
+
+```bash
+scripts/verify_patches.py output/<run>                # PASS / FAIL / N/A per change, from the recording
+scripts/verify_patches.py --summary output/rc*        # one table across runs; exit 1 on any FAIL
+scripts/flag_regression.py --output-dir output        # score the flags against the human verdicts
+```
+
+See [`docs/verified/verification.md`](docs/verified/verification.md).
 
 ## Example Tasks
 
@@ -132,33 +174,31 @@ See the full [Benchmark Task Library](robolab/tasks/README.md) for all 120 tasks
 
 ## Dashboard
 
-A self-contained web dashboard for browsing the benchmark (scenes and tasks) and analyzing your experiment results.
+A self-contained web dashboard for browsing the benchmark (scenes and tasks) and analyzing experiment results.
 
 ```bash
-uv run robolab-dashboard
+uv run --no-sync robolab-dashboard --host 127.0.0.1
 # open http://localhost:8080
 ```
 
-<video src="https://github.com/user-attachments/assets/5992e61b-9043-4602-8402-04459da38421" autoplay controls muted loop playsinline width="800">
-  Your viewer doesn't render inline video — see <a href="https://github.com/user-attachments/assets/5992e61b-9043-4602-8402-04459da38421">robolab_dashboard.mp4</a>.
-</video>
+The dashboard has no authentication; bind it to `127.0.0.1` on shared machines.
 
-See **[docs/dashboard.md](docs/dashboard.md)** for the full feature tour, CLI
-flags, and the API endpoints under the hood.
+See [docs/dashboard.md](docs/dashboard.md) for the feature tour, CLI flags, and API endpoints.
 
 ## Documentation
 
-Full documentation is at **[docs/README.md](docs/README.md)**, covering:
+Full documentation is at [docs/README.md](docs/README.md), covering:
 
-- [Objects](docs/objects.md), [Scenes](docs/scene.md), [Tasks](docs/task.md) — Creating and managing assets and benchmark tasks
-- [Robots](docs/robots.md), [Cameras](docs/camera.md), [Lighting](docs/lighting.md), [Backgrounds](docs/background.md) — Configuring simulation parameters
-- [Environment Registration](docs/environment_registration.md) — Combining tasks with robot/observation/action configs
-- [Inference Clients](policies/README.md) — A list of supported open-source models and clients
-- [Replaying Recorded Episodes](docs/replay.md) — Playing back recorded HDF5 episodes faithfully
-- [Analysis and Results](docs/analysis.md) — Summarizing, comparing, and auditing results
-- [Dashboard](docs/dashboard.md) — Interactive web viewer for benchmark, tasks, scenes, and eval results
+- **RoboLab Verified**: [why](docs/verified/README.md), [changes](docs/verified/changes.md), [findings](docs/verified/findings.md), [migration](docs/verified/migration.md), [verification](docs/verified/verification.md), [physics](docs/physics.md)
+- [Objects](docs/objects.md), [Scenes](docs/scene.md), [Tasks](docs/task.md): creating and managing assets and benchmark tasks
+- [Robots](docs/robots.md), [Cameras](docs/camera.md), [Lighting](docs/lighting.md), [Backgrounds](docs/background.md): configuring simulation parameters
+- [Environment Registration](docs/environment_registration.md): combining tasks with robot/observation/action configs
+- [Inference Clients](policies/README.md): supported open-source models and clients
+- [Replaying Recorded Episodes](docs/replay.md): playing back recorded HDF5 episodes faithfully
+- [Analysis and Results](docs/analysis.md), [Data and Output](docs/data.md): summarizing, comparing, and auditing results; the output schema
+- [Dashboard](docs/dashboard.md): interactive web viewer for benchmark, tasks, scenes, and eval results
 - [Subtask Checking](docs/subtask.md), [Conditionals](docs/task_conditionals.md), [Event Tracking](docs/event_tracking.md)
-- [Ecosystem](docs/ecosystem.md) — Task libraries and projects built on RoboLab
+- [Ecosystem](docs/ecosystem.md): task libraries and projects built on RoboLab
 
 ## Requirements
 
@@ -172,16 +212,16 @@ Full documentation is at **[docs/README.md](docs/README.md)**, covering:
 > **Note on simulator versions**: the stacks ship different PhysX builds, so contact-rich dynamics (grasping, object settling) are not invariant across versions. Benchmark results are best compared on the same stack. RoboLab converts recorded quaternion layouts across versions, but numerical replay fidelity still requires the original simulator stack.
 
 - **Disk space**: ~8 GB (assets account for ~7 GB)
-- **GPU**: NVIDIA RTX GPU required. Recommend 48GB+ VRAM. See [Isaac Lab's hardware requirements](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html#system-requirements) for recommended GPUs and VRAM.
-- **Speed**: 30 GPU hours / 100 tasks, 1.4 it/s (assuming ~200ms inference step)
+- **GPU**: NVIDIA RTX GPU required. Recommend 48 GB+ VRAM. See [Isaac Lab's hardware requirements](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html#system-requirements) and the per-task [`num_envs` guide](docs/env_vram_size_guide.md).
+- **Speed**: a 4-env run of one task takes 5–17 minutes on an L40 with ~200 ms inference; the full benchmark is ~30 GPU hours per policy.
 
 ## License
 
-The RoboLab framework is released under the [Apache License 2.0](./LICENSE).
-
-Third-party dependency licenses are listed in [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
+RoboLab Verified is released under the [Apache License 2.0](./LICENSE), as is upstream RoboLab; see [NOTICE](./NOTICE). Third-party dependency licenses are listed in [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
 
 ## Citation
+
+RoboLab is the work of NVIDIA's Seattle Robotics Lab. If you use the benchmark, cite the paper:
 
 ```bibtex
 @inproceedings{yang2026robolab,
@@ -195,6 +235,8 @@ Third-party dependency licenses are listed in [THIRD_PARTY_NOTICES.md](./THIRD_P
 }
 ```
 
+If your numbers were produced with this fork, say so and give the tag, e.g. "RoboLab Verified (`verified-rc7`, https://github.com/Manda-Robotics/RoboLab-Verified)". The differences from upstream are listed in [`docs/verified/changes.md`](docs/verified/changes.md).
+
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for acknowledgements, issues, and how to contribute.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how changes are documented and verified, and for the upstream acknowledgements.

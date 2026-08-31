@@ -64,7 +64,7 @@ class Subtask:
         # Sanitize conditions structure to unified dict format
         self.conditions = cast(
             dict[str, list[tuple[Callable, float]]],
-            sanitize_subtask_conditions(self.conditions)
+            sanitize_subtask_conditions(self.conditions, logical=self.logical)
         )
 
         # Normalize the scores of the conditions within each group to sum to 1.0.

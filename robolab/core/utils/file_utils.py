@@ -563,6 +563,11 @@ def expand_folder_patterns(
         candidates: list[str] = []
         if os.path.isabs(pattern):
             candidates.append(pattern)
+        elif base_dir is not None and any(ch in pattern for ch in "*?[") and os.sep not in pattern:
+            # A bare glob such as ``t*`` means run directories under output/; tried
+            # there first so it does not match unrelated cwd entries (``tests/``).
+            candidates.append(os.path.join(base_dir, pattern))
+            candidates.append(pattern)
         else:
             candidates.append(pattern)
             if base_dir is not None:

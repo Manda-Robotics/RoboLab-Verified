@@ -42,15 +42,32 @@ class GrabAFruitTask(Task):
     }
     episode_length_s: int = 30
     attributes = ['semantics']
+    # P65 (H-R9-T4): same defect as GrabABagel -- success is a 50 mm lift
+    # (object_picked_up), the ladder was contact only, so env1 of
+    # isaac60_robolab120_pi05 logs "Completed subtask 'grab_a_fruit' 1/1" at
+    # 6.20 s on an episode whose success is False. Two rungs per fruit, the
+    # second one being the success predicate.
     subtasks = [
         Subtask(
             name="grab_a_fruit",
-            conditions=[
-                partial(object_grabbed, object="banana"),
-                partial(object_grabbed, object="banana_01"),
-                partial(object_grabbed, object="apple_01"),
-                partial(object_grabbed, object="orange2"),
-            ],
+            conditions={
+                "banana": [
+                    partial(object_grabbed, object="banana"),
+                    partial(object_picked_up, object="banana", surface="table", distance=0.05),
+                ],
+                "banana_01": [
+                    partial(object_grabbed, object="banana_01"),
+                    partial(object_picked_up, object="banana_01", surface="table", distance=0.05),
+                ],
+                "apple_01": [
+                    partial(object_grabbed, object="apple_01"),
+                    partial(object_picked_up, object="apple_01", surface="table", distance=0.05),
+                ],
+                "orange2": [
+                    partial(object_grabbed, object="orange2"),
+                    partial(object_picked_up, object="orange2", surface="table", distance=0.05),
+                ],
+            },
             logical="any",
             score=1.0
         )

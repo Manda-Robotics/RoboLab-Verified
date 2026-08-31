@@ -9,6 +9,7 @@ const state = {
   runs: [],            // RunMeta[]
   tasksByRun: {},      // run_id → TaskSummary[]
   episodesByKey: {},   // `${run_id}::${task}` → EpisodeRow[]
+  overview: null,      // cached /api/overview (P70: the task page needs each task's run list)
   selection: { view: 'overview' },
   expanded: { runs: new Set(), tasks: new Set() }, // task key = run_id::task
   compareSet: new Set(), // run_ids selected for cross-run comparison (Ctrl/Cmd-click)
@@ -160,7 +161,7 @@ function sortRows(rows, tableId, accessors) {
     if (!as && !bs) return 0;
     if (!as) return 1;
     if (!bs) return -1;
-    return as < bs ? -1 * dir : 1 * dir;
+    return as.localeCompare(bs) * dir;  // equal strings → 0 (the old ternary returned 1*dir on ties)
   });
 }
 // Mean and across-task std of `timing.policy_inference_avg_ms`.
@@ -416,6 +417,7 @@ async function refreshAll() {
   // clear caches that depend on the source list
   state.tasksByRun = {};
   state.episodesByKey = {};
+  state.overview = null;
   state.compareSet.clear();
   await renderSources();
   state.runs = await fetchJSON('/api/runs');
@@ -443,6 +445,24 @@ async function ensureEpisodes(runId, task) {
   return data;
 }
 
+// "today" / "yesterday" / "Tue" (this week) / "12 Aug" / "12 Aug 2025", from a
+// unix timestamp, relative to the viewer's local midnight.
+function fmtRelativeDay(unixSec) {
+  const d = new Date(unixSec * 1000);
+  const now = new Date();
+  const dayStart = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((dayStart(now) - dayStart(d)) / 86400000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return d.toLocaleDateString(undefined, { weekday: 'short' });
+  const opts = { day: 'numeric', month: 'short' };
+  if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+  return d.toLocaleDateString(undefined, opts);
+}
+function fmtClock(unixSec) {
+  return new Date(unixSec * 1000).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+
 function renderSidebar() {
   const root = $('#sidebar');
   root.innerHTML = '';
@@ -454,7 +474,32 @@ function renderSidebar() {
   // source dir — otherwise the label is redundant (matches the global one).
   const sourceSet = new Set(state.runs.map((r) => r.source).filter(Boolean));
   const showSource = sourceSet.size > 1;
-  for (const run of state.runs) {
+
+  // ---- filter box + policy-family groups (review feedback 2026-08-25: "too
+  // many runs, I need to distinguish — pi05, Gemini, Aloha, …") ----
+  state.sidebarFilter = state.sidebarFilter || '';
+  const filterBox = el('input', {
+    type: 'search', class: 'sidebar-filter', placeholder: 'filter runs… (name, policy)',
+    value: state.sidebarFilter,
+  });
+  filterBox.addEventListener('input', () => {
+    state.sidebarFilter = filterBox.value; renderSidebar();
+    requestAnimationFrame(() => { const b = $('#sidebar .sidebar-filter'); if (b) { b.focus(); b.setSelectionRange(b.value.length, b.value.length); } });
+  });
+  root.appendChild(el('div', { class: 'px-3 pb-1' }, filterBox));
+  const q = state.sidebarFilter.trim().toLowerCase();
+  const visibleRuns = state.runs.filter((r) => !q || r.run_id.toLowerCase().includes(q) || (r.policy || '').toLowerCase().includes(q) || (r.family || '').toLowerCase().includes(q));
+
+  // group by family; groups ordered by their newest run (runs are already newest-first)
+  const groups = new Map();
+  for (const run of visibleRuns) {
+    const key = run.family || 'Unlabelled';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(run);
+  }
+  let collapsed;
+  try { collapsed = new Set(JSON.parse(localStorage.getItem('sidebar.collapsedFamilies') || '[]')); } catch { collapsed = new Set(); }
+  const renderRun = (run) => {
     const isExpanded = state.expanded.runs.has(run.run_id);
     const isSelected = state.selection.view === 'run' && state.selection.run_id === run.run_id;
     const isCompared = state.compareSet.has(run.run_id);
@@ -491,7 +536,15 @@ function renderSidebar() {
       }),
       el('span', { class: 'w-3', style: { color: 'var(--text-2)' } }, isExpanded ? '▾' : '▸'),
       el('div', { class: 'flex-1 min-w-0' },
-        el('div', { class: 'font-medium truncate', title: run.run_id }, run.run_id),
+        el('div', { class: 'flex items-baseline gap-2' },
+          el('div', { class: 'font-medium truncate flex-1 min-w-0', title: run.run_id }, run.run_id),
+          // Subtle "when": today / yesterday / weekday / date, top-right of the
+          // row, full timestamp on hover (review feedback 2026-08-24: runs need
+          // a date so you can tell last night's from last week's).
+          run.modified_at
+            ? el('span', { class: 'run-date font-mono', title: new Date(run.modified_at * 1000).toLocaleString() },
+                fmtRelativeDay(run.modified_at))
+            : ''),
         el('div', { class: 'text-xs', style: { color: 'var(--text-2)' } },
           run.policy ? `${run.policy} · ` : '',
           `${run.num_success}/${run.num_episodes} (${fmtPct(run.success_rate)})`),
@@ -553,7 +606,35 @@ function renderSidebar() {
         }
       }
     }
+  };
+
+  for (const [fam, runs] of groups) {
+    const n = runs.reduce((a, r) => a + r.num_episodes, 0);
+    const k = runs.reduce((a, r) => a + r.num_success, 0);
+    const newest = Math.max(...runs.map((r) => r.modified_at || 0));
+    // A deep link reveals its run's group once (applyHash sets revealRun);
+    // otherwise the user's collapse choice wins — even for the selected run.
+    const reveal = state.revealRun && runs.some((r) => r.run_id === state.revealRun);
+    if (reveal) { collapsed.delete(fam); try { localStorage.setItem('sidebar.collapsedFamilies', JSON.stringify([...collapsed])); } catch { /* private mode */ } }
+    const isCollapsed = collapsed.has(fam);
+    const header = el('div', {
+      class: 'family-row flex items-center gap-2 px-3 py-1.5',
+      title: `${runs.length} run${runs.length === 1 ? '' : 's'} · ${k}/${n} episodes succeeded`,
+      onclick: () => {
+        if (collapsed.has(fam)) collapsed.delete(fam); else collapsed.add(fam);
+        try { localStorage.setItem('sidebar.collapsedFamilies', JSON.stringify([...collapsed])); } catch { /* private mode */ }
+        renderSidebar();
+      },
+    },
+      el('span', { class: 'w-3', style: { color: 'var(--text-2)' } }, isCollapsed ? '▸' : '▾'),
+      el('span', { class: 'family-name flex-1 min-w-0 truncate' }, fam),
+      el('span', { class: 'family-stats font-mono' }, `${runs.length} · ${n ? fmtPct(k / n) : '—'}`),
+      newest ? el('span', { class: 'run-date font-mono' }, fmtRelativeDay(newest)) : null);
+    root.appendChild(header);
+    if (!isCollapsed) for (const run of runs) renderRun(run);
   }
+  if (!groups.size) root.appendChild(el('div', { class: 'p-3 text-slate-500 text-xs' }, 'No runs match the filter.'));
+  state.revealRun = null;
 }
 
 // ---- compare bar / report ---------------------------------------------------
@@ -1522,28 +1603,251 @@ function setBreadcrumb(...parts) {
   });
 }
 
+// ---- P70: one task across every experiment ---------------------------------
+// The reviewer: "you can see all of the tasks being listed here, but you can't click on
+// the tasks ... you see all of the episodes and, obviously, which policy they
+// were on". Nothing new is needed server-side: /api/overview already gives each
+// task's run list, /api/runs each run's policy, ensureEpisodes the rows.
+
+// Pure join, kept out of the render so it is testable without a browser.
+function joinTaskEpisodes(taskRow, runs, episodesByRun) {
+  const meta = {};
+  for (const r of runs || []) meta[r.run_id] = r;
+  const rows = [];
+  for (const runId of (taskRow && taskRow.runs) || []) {
+    const info = meta[runId] || {};
+    for (const ep of episodesByRun[runId] || []) {
+      rows.push({
+        policy: info.policy || 'unknown',
+        family: info.family || info.policy || 'unknown',
+        run_id: runId,
+        env_id: ep.env_id,
+        run_index: ep.run_index,
+        success: !!ep.success,
+        score: typeof ep.score === 'number' ? ep.score : null,
+        duration: typeof ep.duration === 'number' ? ep.duration : null,
+        reason: ep.reason || '',
+      });
+    }
+  }
+  return rows;
+}
+
+// Per-policy aggregate over the joined rows, so the numbers can be checked directly.
+function summarisePolicies(rows) {
+  const by = new Map();
+  for (const r of rows) {
+    if (!by.has(r.policy)) by.set(r.policy, { policy: r.policy, n: 0, s: 0, scoreSum: 0, scoreN: 0, runSet: new Set() });
+    const a = by.get(r.policy);
+    a.n += 1;
+    if (r.success) a.s += 1;
+    if (r.score !== null) { a.scoreSum += r.score; a.scoreN += 1; }
+    a.runSet.add(r.run_id);
+  }
+  return [...by.values()]
+    .map((a) => ({ policy: a.policy, n: a.n, s: a.s, runs: a.runSet.size,
+                   rate: a.n ? a.s / a.n : 0,
+                   score: a.scoreN ? a.scoreSum / a.scoreN : null }))
+    .sort((x, y) => y.n - x.n || x.policy.localeCompare(y.policy));
+}
+
+async function ensureOverview() {
+  if (!state.overview) state.overview = await fetchJSON('/api/overview');
+  return state.overview;
+}
+
+async function selectTaskAll(task) {
+  state.selection = { view: 'taskall', task };
+  writeHash(`#/results/task/${encodeURIComponent(task)}`);
+  await renderTaskAll(task);
+}
+
+async function renderTaskAll(task) {
+  setBreadcrumb(
+    el('a', { class: 'hover:underline cursor-pointer', onclick: selectOverview }, 'Overview'),
+    task,
+  );
+  const pane = $('#pane');
+  pane.innerHTML = '';
+  pane.appendChild(el('div', { class: 'text-sm', style: { color: 'var(--text-2)' } }, 'Loading episodes...'));
+
+  let taskRow;
+  try {
+    const ov = await ensureOverview();
+    taskRow = (ov.tasks || []).find((t) => t.task === task);
+  } catch (e) {
+    pane.innerHTML = '';
+    pane.appendChild(el('div', { style: { color: 'var(--fail)' } }, String(e)));
+    return;
+  }
+  if (!taskRow) {
+    pane.innerHTML = '';
+    pane.appendChild(el('div', { style: { color: 'var(--text-2)' } }, `No experiment contains ${task}.`));
+    return;
+  }
+
+  // Fan out over the experiments that have this task. A run that fails to load
+  // contributes nothing rather than failing the whole page.
+  const episodesByRun = {};
+  await Promise.all(taskRow.runs.map(async (id) => {
+    try { episodesByRun[id] = await ensureEpisodes(id, task); }
+    catch (e) { episodesByRun[id] = []; }
+  }));
+
+  const rows = joinTaskEpisodes(taskRow, state.runs, episodesByRun);
+  const policies = summarisePolicies(rows);
+  pane.innerHTML = '';
+
+  pane.appendChild(el('div', { class: 'mb-5' },
+    el('h2', { class: 'text-xl font-semibold mb-1 truncate', title: task }, task),
+    el('p', { class: 'text-sm', style: { color: 'var(--text-2)' } },
+      `${rows.length} episodes / ${taskRow.runs.length} experiments / ${policies.length} policies`)));
+
+  // Per-policy strip: the split the pooled overview row cannot show (H-E20).
+  if (policies.length) {
+    pane.appendChild(el('div', { class: 'mb-6' },
+      el('h3', { class: 'text-sm font-semibold uppercase tracking-wide mb-2', style: { color: 'var(--text-2)' } }, 'By policy'),
+      el('div', { class: 'grid grid-cols-2 md:grid-cols-4 gap-3' },
+        ...policies.map((p) =>
+          el('div', { class: 'panel p-3' },
+            el('div', { class: 'font-medium truncate', title: p.policy }, p.policy),
+            el('div', { class: 'text-xs', style: { color: 'var(--text-2)' } },
+              `${p.runs} experiment${p.runs === 1 ? '' : 's'}, ${p.n} episodes`),
+            el('div', { class: 'mt-1.5' }, srScoreBar(p.rate, p.score)),
+            el('div', { class: 'mt-1 text-sm metric-block' }, fmtSRCell(p.s, p.n)))))));
+  }
+
+  // Episode table, policy-first by default.
+  seedSort('taskAllEps', 'policy', 'asc');
+  const onChange = () => renderTaskAll(task);
+  const pad = (n) => String(n).padStart(4, '0');
+  const sorted = sortRows(rows, 'taskAllEps', {
+    policy: (r) => `${r.policy} ${r.run_id} ${pad(r.env_id)}`,
+    run: (r) => `${r.run_id} ${pad(r.env_id)}`,
+    env: { get: (r) => r.env_id, numeric: true },
+    outcome: { get: (r) => (r.success ? 1 : 0), numeric: true },
+    score: { get: (r) => (r.score === null ? -1 : r.score), numeric: true },
+    duration: { get: (r) => (r.duration === null ? -1 : r.duration), numeric: true },
+  });
+
+  pane.appendChild(el('table', { class: 'panel w-full text-sm overflow-hidden' },
+    el('thead', { class: 'text-xs uppercase tracking-wider' },
+      el('tr', {},
+        sortableTh('taskAllEps', 'policy', 'Policy', { onChange }),
+        sortableTh('taskAllEps', 'run', 'Experiment', { onChange }),
+        sortableTh('taskAllEps', 'env', 'Env', { numeric: true, alignRight: true, onChange }),
+        sortableTh('taskAllEps', 'outcome', 'Outcome', { onChange }),
+        sortableTh('taskAllEps', 'score', 'Score', { numeric: true, alignRight: true, onChange }),
+        sortableTh('taskAllEps', 'duration', 'Duration', { numeric: true, alignRight: true, onChange }))),
+    el('tbody', {},
+      ...sorted.map((r) =>
+        el('tr', {
+          class: 'tbl-row cursor-pointer tbl-row-clickable',
+          title: r.reason,
+          onclick: () => selectEpisode(r.run_id, task, r.env_id, r.run_index),
+        },
+          el('td', { class: 'px-3 py-1.5 font-medium' }, r.policy),
+          el('td', { class: 'px-3 py-1.5 truncate', style: { color: 'var(--text-2)', maxWidth: '18rem' }, title: r.run_id }, r.run_id),
+          el('td', { class: 'px-3 py-1.5 text-right tabular-nums' }, String(r.env_id)),
+          el('td', { class: 'px-3 py-1.5' },
+            el('span', { style: { color: r.success ? 'var(--ok)' : 'var(--fail)' } }, r.success ? 'success' : 'fail')),
+          el('td', { class: 'px-3 py-1.5 text-right tabular-nums' }, r.score === null ? '-' : r.score.toFixed(2)),
+          el('td', { class: 'px-3 py-1.5 text-right tabular-nums', style: { color: 'var(--text-2)' } },
+            r.duration === null ? '-' : `${r.duration.toFixed(1)}s`))))));
+}
+
 function selectOverview() {
   state.selection = { view: 'overview' };
+  writeHash('#/results');
   renderOverview();
 }
 
 async function selectRun(runId) {
   state.selection = { view: 'run', run_id: runId };
+  writeHash(`#/results/run/${encodeURIComponent(runId)}`);
   await ensureTasks(runId);
   renderRun(runId);
 }
 
 async function selectTask(runId, task) {
   state.selection = { view: 'task', run_id: runId, task };
+  writeHash(`#/results/run/${encodeURIComponent(runId)}/task/${encodeURIComponent(task)}`);
   await ensureEpisodes(runId, task);
   renderTask(runId, task);
 }
 
 async function selectEpisode(runId, task, envId, runIndex) {
   state.selection = { view: 'episode', run_id: runId, task, env_id: envId, run_index: runIndex };
+  writeHash(`#/results/run/${encodeURIComponent(runId)}/task/${encodeURIComponent(task)}/ep/${envId}/${runIndex}`);
   await ensureEpisodes(runId, task);
   renderEpisode(runId, task, envId, runIndex);
 }
+
+// Seek the current episode's linked views to `t` and pause there — used by
+// ?t= review links. Waits for the master video's metadata if needed.
+function seekEpisodeTo(t) {
+  const tr = window.__transport;
+  if (!tr) return;
+  const m = tr.master();
+  const go = () => { for (const v of tr.linked()) v.pause(); seekAll(tr.linked(), t); setTimeout(() => { for (const v of tr.linked()) v.pause(); }, 250); };
+  if (m.readyState >= 1) go(); else m.addEventListener('loadedmetadata', go, { once: true });
+  // the autostart fires on canplay; make sure we end paused at t
+  m.addEventListener('canplay', () => setTimeout(go, 50), { once: true });
+}
+
+// ---- permalinks ------------------------------------------------------------
+// The URL hash mirrors the selection (#/results/run/<run>/task/<task>/ep/<env>/<runIndex>,
+// #/scenes, #/tasks, #/home) so an episode can be linked from a review
+// transcript, reload lands where you were, and Back works (H-E15). writeHash
+// is a no-op while we are applying a hash, so navigation never echoes.
+let applyingHash = false;
+function writeHash(h) {
+  if (applyingHash || location.hash === h || location.hash.split('?')[0] === h) return;
+  // The very first write (fresh load) replaces instead of pushing, so Back
+  // from the landing page leaves the app rather than bouncing on it.
+  if (!location.hash) history.replaceState(null, '', h); else history.pushState(null, '', h);
+}
+async function applyHash() {
+  const h0 = location.hash || '';
+  // optional ?t=<seconds>: open the episode paused at that time (review links)
+  const qi = h0.indexOf('?');
+  const h = qi >= 0 ? h0.slice(0, qi) : h0;
+  const query = new URLSearchParams(qi >= 0 ? h0.slice(qi + 1) : '');
+  const seekTo = query.has('t') ? parseFloat(query.get('t')) : null;
+  const parts = h.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
+  applyingHash = true;
+  try {
+    if (parts[0] === 'scenes' || parts[0] === 'tasks' || parts[0] === 'home') { setRoute(parts[0]); return; }
+    if (parts[0] !== 'results') { if (h) setRoute('home'); return; }
+    if (state.route !== 'results') setRoute('results', false);
+    // results/run/<run>[/task/<task>[/ep/<env>/<runIndex>]]
+    // P70: #/results/task/<Task> - one task across every experiment
+    if (parts[1] === 'task' && parts[2]) { await selectTaskAll(parts[2]); return; }
+    if (parts[1] === 'run' && parts[2]) {
+      const runId = parts[2];
+      state.expanded.runs.add(runId);
+      state.revealRun = runId;             // open its policy-family group once
+      if (parts[3] === 'task' && parts[4]) {
+        const task = parts[4];
+        state.expanded.tasks.add(`${runId}::${task}`);
+        if (parts[5] === 'ep' && parts[6] != null && parts[7] != null) {
+          await selectEpisode(runId, task, parseInt(parts[6], 10), parseInt(parts[7], 10));
+          if (seekTo != null && Number.isFinite(seekTo)) seekEpisodeTo(seekTo);
+        } else {
+          await selectTask(runId, task);
+        }
+      } else {
+        await selectRun(runId);
+      }
+      renderSidebar();
+    } else {
+      selectOverview();
+    }
+  } finally {
+    applyingHash = false;
+  }
+}
+window.addEventListener('popstate', () => { applyHash(); });
 
 // ---- overview view ----------------------------------------------------------
 
@@ -1611,7 +1915,8 @@ async function renderOverview() {
     el('tbody', {},
       ...sortedTasks.map((t) =>
         el('tr', { class: 'tbl-row' },
-          el('td', { class: 'px-3 py-1.5 font-medium text-left' }, t.task),
+          el('td', { class: 'px-3 py-1.5 font-medium text-left' },
+            el('a', { class: 'hover:underline cursor-pointer', onclick: () => selectTaskAll(t.task) }, t.task)),
           el('td', { class: 'px-3 py-1.5 text-right tabular-nums' }, String(t.n)),
           el('td', { class: 'px-3 py-1.5 text-right tabular-nums' }, String(t.s)),
           el('td', { class: 'px-3 py-1.5' },
@@ -1748,14 +2053,75 @@ function renderTask(runId, task) {
       chip(`SR ${fmtPct(n ? s / n : 0)}`),
       chip(`Score ${fmtScore(meanScore)}`))));
 
+  // Where did the episodes get to? One bucket per outcome ("✓", "stuck at
+  // stage 2 (started)", "stage 1 not started"); the chips filter the grid
+  // (review feedback: the table shows SR/score but not which subgoals were
+  // reached — E6; failure `reason` was loaded but never shown — H-E17).
+  const filterKey = `${runId}::${task}`;
+  state.taskFilter = state.taskFilter || {};
+  const buckets = new Map();
+  for (const ep of eps) {
+    const b = progressBucket(ep);
+    if (!buckets.has(b.key)) buckets.set(b.key, { ...b, n: 0 });
+    buckets.get(b.key).n += 1;
+  }
+  const hasProgress = eps.some((e) => e.stages_total != null);
+  let grid;
+  const applyFilter = () => {
+    const active = state.taskFilter[filterKey] || null;
+    grid.innerHTML = '';
+    const shown = eps.filter((ep) => !active || progressBucket(ep).key === active);
+    for (const ep of shown) grid.appendChild(buildEpisodeCard(runId, task, ep));
+    if (!shown.length) grid.appendChild(el('div', { class: 'text-slate-500 col-span-full' }, eps.length ? 'No episodes in this bucket.' : 'No episodes.'));
+    for (const c of pane.querySelectorAll('.bucket-chip')) c.classList.toggle('active', (c.dataset.key || null) === active);
+  };
+  if (hasProgress && eps.length) {
+    const order = [...buckets.values()].sort((a, b) => a.order - b.order);
+    const row = el('div', { class: 'flex flex-wrap items-center gap-2 mb-3 text-xs' },
+      el('span', { class: 'lang-label', style: { margin: 0 } }, 'Progress'),
+      el('button', { class: 'chip bucket-chip', 'data-key': '', onclick: () => { delete state.taskFilter[filterKey]; applyFilter(); } }, `all ${eps.length}`),
+      ...order.map((b) => el('button', {
+        class: `chip bucket-chip ${b.cls}`, 'data-key': b.key, title: b.title,
+        onclick: () => { state.taskFilter[filterKey] = state.taskFilter[filterKey] === b.key ? undefined : b.key; if (!state.taskFilter[filterKey]) delete state.taskFilter[filterKey]; applyFilter(); },
+      }, `${b.label} ${b.n}`)));
+    pane.appendChild(row);
+  }
+
   // episode grid: each card auto-plays the viewport mp4 (or the first other
   // video) as a preview. Falls back to thumb png, then to a "no media" tile.
-  const grid = el('div', { class: 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3' });
-  for (const ep of eps) grid.appendChild(buildEpisodeCard(runId, task, ep));
-  if (!eps.length) {
-    grid.appendChild(el('div', { class: 'text-slate-500 col-span-full' }, 'No episodes.'));
-  }
+  grid = el('div', { class: 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3' });
   pane.appendChild(grid);
+  applyFilter();
+}
+
+// Outcome bucket of an episode from its subtask progress (see
+// LocalLoader._attach_progress): success · stuck at stage k (started) ·
+// stage k not started · no subtask tracking.
+function progressBucket(ep) {
+  if (ep.physics_artifact) return { key: 'towed', label: '⚠ physics artifact', cls: 'fail', order: -1, title: 'An object moved with an open hand (stuck to a finger) — TOWED_WITHOUT_GRASP; the episode is not trustworthy' };
+  if (ep.success) return { key: 'ok', label: '✓ success', cls: 'success', order: 0, title: 'Episode succeeded' };
+  if (ep.stages_total == null) return { key: 'na', label: 'no subtask tracking', cls: '', order: 99, title: 'No subtask events recorded' };
+  if ((ep.stages_reached || 0) >= ep.stages_total) {
+    // Every stage credited, yet the success predicate never held — the
+    // ladder and the termination disagree (dragged-not-lifted hammer,
+    // H-R6-9; contact-credited grab vs lift-required success, H-R8-21/25).
+    return { key: 'done-nosr', label: 'all stages, no success', cls: 'fail', order: 5, title: `All ${ep.stages_total} stage(s) were credited but the success condition was never satisfied` };
+  }
+  const k = (ep.stages_reached || 0) + 1;
+  if (ep.stage_started) return { key: `s${k}s`, label: `stuck at stage ${k}`, cls: 'fail', order: 10 + k, title: `Stage ${k} of ${ep.stages_total} was started (an object was grabbed) but never completed` };
+  return { key: `s${k}n`, label: `stage ${k} not started`, cls: 'fail', order: 30 + k, title: `Stage ${k} of ${ep.stages_total} was never started` };
+}
+
+// ▰▰▱ stage boxes for an episode card.
+function progressBoxes(ep) {
+  if (ep.stages_total == null) return null;
+  const wrap = el('span', { class: 'stage-boxes', title: `${ep.stages_reached || 0} of ${ep.stages_total} stage${ep.stages_total === 1 ? '' : 's'} reached${ep.stage_started ? ', next one started' : ''}` });
+  for (let i = 0; i < ep.stages_total; i++) {
+    const cls = i < (ep.stages_reached || 0) ? 'done' : (i === (ep.stages_reached || 0) && ep.stage_started ? 'partial' : '');
+    wrap.appendChild(el('span', { class: `stage-box ${cls}` }));
+  }
+  wrap.appendChild(el('span', { class: 'stage-count font-mono' }, `${ep.stages_reached || 0}/${ep.stages_total}`));
+  return wrap;
 }
 
 // Reusable episode card: autoplaying viewport preview + run/env caption +
@@ -1799,8 +2165,9 @@ function buildEpisodeCard(runId, task, ep) {
     onclick: () => { selectEpisode(runId, task, ep.env_id, ep.run_index); renderSidebar(); },
   },
     previewBlock,
-    el('div', { class: 'p-2 flex items-center justify-between' },
+    el('div', { class: 'p-2 flex items-center justify-between gap-2' },
       el('div', { class: 'text-xs' }, `run ${ep.run_index} · env ${ep.env_id}`),
+      progressBoxes(ep),
       badge(ep.success)));
 }
 
@@ -1832,41 +2199,105 @@ async function renderEpisode(runId, task, envId, runIndex) {
   const header = el('div', { class: 'flex items-start gap-3 flex-wrap mb-4' },
     epChip,
     badge(ep.success),
+    ep.physics_artifact ? el('span', { class: 'chip fail', title: 'TOWED_WITHOUT_GRASP fired — an object moved with an open hand; physics artifact, do not trust this episode' }, '⚠ physics artifact') : null,
     chip(`${ep.episode_step} steps`),
     chip(fmtSec(ep.duration)),
+    ep.score != null
+      ? el('span', { class: 'chip', title: ep.score_peak != null && ep.score_peak !== ep.score
+            ? `Final-frame score ${fmtScore(ep.score)} · peak ${fmtScore(ep.score_peak)} — a credited subgoal was undone later`
+            : 'Subtask score judged on the final frame' },
+          `score ${fmtScore(ep.score)}${ep.score_peak != null && ep.score_peak !== ep.score ? ` (peak ${fmtScore(ep.score_peak)})` : ''}`)
+      : null,
     ep.instruction_type ? chip(`instr: ${ep.instruction_type}`) : null,
-    ...(ep.attributes || []).map((a) => chip(a)));
+    ...(ep.attributes || []).map((a) => chip(a)),
+    // When this episode was recorded (newest video mtime) — last in the row,
+    // subtle, full timestamp on hover (The reviewer: "to the very right after the
+    // last flag").
+    ep.recorded_at
+      ? el('span', { class: 'run-date font-mono self-center', title: new Date(ep.recorded_at * 1000).toLocaleString() },
+          `${fmtRelativeDay(ep.recorded_at)} ${fmtClock(ep.recorded_at)}`)
+      : null);
   pane.appendChild(header);
 
   // ---- LANGUAGE INSTRUCTION block (placed above the viewport so it reads
   // before the user starts watching the video) ----
-  pane.appendChild(el('div', { class: 'mb-5' },
+  pane.appendChild(el('div', { class: 'mb-3' },
     el('div', { class: 'lang-label mb-1' }, 'Language instruction'),
     el('div', { class: 'text-base', style: { color: 'var(--text-0)' } }, ep.instruction || '—')));
+
+  // ---- SUBGOALS: the task's subtask ladder, written out, with a box per
+  // stage that fills as the playhead passes the moment it was reached
+  // (review feedback: "I never really get what the subgoals are — I only
+  // see the bar progress after they are reached"; E5 / H-E30).
+  const subgoalsHost = el('div', { class: 'subgoals mb-5' });
+  pane.appendChild(subgoalsHost);
+  window.__subgoals = buildSubgoals(subgoalsHost, task);
 
   // ---- camera tile grid (lerobot-style, autoplay+muted+loop, mono labels) ----
   // Collect the <video> elements so we can sync seek/playhead with events below.
   const camVideos = [];
   if (videos.length) {
-    const grid = el('div', { class: 'cam-grid mb-5' });
+    const grid = el('div', { class: 'cam-grid mb-2' });
     for (const v of videos) {
       const url = `/api/runs/${encodeURIComponent(runId)}/tasks/${encodeURIComponent(task)}/episodes/${envId}/run/${runIndex}/video?name=${encodeURIComponent(v.name)}`;
       const wrap = el('div', { class: 'cam-tile-video-wrap video-host' });
+      // No `autoplay` here: the shared transport below starts every *linked*
+      // view together once the master stream can play (E4 — two streams
+      // autoplaying independently could never be scrubbed in lockstep).
+      // Native controls stay on each tile (fullscreen, picture-in-picture, the
+      // familiar bar); a play/pause/seek on a linked tile is mirrored to the
+      // others. The playback rate is owned by the transport's speed select.
       const video = el('video', {
         src: url,
-        autoplay: '', muted: '', loop: '', playsinline: '', controls: '',
+        muted: '', loop: '', playsinline: '', preload: 'auto', controls: '',
       });
-      applyDefaultPlaybackRate(video);
+      video.dataset.linked = '1';
       attachVideoLoading(video, wrap);
       camVideos.push(video);
       wrap.appendChild(video);
+      // Link toggle: unlinked, this tile ignores the transport and plays on
+      // its own with its native controls (review feedback 2026-08-25: "be
+      // able to play a video independently"). Re-linking snaps it back to
+      // the master clock.
+      const linkBtn = el('button', { class: 'link-btn', title: 'Linked to the shared transport — click to play this view independently' });
+      linkBtn.innerHTML = ICON_LINKED;
+      linkBtn.addEventListener('click', () => {
+        const linked = video.dataset.linked === '1';
+        video.dataset.linked = linked ? '0' : '1';
+        linkBtn.innerHTML = linked ? ICON_UNLINKED : ICON_LINKED;
+        linkBtn.title = linked
+          ? 'Playing independently — click to link back to the shared transport'
+          : 'Linked to the shared transport — click to play this view independently';
+        linkBtn.closest('.cam-tile').classList.toggle('unlinked', linked);
+        video.dispatchEvent(new CustomEvent('linkchange', { detail: { linked: !linked } }));
+      });
+      // The viewport is recorded from the front-facing mirrored camera in the
+      // default registrations: the robot's right is on the viewer's left. Say
+      // so on the tile (subtly) — a reviewer once called a left/right task
+      // "broken" because of this (findings.md D3 / E8).
+      const cams = ep.viewport_cameras || [];
+      const mirroredIdx = v.name === 'viewport' ? cams.findIndex((n) => /mirror/i.test(n)) : -1;
+      const mirrorTag = mirroredIdx >= 0
+        ? el('span', {
+            class: 'mirror-tag',
+            title: `${cams[mirroredIdx]} faces the robot from the front, so the robot's right is on your left`
+              + (cams.length > 1 ? ` (panel ${mirroredIdx + 1} of ${cams.length})` : ''),
+          }, cams.length > 1 ? `panel ${mirroredIdx + 1} mirrored · robot R = your L` : 'mirrored · robot R = your L')
+        : null;
       grid.appendChild(el('div', { class: 'cam-tile' },
         el('div', { class: 'cam-tile-label' },
           el('span', { class: 'dot' }),
-          v.name),
+          v.name,
+          mirrorTag,
+          linkBtn),
         wrap));
     }
     pane.appendChild(grid);
+    // One transport for all views: play/pause · time · the event timeline as
+    // the scrubber · speed. The events loader (Episode tab) fills the
+    // timeline with markers; the strip itself lives here so it never leaves
+    // the screen when tabs change.
+    pane.appendChild(buildTransport(camVideos));
   }
 
   // Stash cam videos so subordinate renderers (events strip, time-series plots)
@@ -1961,33 +2392,48 @@ async function loadAndRenderEvents(host, runId, task, envId, runIndex, camVideos
   }
 
   host.appendChild(el('div', { class: 'lang-label mb-1' }, `Events (${events.length})`));
+  if (window.__subgoals) window.__subgoals.applyEvents(events);
 
-  // strip
+  // strip — the transport under the camera grid owns the one timeline; we
+  // add the event markers to it. Without a transport (no videos) render a
+  // local strip as before.
+  const transport = window.__transport && document.body.contains(window.__transport.strip) ? window.__transport : null;
   let strip = null;
   let playhead = null;
   let markers = [];
   if (dt) {
-    strip = el('div', { class: 'events-strip mb-2' });
-    strip.appendChild(el('div', { class: 'events-strip-track' }));
+    if (transport) {
+      strip = transport.strip;
+      for (const stale of strip.querySelectorAll('.events-strip-marker')) stale.remove();
+      playhead = transport.playhead;
+    } else {
+      strip = el('div', { class: 'events-strip mb-2' });
+      strip.appendChild(el('div', { class: 'events-strip-track' }));
+    }
     for (const ev of events) {
       const x = (ev.time_s / maxTime) * 100;
       const m = el('div', {
         class: `events-strip-marker ${ev.severity}`,
         style: { left: `${x}%` },
         title: `${(ev.time_s || 0).toFixed(2)}s · ${ev.name}\n${ev.info || ''}`,
-        onclick: (e) => { e.stopPropagation(); seekAll(camVideos, ev.time_s); },
+        onclick: (e) => { e.stopPropagation(); seekAll(linkedVideos(camVideos), ev.time_s); },
       });
       strip.appendChild(m);
       markers.push({ ev, node: m });
     }
-    playhead = el('div', { class: 'events-strip-playhead', style: { left: '0%' } });
-    strip.appendChild(playhead);
-    strip.addEventListener('click', (e) => {
-      const rect = strip.getBoundingClientRect();
-      const frac = (e.clientX - rect.left) / rect.width;
-      seekAll(camVideos, frac * maxTime);
-    });
-    host.appendChild(strip);
+    if (!transport) {
+      playhead = el('div', { class: 'events-strip-playhead', style: { left: '0%' } });
+      strip.appendChild(playhead);
+      strip.addEventListener('click', (e) => {
+        const rect = strip.getBoundingClientRect();
+        const frac = (e.clientX - rect.left) / rect.width;
+        seekAll(linkedVideos(camVideos), frac * maxTime);
+      });
+      host.appendChild(strip);
+    } else {
+      // keep the playhead above the markers we just appended
+      strip.appendChild(playhead);
+    }
   }
 
   // score progress bar — tracks cumulative subtask score as the video plays.
@@ -2037,7 +2483,7 @@ async function loadAndRenderEvents(host, runId, task, envId, runIndex, camVideos
   const rowEls = events.map((ev) =>
     el('div', {
       class: `events-row ${ev.severity}`,
-      onclick: () => { if (ev.time_s != null) seekAll(camVideos, ev.time_s); },
+      onclick: () => { if (ev.time_s != null) seekAll(linkedVideos(camVideos), ev.time_s); },
     },
       el('span', { class: 'ev-time' }, ev.time_s != null ? `${ev.time_s.toFixed(2)}s` : `step ${ev.step}`),
       el('span', { class: 'ev-info', title: ev.info || '' },
@@ -2049,12 +2495,13 @@ async function loadAndRenderEvents(host, runId, task, envId, runIndex, camVideos
 
   // Sync: highlight the most-recent passed event as the video plays.
   if (camVideos.length && dt) {
-    const driver = camVideos[0];
     let activeIdx = -1;
     let lastScore = -1;  // -1 (not 0/1) so the first paint always fires
-    const onTime = () => {
-      const t = driver.currentTime;
-      // playhead
+    const onTime = (t) => {
+      if (window.__subgoals) window.__subgoals.onTime(t);
+      // playhead (the transport positions its own playhead by video duration;
+      // here it is anchored to the recorded timebase, which is what the
+      // markers use)
       if (playhead) playhead.style.left = `${Math.min(100, (t / maxTime) * 100)}%`;
       // find latest event with time_s <= t
       let idx = -1;
@@ -2070,8 +2517,9 @@ async function loadAndRenderEvents(host, runId, task, envId, runIndex, camVideos
         if (idx >= 0) {
           rowEls[idx].classList.add('active');
           markers[idx] && markers[idx].node.classList.add('active');
-          // keep the active row in view (only when user isn't scrolling)
-          rowEls[idx].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          // Keep the active row visible inside the events list ONLY — never
+          // scroll the page (see scrollRowWithinList).
+          scrollRowWithinList(listEl, rowEls[idx]);
         }
         activeIdx = idx;
       }
@@ -2090,18 +2538,266 @@ async function loadAndRenderEvents(host, runId, task, envId, runIndex, camVideos
         }
       }
     };
-    driver.addEventListener('timeupdate', onTime);
+    if (transport) transport.onTime = onTime;
+    else camVideos[0].addEventListener('timeupdate', () => onTime(camVideos[0].currentTime));
   }
 }
 
 function seekAll(videos, time_s) {
+  // Seek only — playing/paused state is the user's, not ours (clicking an
+  // event used to force playback, losing the frame under inspection: H-E29).
   if (time_s == null || !Number.isFinite(time_s)) return;
   for (const v of videos) {
     try {
       v.currentTime = Math.max(0, time_s);
-      if (v.paused) v.play().catch(() => {});
     } catch { /* readyState too low — ignore, video will catch up */ }
   }
+}
+
+// Views currently driven by the shared transport (see the link toggle on each
+// camera tile). Seeks from the event list / timeline apply to these only.
+function linkedVideos(videos) {
+  const l = (videos || []).filter((v) => v.dataset.linked !== '0');
+  return l.length ? l : (videos || []).slice(0, 1);
+}
+
+// Scroll `list` (an overflow-y:auto container) just enough that `row` is
+// visible, without touching any ancestor scroll position: Element.scrollIntoView
+// walks every scrollable ancestor including the document, so each new flag
+// used to yank the whole page down to the events panel while the reviewer was
+// watching the videos above it (review feedback 2026-08-24).
+function scrollRowWithinList(list, row) {
+  const lr = list.getBoundingClientRect();
+  const rr = row.getBoundingClientRect();
+  let delta = 0;
+  if (rr.top < lr.top) delta = rr.top - lr.top;
+  else if (rr.bottom > lr.bottom) delta = rr.bottom - lr.bottom;
+  if (delta) list.scrollTop += delta;
+}
+
+// Inline SVG icons rather than glyphs: U+23F8 (pause) is missing from several
+// system fonts and rendered as an empty button (review feedback 2026-08-24).
+const ICON_PLAY = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+  + '<path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+  + '<rect x="3.5" y="2.5" width="3.2" height="11" fill="currentColor"/>'
+  + '<rect x="9.3" y="2.5" width="3.2" height="11" fill="currentColor"/></svg>';
+const ICON_LINKED = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">'
+  + '<path d="M6.5 9.5l3-3"/><path d="M7 4.5l1.2-1.2a2.5 2.5 0 013.5 3.5L10.5 8"/><path d="M9 11.5l-1.2 1.2a2.5 2.5 0 01-3.5-3.5L5.5 8"/></svg>';
+const ICON_UNLINKED = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">'
+  + '<path d="M7 4.5l1.2-1.2a2.5 2.5 0 013.5 3.5L10.5 8"/><path d="M9 11.5l-1.2 1.2a2.5 2.5 0 01-3.5-3.5L5.5 8"/><path d="M3 3l10 10"/></svg>';
+
+// ---- subgoal checklist ---------------------------------------------------
+// Renders the task's stages (from /api/tasks/<task>/subtasks) under the
+// language instruction. `applyEvents(events)` marks when each stage was
+// reached (the recorder's "Completed subtask '<name>' k/N" event) and when
+// it was first *touched* (an "advanced … step" event inside that stage);
+// `onTime(t)` fills the boxes as the video passes those moments.
+function buildSubgoals(host, task) {
+  const api = { stages: [], reachedAt: [], touchedAt: [], onTime: () => {}, applyEvents: () => {} };
+  host.innerHTML = '';
+  fetchJSON(`/api/tasks/${encodeURIComponent(task)}/subtasks`).then((data) => {
+    const stages = data.subtasks || [];
+    api.stages = stages;
+    if (!stages.length) { host.remove(); return; }
+    host.appendChild(el('div', { class: 'lang-label mb-1' }, `Subgoals (${stages.length} stage${stages.length > 1 ? 's' : ''}, in order)`));
+    const list = el('div', { class: 'subgoal-list' });
+    const rows = stages.map((st, i) => {
+      const box = el('span', { class: 'subgoal-box', 'aria-hidden': 'true' });
+      const when = el('span', { class: 'subgoal-when font-mono' }, '');
+      const row = el('div', { class: 'subgoal-row', title: (st.conditions || []).join(' → ') || st.name },
+        box,
+        el('span', { class: 'subgoal-index font-mono' }, `${i + 1}.`),
+        el('span', { class: 'subgoal-text' },
+          st.description || st.name,
+          st.conditions && st.conditions.length
+            ? el('span', { class: 'subgoal-conds font-mono' }, ' · ' + st.conditions.join(' → '))
+            : null),
+        when);
+      list.appendChild(row);
+      return { row, box, when };
+    });
+    host.appendChild(list);
+
+    api.applyEvents = (events) => {
+      api.reachedAt = stages.map(() => null);
+      api.touchedAt = stages.map(() => null);
+      let stage = 0;
+      for (const ev of events) {
+        const info = ev.info || '';
+        const m = /Completed subtask '[^']*' (\d+)\/(\d+)/.exec(info);
+        if (m) {
+          const k = parseInt(m[1], 10) - 1;
+          if (k >= 0 && k < stages.length && api.reachedAt[k] == null) api.reachedAt[k] = ev.time_s ?? null;
+          stage = k + 1;
+          continue;
+        }
+        if (/advanced \d+ step/.test(info) && stage < stages.length && api.touchedAt[stage] == null) {
+          api.touchedAt[stage] = ev.time_s ?? null;
+        }
+      }
+      rows.forEach((r, i) => {
+        const reached = api.reachedAt[i], touched = api.touchedAt[i];
+        r.row.classList.toggle('never', reached == null);
+        r.when.textContent = reached != null ? `reached ${reached.toFixed(1)}s`
+          : touched != null ? `started ${touched.toFixed(1)}s, not completed` : 'not reached';
+      });
+      api.onTime(0);
+    };
+    api.onTime = (t) => {
+      rows.forEach((r, i) => {
+        const reached = api.reachedAt[i], touched = api.touchedAt[i];
+        r.box.classList.toggle('done', reached != null && t >= reached);
+        r.box.classList.toggle('partial', !(reached != null && t >= reached) && touched != null && t >= touched);
+      });
+    };
+  }).catch(() => { host.remove(); });
+  return api;
+}
+
+// ---- shared video transport ----------------------------------------------
+// One row under the camera grid: [play/pause] [time] [event timeline = scrubber]
+// [speed]. Every *linked* view is driven together; the first linked view is the
+// master clock and the others are snapped to it whenever they drift more than
+// DRIFT_S. The timeline strip is exposed on window.__transport so the events
+// loader can add its markers to it (one timeline, not two — review feedback
+// 2026-08-25). Unlinked views are left alone entirely.
+function buildTransport(videos) {
+  const DRIFT_S = 0.2;
+  const linked = () => linkedVideos(videos);
+  const master = () => linked()[0];
+
+  const fmtT = (s) => {
+    if (!Number.isFinite(s)) return '0:00';
+    const m = Math.floor(s / 60), r = Math.floor(s % 60);
+    return `${m}:${String(r).padStart(2, '0')}`;
+  };
+
+  const playBtn = el('button', { class: 'transport-btn', title: 'Play/pause linked views (space)' });
+  const setPlayIcon = (playing) => {
+    playBtn.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    playBtn.dataset.state = playing ? 'playing' : 'paused';
+  };
+  setPlayIcon(false);
+  const timeLabel = el('span', { class: 'transport-time font-mono' }, '0:00 / 0:00');
+  const strip = el('div', { class: 'events-strip transport-strip', title: 'Seek linked views (←/→ step 2 s)' });
+  strip.appendChild(el('div', { class: 'events-strip-track' }));
+  const playhead = el('div', { class: 'events-strip-playhead', style: { left: '0%' } });
+  strip.appendChild(playhead);
+  const speed = el('select', { class: 'transport-speed', title: 'Playback speed' });
+  for (const r of [0.5, 1, 2, 3]) {
+    const opt = el('option', { value: String(r) }, `${r}×`);
+    if (r === DEFAULT_VIDEO_RATE) opt.selected = true;
+    speed.appendChild(opt);
+  }
+
+  const applyRate = () => {
+    const r = parseFloat(speed.value);
+    for (const v of videos) v.playbackRate = r;
+  };
+  applyRate();
+  // Some browsers reset playbackRate on load/play — re-apply from the select,
+  // which holds the user's choice.
+  for (const v of videos) {
+    v.addEventListener('loadedmetadata', applyRate);
+    v.addEventListener('play', applyRate);
+  }
+  speed.addEventListener('change', applyRate);
+
+  const playAll = () => { for (const v of linked()) v.play().catch(() => {}); };
+  const pauseAll = () => { for (const v of linked()) v.pause(); };
+  const toggle = () => { if (master().paused) playAll(); else pauseAll(); };
+  playBtn.addEventListener('click', toggle);
+
+  // Autostart: begin playing as soon as the master stream can, so opening an
+  // episode shows motion immediately — in lockstep (videos are muted, so
+  // browsers allow it).
+  const m0 = master();
+  const autostart = () => { m0.removeEventListener('canplay', autostart); playAll(); };
+  if (m0.readyState >= 3) autostart(); else m0.addEventListener('canplay', autostart);
+
+  // Bidirectional sync: a play / pause / seek performed on ANY linked tile
+  // (native controls) is mirrored to the other linked tiles. `syncing` guards
+  // against the echo of our own propagation re-triggering the handlers.
+  let syncing = false;
+  const mirror = (fn) => { if (syncing) return; syncing = true; try { fn(); } finally { setTimeout(() => { syncing = false; }, 0); } };
+  const isLinked = (v) => v.dataset.linked !== '0';
+  for (const v of videos) {
+    v.addEventListener('play', () => { if (v === master()) setPlayIcon(true); if (!isLinked(v)) return; mirror(() => { for (const o of linked()) if (o !== v && o.paused) o.play().catch(() => {}); }); });
+    v.addEventListener('pause', () => { if (v === master()) setPlayIcon(false); if (!isLinked(v)) return; mirror(() => { for (const o of linked()) if (o !== v && !o.paused) o.pause(); }); });
+    v.addEventListener('seeking', () => { if (!isLinked(v)) return; mirror(() => {
+      for (const o of linked()) if (o !== v && Math.abs(o.currentTime - v.currentTime) > 0.05) { try { o.currentTime = v.currentTime; } catch { /* not ready */ } }
+    }); });
+    // Re-linking snaps the view to the master clock and play state.
+    v.addEventListener('linkchange', (e) => {
+      if (!e.detail.linked) { setPlayIcon(!master().paused); return; }
+      const m = master();
+      if (m !== v) {
+        try { v.currentTime = m.currentTime; } catch { /* not ready */ }
+        if (m.paused) v.pause(); else v.play().catch(() => {});
+      }
+    });
+  }
+
+  // The timeline is the scrubber: click or drag anywhere on it.
+  let scrubbing = false;
+  const seekToPointer = (e) => {
+    const m = master();
+    if (!m.duration) return;
+    const rect = strip.getBoundingClientRect();
+    const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    seekAll(linked(), frac * m.duration);
+  };
+  strip.addEventListener('pointerdown', (e) => {
+    if (e.target.classList.contains('events-strip-marker')) return;   // marker has its own click
+    scrubbing = true; strip.setPointerCapture(e.pointerId); seekToPointer(e);
+  });
+  strip.addEventListener('pointermove', (e) => { if (scrubbing) seekToPointer(e); });
+  const endScrub = () => { scrubbing = false; };
+  strip.addEventListener('pointerup', endScrub);
+  strip.addEventListener('pointercancel', endScrub);
+
+  const transport = { strip, playhead, master, linked, onTime: null };
+  const onTimeUpdate = (v) => {
+    if (v !== master()) return;
+    const m = v;
+    if (m.duration) playhead.style.left = `${Math.min(100, (m.currentTime / m.duration) * 100)}%`;
+    timeLabel.textContent = `${fmtT(m.currentTime)} / ${fmtT(m.duration)}`;
+    for (const o of linked()) {
+      if (o === m || o.seeking) continue;                 // user is scrubbing that tile
+      if (Math.abs(o.currentTime - m.currentTime) > DRIFT_S) {
+        try { o.currentTime = m.currentTime; } catch { /* not ready */ }
+      }
+      // A linked view whose play/pause state diverged (e.g. one stream
+      // stalled) is pulled back in line with the master.
+      if (m.paused !== o.paused) { if (m.paused) o.pause(); else o.play().catch(() => {}); }
+    }
+    if (transport.onTime) transport.onTime(m.currentTime);
+  };
+  for (const v of videos) {
+    v.addEventListener('timeupdate', () => onTimeUpdate(v));
+    v.addEventListener('loadedmetadata', () => { if (v === master()) timeLabel.textContent = `${fmtT(v.currentTime)} / ${fmtT(v.duration)}`; });
+  }
+
+  // Keyboard: space toggles, arrows step ±2s. One handler per episode view —
+  // remove the previous one so re-renders don't stack them.
+  if (window.__transportKeyHandler) {
+    document.removeEventListener('keydown', window.__transportKeyHandler);
+  }
+  const keyHandler = (e) => {
+    const tag = (e.target && e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+    if (!document.body.contains(strip)) return;   // stale view
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.code === 'ArrowLeft') { e.preventDefault(); seekAll(linked(), master().currentTime - 2); }
+    else if (e.code === 'ArrowRight') { e.preventDefault(); seekAll(linked(), master().currentTime + 2); }
+  };
+  document.addEventListener('keydown', keyHandler);
+  window.__transportKeyHandler = keyHandler;
+
+  window.__transport = transport;
+  return el('div', { class: 'transport mb-5' }, playBtn, timeLabel, strip, speed);
 }
 
 // ---- episode tabs ---------------------------------------------------------
@@ -2380,8 +3076,9 @@ function renderPlots(host, ts) {
 
 // ---- top-level router (Home / Scenes / Tasks / Results) -------------------
 
-function setRoute(route) {
+function setRoute(route, render = true) {
   state.route = route;
+  if (route !== 'results') writeHash(`#/${route}`);
   // Toggle the sidebar pane and swap its inner content per route. Home /
   // Scenes hide the sidebar entirely; Results and Tasks each show their
   // own sidebar body.
@@ -2399,6 +3096,7 @@ function setRoute(route) {
   // Clear breadcrumb + compare bar between routes.
   $('#breadcrumb').innerHTML = '';
   $('#compare-bar').innerHTML = '';
+  if (!render) { if (route === 'results') renderCompareBar(); return; }   // deep link renders its own view
   if (route === 'home') renderHome();
   else if (route === 'scenes') renderScenesIndex();
   else if (route === 'tasks') renderTasksIndex();
@@ -2412,7 +3110,9 @@ function renderHome() {
   pane.appendChild(el('div', { class: 'max-w-4xl mx-auto pt-6' },
     el('div', { class: 'flex items-center gap-3 mb-2' },
       ribbleIcon(40),
-      el('h1', { class: 'text-2xl font-semibold' }, 'RoboLab Dashboard')),
+      el('h1', { class: 'text-2xl font-semibold brand-wordmark brand-wordmark--start' },
+        'RoboLab Dashboard',
+        el('small', { class: 'brand-verified' }, 'verified'))),
     el('p', { class: 'mb-8 text-sm', style: { color: 'var(--text-2)' } },
       'Browse scenes and tasks here, and use the results dashboard to view experiment results at a glance.'),
     el('div', { class: 'grid grid-cols-1 md:grid-cols-3 gap-4' },
@@ -2926,7 +3626,7 @@ function _applyTaskSort(tasks, s) {
     if (as === bs) return 0;
     if (!as) return 1;
     if (!bs) return -1;
-    return as < bs ? -1 * dir : 1 * dir;
+    return as.localeCompare(bs) * dir;  // equal strings → 0 (the old ternary returned 1*dir on ties)
   });
 }
 
@@ -3287,6 +3987,8 @@ async function boot() {
   // Land on Home FIRST so the user never sees the Results sidebar flash
   // on a fresh page load. The Results-only state (sources, runs list) loads
   // in the background and is ready by the time they click into Results.
+  // A deep link (#/results/...) is remembered and applied once runs exist.
+  const initialHash = location.hash;
   setRoute('home');
   try {
     await renderSources();
@@ -3296,6 +3998,11 @@ async function boot() {
     return;
   }
   renderSidebar();
+  // Deep link: #/results/... (or #/scenes etc.) after the runs list exists.
+  if (initialHash && initialHash !== '#/home') {
+    history.replaceState(null, '', initialHash);
+    await applyHash();
+  }
 }
 
 boot();
