@@ -667,6 +667,14 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
         last_move = max([t for t in range(T) if ch.tcp_speed[t] > V_MOVE] or [0])
         if last_move > 0:
             segs.append(_make_segment("no_completed_subtask", None, 0, last_move, "fail", ch, lab, obj, targets, dests, dt))
+    else:
+        # a long stretch after the last attempt in which nothing happens (idle, pressing the
+        # table, retreating) is a failure stretch, not the references' retreat tail
+        tail_start = segs[-1]["end"]
+        gap = T - tail_start
+        share = (sum(1 for k in range(tail_start, T) if lab[k] in BREAKERS) / gap) if gap else 0.0
+        if gap * dt >= GAP_NCS_S and share >= NCS_BREAKER_SHARE and segs[-1]["label"] != "carry":
+            segs.append(_make_segment("no_completed_subtask", None, tail_start, T - 1, "fail", ch, lab, obj, targets, dests, dt))
     _flag_against_log(segs, ch, log_events, dt, kind)
     for seg in segs:                       # attributes added after the segment was built
         base = seg["description"].split(" [")[0]
