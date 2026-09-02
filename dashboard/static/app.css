@@ -907,19 +907,19 @@ table thead th { padding: 0.5rem 0.75rem; font-weight: 500; }
 .transport-col { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .transport-col .events-strip { flex: none; }
 .phase-lane {
-  position: relative; height: 16px;
+  position: relative; height: 24px;
   background: var(--bg-1); border: 1px solid var(--border); border-radius: 4px;
   overflow: hidden; cursor: pointer; touch-action: none;
 }
-.phase-lane-l1 { height: 10px; }
-.phase-lane-labels { height: 12px; background: var(--bg-0); }
+.phase-lane-l1 { height: 17px; }
+.phase-lane-labels { height: 15px; background: var(--bg-0); }
 .phase-seg {
   position: absolute; top: 1px; bottom: 1px; box-sizing: border-box;
   border-radius: 2px; border-right: 1px solid rgba(0, 0, 0, 0.45);
-  opacity: 0.85; color: #0b0d12; font-size: 9px; line-height: 12px; padding: 0 3px;
+  opacity: 0.85; color: #0b0d12; font-size: 11px; line-height: 20px; padding: 0 4px;
   white-space: nowrap; overflow: hidden; cursor: pointer;
 }
-.phase-seg.phase { font-size: 8px; line-height: 8px; padding: 0 2px; }
+.phase-seg.phase { font-size: 10px; line-height: 14px; padding: 0 3px; }
 .phase-seg.active { opacity: 1; outline: 1px solid white; z-index: 1; }
 .phase-seg.ncs { background: repeating-linear-gradient(45deg, #374151 0 4px, #1f2937 4px 8px) !important; color: var(--text-2); }
 .phase-mark { position: absolute; top: 0; bottom: 0; width: 2px; background: #fbbf24; transform: translateX(-50%); cursor: pointer; }

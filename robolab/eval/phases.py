@@ -246,13 +246,19 @@ def compute_channels(rec: Recording, dt: float, targets: set[str], dests: set[st
         if rec.pads:
             touch[o], pinch[o] = rec.contact(o), rec.pinch(o)
         else:
-            # no contact/ group (upstream-era recording): TCP within CONTACT_PROXY_M of the box
+            # no contact/ group (upstream-era recording): TCP within CONTACT_PROXY_M of the box,
+            # AND some evidence of interaction (jaws part-closed, a close command, or the object
+            # moving). Distance alone read "touch" for 6.2 s of hovering next to the mustard in
+            # the one episode with narrated ground truth; the composite reads 0.6 s outside the
+            # narrated contact windows and misses 0.3 s of 7.9 s inside them.
             corners = rec.bbox_corners.get(o)
             if corners is not None:
                 dd = np.array([_bbox_dist(tcp[t], corners[t]) for t in range(T)])
             else:
                 dd = np.linalg.norm(tcp - p, axis=1) - 0.04
-            touch[o] = dd < CONTACT_PROXY_M
+            moved = _win_disp(p, max(1, int(round(DISP_WIN_S / dt)))) > 0.002
+            engaged = (closure > 0.15) | (rec.actions[:, -1] > 0.5) | moved
+            touch[o] = (dd < CONTACT_PROXY_M) & engaged
             pinch[o] = touch[o] & (closure > 0.3)
         dist[o] = np.linalg.norm(tcp - p, axis=1)
         rate[o] = np.gradient(dist[o], dt) if T > 2 else np.zeros(T)
