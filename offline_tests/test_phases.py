@@ -79,8 +79,9 @@ def test_t3_env1_indecision_then_a_pick_that_never_places():
     assert kinds[0] == ("no_completed_subtask", "fail")
     assert at[0]["end"] * d["dt"] > 8.0                # the 10 s of approach / retreat alternation
     assert ("pick", "pass") in kinds
-    assert kinds[-1] == ("carry", "unknown")          # still in hand at the 20 s cap
-    assert not any(a["label"] == "place" for a in at)
+    # still in hand at the 20 s cap, held above the other bowl: a place in progress
+    assert kinds[-1] == ("place", "unknown")
+    assert any("still held at the end" in x for x in at[-1]["attributes"])
 
 
 def test_t3_env3_picks_the_wrong_bowl():

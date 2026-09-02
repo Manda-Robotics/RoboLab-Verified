@@ -554,9 +554,16 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
     folded: list[dict] = []
     for r in raw:
         prev = folded[-1] if folded else None
-        if prev and not prev["passed"] and not r["passed"] and prev["o"] == r["o"] and r["first"] - prev["end_contact"] <= burst:
+        same_burst = prev is not None and prev["o"] == r["o"] and r["first"] - prev["end_contact"] <= burst
+        if same_burst and not prev["passed"] and not r["passed"]:
             prev["end_contact"] = r["end_contact"]
             prev["n_attempts"] = prev.get("n_attempts", 1) + 1
+        elif same_burst and not prev["passed"] and r["passed"]:
+            # a failed close that ends in a successful pick within the burst belongs to that
+            # pick (the references' rule, and the reviewer's)
+            r["first"] = prev["first"]
+            r["n_attempts"] = prev.get("n_attempts", 1) + 1
+            folded[-1] = r
         else:
             r.setdefault("n_attempts", 1)
             folded.append(r)
@@ -612,8 +619,19 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
         while v < T and held[v] == o:
             v += 1
         if v >= T:
-            segs.append(_make_segment("carry", o, pick_end + 1, T - 1, "unknown", ch, lab, obj, targets, dests, dt,
-                                      note="still held at the end of the episode"))
+            # still held at the cap: a place in progress when the object already sits inside the
+            # destination (the reviewer labels it so), a bare carry otherwise
+            dest_end = None
+            if dests:
+                dest_end = min((d for d in dests if d in rec.obj_pos),
+                               key=lambda d: np.linalg.norm(rec.obj_pos[o][T - 1, :2] - rec.obj_pos[d][T - 1, :2]), default=None)
+            if dest_end and _in_destination(rec, ch, o, dest_end, T - 1):
+                seg = _make_segment("place", o, pick_end + 1, T - 1, "unknown", ch, lab, obj, targets, dests, dt, dest=dest_end)
+                seg["attributes"].append("still held at the end of the episode, inside the destination")
+            else:
+                seg = _make_segment("carry", o, pick_end + 1, T - 1, "unknown", ch, lab, obj, targets, dests, dt,
+                                    note="still held at the end of the episode")
+            segs.append(seg)
             continue
         leave = v
         if leave >= nxt_first:
