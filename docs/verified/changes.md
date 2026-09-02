@@ -165,6 +165,21 @@ Reported and left as is: the `timing` block is a run-level total repeated per ro
 schema); the dashboard's `/thumb` endpoint has no producer (E2); a ladder line is re-emitted
 when a regressed rung is credited again (documented in [migration.md](migration.md)).
 
+## Dense annotation (2026-09-01)
+
+A second and third timeline under the flag bar: what the robot is doing at every step, and the
+pick / place / drop segments built from that. Plan, evidence and hypotheses in
+[dense_annotations.md](dense_annotations.md). Nothing in this section changes a number in
+`episode_results.jsonl`; every row is OFFLINE (a gold set is being labelled; the RUNTIME rows
+R1 to R6 of the plan are not started).
+
+| ID | Change | Scores | Level | Finding | Evidence |
+|---|---|---|---|---|---|
+| P100 | **`GraspTracker` replays over a recording.** `robolab/eval/tracker_replay.py` binds the tracker's five world accessors to the HDF5 arrays (pad forces, `base_link` pose, object poses, closure) and runs the unmodified state machine step by step; the only deviation is `hand_position` (`base_link` instead of the unrecorded left inner finger). | no | OFFLINE | plan §1.2 | 240 episodes (trial, rc3 to rc7): 93.5 % of the logged tracker lines reproduced at the same detection step ±2; 89.6 % at the same onset ±1 (the logs predate P84, which moved carry onsets). The residual is the finger-position deviation: carries of objects that shift while the jaws close. `offline_tests/test_phases.py`. |
+| P101 | **Dense phases and attempts from state.** `robolab/eval/phases.py`: 18 phases in 7 families, one per step, contiguous and exhaustive, with the in-hand state from P100; `pick` / `place` / `drop` / `no_completed_subtask` segments with result, derived attributes, a templated description and a flag for every disagreement with the event log. Constants the tracker owns are imported, not re-declared. `scripts/annotate_phases.py` writes `phases_<run>_env<env>.json`. | no | OFFLINE | plan §2 | H1: 0 coverage or order violations over 240 episodes. H2: 98.3 % of 4,361 log events fall in a phase that names them (or on a channel that carries the fact); the misses are pre-P84 carry onsets and attempt lines stamped at their first contact. Object motion from windowed displacement, not `root_velocity` (28 % false "moving" on untouched objects vs 3 %). 19 offline tests on a 2 MB fixture (`offline_tests/fixtures/dense`). |
+| P102 | **Dashboard lanes and a label panel.** Attempts, phases and the reviewer's marks as three lanes under the event strip, same x axis; served by `.../phases` (file, or computed on the fly and cached); marks written by `.../phase_labels` to `analysis/phase_labels.jsonl` with tombstone deletes; keys `i` / `o` / `Enter`. | no | OFFLINE | plan phase C | Headless Chromium over `t1_BananaInBowl` env 0 and `t4_MarkerInMug` env 1: lanes and strip share the width to the pixel, 2 and 5 attempt blocks, 10 and 24 phase blocks, key marks land at the playhead, no console errors. [dashboard.md](../dashboard.md#dense-annotation-lanes). |
+| P103 | **Gold-set selection.** `scripts/select_gold_episodes.py`: 50 episodes, seeded, stratified (clean success, messy success, grasped then failed, never grasped, crowded scene, and four other policies in proxy mode), at most two per task and stratum, the tuning fixture excluded; `analysis/gold_set.jsonl` with dashboard deep links. | no | OFFLINE | plan phase B | 38 π0.5 episodes from rc3 to rc7 with pad forces, 12 from the Cosmos3 / MolmoAct2 / G0.5 / GR00T corpora without them, 23 tasks, 24 successes. |
+
 ## Withdrawn, reverted, rejected
 
 Kept with the reason for each.

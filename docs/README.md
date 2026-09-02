@@ -11,6 +11,7 @@ upstream:
 - **[Findings](verified/findings.md)** — every defect found in upstream, with its measurement, including the ones not fixed
 - **[Migration](verified/migration.md)** — new result fields, new event codes, new files, and the knobs that restore upstream behaviour
 - **[Verification](verified/verification.md)** — the tools that produced the evidence and how to reproduce it
+- **[Dense annotations](verified/dense_annotations.md)**: plan for a per-step phase track under the flag bar, derived from the recorded state, with the pilot numbers and the hypotheses to test
 - **[Physics](physics.md)** — friction as a run parameter, and the arm controller
 
 Everything below is upstream's documentation, updated where the fork changed behaviour.

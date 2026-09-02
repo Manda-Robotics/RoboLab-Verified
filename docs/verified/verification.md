@@ -21,7 +21,7 @@ Two rules apply throughout:
 
 ## Offline tests
 
-`python -m pytest offline_tests` runs 222 tests with no simulator and no GPU in ~5 s. They
+`python -m pytest offline_tests` runs 251 tests with no simulator and no GPU in ~5 s. They
 run in CI on every push (`.github/workflows/offline-tests.yml`). In addition to unit tests of
 each change, they check three classes of bug that each cost a GPU launch to discover:
 
