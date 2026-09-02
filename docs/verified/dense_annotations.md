@@ -802,6 +802,27 @@ BananasInCrate), recorded with the fork's recorder plus three new terms
 | `contact_body/<label>__<obj>` (R2) | seven robot bodies beyond the pads. No measurable step cost on GrabAFruit (0.75 vs 0.73 it/s). In BananaInBowl the inner knuckles touch an object on 78 of 1,891 steps, 10 of them with no pad on anything: pushes the pads could not attribute |
 | `robot_joint_names` in `env_cfg.json` (R1) | the closure column found by name; the hard-coded column 7 stays as the fallback |
 
+Per task (4 envs × 2 runs each; "state" = replayed tracker vs the recorded live state over
+every object-step; "lines" = replayed tracker lines vs the log at the same detection step ±2;
+"ladder" = episodes where the final rung's first true step equals the log's
+`SUBTASK_COMPLETED` step, or both are absent; "pad-free" = steps on which an extra robot body
+touches an object while neither pad touches anything):
+
+| task | success | steps | state | lines | ladder | H2 | pad-free body contact |
+|---|---|---|---|---|---|---|---|
+| BananaInBowl | 8/8 | 1,891 | 3,782 / 3,782 | 32 / 33 | 8 / 8 | 59 / 59 | 10 (inner knuckle) |
+| BowlStackingRightOnLeft | 2/8 | 2,267 | 4,534 / 4,534 | 23 / 24 | 8 / 8 | 26 / 27 | 0 |
+| GrabAFruit (20 objects) | 0/8 | 3,600 | 68,400 / 68,400 | 5 / 5 | 8 / 8 | 14 / 15 | 0 |
+| MustardInRightBin | 3/8 | 2,692 | 8,076 / 8,076 | 32 / 32 | 8 / 8 | 55 / 56 | 5 (outer finger) |
+| FoodPacking2Cans (180 s) | 2/8 | 18,217 | 109,300 / 109,302 | 157 / 160 | 8 / 8 | 326 / 334 | 403 (347 on the left outer finger) |
+| BananasInCrate | 3/8 | 5,793 | 34,758 / 34,758 | 127 / 128 | 8 / 8 | 194 / 199 | 169 (knuckles and outer finger) |
+
+Every carry onset agrees to the step (0 of 88 carries differ); attempt onsets differ by at
+most one step. The eleven unmatched lines in 382 are release-vs-drop readings and attempt
+lines one debounce apart, not state. The remaining H2 misses are the known class:
+`OBJECT_CARRIED` back-dated into an `open_contact` phase (the tracker's onset precedes the
+closure the phase reads).
+
 Findings that change the plan:
 
 - **The finger bodies are not a TCP.** Both inner finger link origins coincide with `base_link`
@@ -820,6 +841,10 @@ Findings that change the plan:
   `DROPPED` at the same step (d1 run 1 env 1, step 426). The recorded tracker state agrees
   with the replay there; the difference is in the event tracker's release-vs-drop reading
   of the command history, not in the state. Open, small.
+- **Arm pushes are now on record.** On FoodPacking2Cans the left outer finger touches an object
+  on 412 steps, 347 of them with no pad on anything; on BananasInCrate the knuckles and outer
+  finger add 169 such steps. Those are the `disturb(o)` phases the plan could only attribute by
+  displacement (H12 has its data; the attribution rule is not written yet).
 - What did not happen: the aggregate `conditions/s<i>` of the first two pod tasks used "all
   rungs at once" and is always 0 (the per-condition columns are complete and the check
   script recomputes the aggregate from the terminal rungs; fixed for later tasks).

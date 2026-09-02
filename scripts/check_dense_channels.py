@@ -115,9 +115,16 @@ def main():
                         g, j = k[len(last) + 1:].rsplit("_", 1)
                         groups[g].append((int(j), k))
                 if groups:
-                    s = np.ones(rec.T, bool)
-                    for g, lst in groups.items():
-                        s &= rec.conditions[max(lst)[1]][:rec.T].astype(bool)
+                    # the subtask's own logical / K from the legend (all | any | choose)
+                    legend_path = os.path.join(task_dir, "conditions_legend.json")
+                    logical, K = "all", None
+                    if os.path.exists(legend_path):
+                        for r in json.load(open(legend_path)).get("conditions", []):
+                            if r.get("key") == last:
+                                logical, K = r.get("logical", "all"), r.get("k")
+                    terms = np.stack([rec.conditions[max(lst)[1]][:rec.T].astype(bool) for lst in groups.values()])
+                    n_ok = terms.sum(axis=0)
+                    s = n_ok >= 1 if logical == "any" else n_ok >= (K or 1) if logical == "choose" else terms.all(axis=0)
                 else:
                     s = rec.conditions[last][:rec.T].astype(bool)
                 first = int(np.flatnonzero(s)[0]) + 1 if s.any() else None
