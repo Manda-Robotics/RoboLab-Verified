@@ -852,10 +852,13 @@ def annotate(task_dir: str, env_id: int, run_index: int = 0, log_events: list[di
         rec.pads = proxy_pads(rec, dt)
         warnings.append(f"no contact/ group: touch is TCP within {CONTACT_PROXY_M * 100:.0f} cm of the object box with "
                         "evidence of interaction; the tracker replay runs on that proxy")
-    else:
-        # a recorded pad column can miss a grip outright (rc3, P62-era booleans: a can 20 cm in
+    elif any(not np.issubdtype(p.dtype, np.floating) for p in rec.pads.values()):
+        # a recorded BOOLEAN pad column can miss a grip outright (rc3, P62-era: a can 20 cm in
         # the air between jaws closed at 0.6 read [0, 0]); an object lifted next to closed jaws
-        # is in the hand, so the proxy fills in there and only there
+        # is in the hand, so the proxy fills in there and only there. Not on P77 force
+        # recordings: there the pads read 0 the instant a held object leaves the jaws, and the
+        # fill kept the carry alive for 3 rows past a real drop (d2 2026-09-02, the
+        # `GRIPPER_FULLY_CLOSED in transport` misses of H2)
         prox = proxy_pads(rec, dt)
         settle = max(1, int(round(SETTLE_WARMUP_S / dt)))
         jaws_closed = (rec.closure() > 0.3) & (rec.actions[:, -1] > 0.5)

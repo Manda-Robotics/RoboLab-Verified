@@ -1,6 +1,6 @@
 # Dense annotations for RoboLab Verified: feasibility, design, and test plan
 
-Status: plan written 2026-09-01; phases A and C implemented the same night, see §9 for what exists and what was measured. The basis is **this fork**, RoboLab Verified
+Status: plan written 2026-09-01; phases A and C implemented the same night, R1/R2/R4 recorded on a pod 2026-09-02 (§9.11); see §9 for what exists and what was measured. The basis is **this fork**, RoboLab Verified
 (`Manda-Robotics/RoboLab-Verified`, main `ae33894`, tag `v0.3.1-verified.1`), not upstream RoboLab:
 every path below is relative to this repository's root, every rule builds on the fork's event
 tracker, recorder and verifier (P-rows in [changes.md](changes.md)), and the work lands as new rows
@@ -786,6 +786,50 @@ Two findings for the ledger from this iteration: the P62-era boolean contact mis
 grip (so the live tracker missed that carry too), and `cli_pi05_robolab120` has video for 240
 of its 1,200 episodes (the rerun has all; the gold set now points at the rerun).
 
+### 9.11 Pod session (2026-09-02): R1, R2 and R4 recorded, the replay is exact
+
+One A40 pod session (about 3 h, $0.44/h), π0.5 jointpos, 4 envs × 2 runs per task, six tasks
+(BananaInBowl, BowlStackingRightOnLeft, GrabAFruit twice, MustardInRightBin, FoodPacking2Cans,
+BananasInCrate), recorded with the fork's recorder plus three new terms
+(`robolab/core/events/dense_recorders.py`, register rows P104 to P106). Runs and logs in
+`../TESTING/dense_output/d*`. Checked with `scripts/check_dense_channels.py <run dir>`.
+
+| channel | what it settles |
+|---|---|
+| `finger_left` / `finger_right` (R1) | the replayed `GraspTracker` reads the same finger body as the live one. Replay vs the recorded live state (`tracker/<obj>`): **100 %** of object-steps agree in all three checked tasks (3,782 / 4,534 / 68,400), carry and attempt onsets exact. H5 is no longer a number to chase: the in-hand layer of the phases is the live tracker's own state, whether replayed or read from the file |
+| `tracker/<obj>` (R4) | the per-step `grasped` / `attempt_closed` the plan asked for in §1.2; with it on disk the replay is a check, not a dependency |
+| `conditions/*` + `conditions_legend.json` (R4) | every ladder predicate every step. The final rung first reads true on the step the log stamps `SUBTASK_COMPLETED` (16 / 16 with an outcome, lag 0). L2 `place` results can now be checked against the task's own predicate per step, and the `predicate_disagree` flag of §2.4 has its source |
+| `contact_body/<label>__<obj>` (R2) | seven robot bodies beyond the pads. No measurable step cost on GrabAFruit (0.75 vs 0.73 it/s). In BananaInBowl the inner knuckles touch an object on 78 of 1,891 steps, 10 of them with no pad on anything: pushes the pads could not attribute |
+| `robot_joint_names` in `env_cfg.json` (R1) | the closure column found by name; the hard-coded column 7 stays as the fallback |
+
+Findings that change the plan:
+
+- **The finger bodies are not a TCP.** Both inner finger link origins coincide with `base_link`
+  when open and part by ~4.6 cm as the jaws close (the pad mesh is 9 to 12 cm out along the
+  link's x). A least-squares fit over 429 carried steps places the held banana at
+  `base_link + (0.151, 0.030, -0.013)` with a 1.5 cm median residual, in the finger frames no
+  better. So the measured `TCP_OFFSET` (0.15, 0.03, 0) was right, it stays, and the "record a
+  TCP frame" half of R1 is closed as unnecessary. The finger channels exist for the replay.
+- **The P62 pad-fill was extending carries past real drops on force recordings.** The two
+  `GRIPPER_FULLY_CLOSED in transport` misses of §9.2 are, on the new recordings, steps where the
+  pads read 0 N and the live tracker had already dropped the object; the annotator's
+  "lifted next to closed jaws with no pad contact is in the hand" fill (for rc3's boolean
+  pads) kept the carry alive for 3 rows. Restricted to boolean-pad recordings: H2 on the
+  240-episode tripwire 97.1 → **98.1 %** (4,276 / 4,361), H1 still 0.
+- The remaining replay-vs-log difference is one line in 66: a `RELEASED` where the log says
+  `DROPPED` at the same step (d1 run 1 env 1, step 426). The recorded tracker state agrees
+  with the replay there; the difference is in the event tracker's release-vs-drop reading
+  of the command history, not in the state. Open, small.
+- What did not happen: the aggregate `conditions/s<i>` of the first two pod tasks used "all
+  rungs at once" and is always 0 (the per-condition columns are complete and the check
+  script recomputes the aggregate from the terminal rungs; fixed for later tasks).
+
+What this means for the loop in §9.8: the error class that iteration 1 stopped at (how fast
+a carry is seen to begin and end) was the replay's finger deviation, and on recordings made
+with these terms it is gone by construction. Rule tuning against the gold set resumes on
+episodes recorded this way; the rc3 to rc7 gold episodes keep the deviation and their H8 is
+a lower bound.
+
 ### 9.9 Handoff
 
 - Branch `dense-annotations` in this clone, never pushed; `main` equals `origin/main`. The
@@ -803,6 +847,9 @@ of its 1,200 episodes (the rerun has all; the gold set now points at the rerun).
   first: G41, G50, G10, G36; then G15, G21, G20, G07, G06, G01.
 - Convention decisions taken so far are in §9.3 and the table above; the protocol for narrating
   is §9.4 (narrate through to where the object ends up).
+- Pod recordings with the R1/R2/R4 channels: `../TESTING/dense_output/d1..d6` (48 π0.5 episodes,
+  six tasks); `scripts/check_dense_channels.py` for the replay / ladder / body-contact checks.
+  Pod recipe (fresh A40, ~15 min to first run) in the session memory; the pod is terminated.
 - The private notes corpus and its mode check: `scripts/phase_mode_check.py --notes
   ../RoboLab/analysis/reviews/episode_notes.jsonl --sources ../RoboLab/output` (about an hour).
 
@@ -810,7 +857,9 @@ of its 1,200 episodes (the rerun has all; the gold set now points at the rerun).
 
 1. Continue labelling the tune split (order in §9.9), score, triage; the second annotator into a separate file for H6; then one read of the test split for the reported H8.
 2. Add the two findings above to the ledger (P62 booleans missing a grip; pi05 run without videos).
-2. R1 on a pod: record the left inner finger pose and `joint_names`; re-measure H5.
+2. ~~R1 on a pod~~ done (§9.11): R1, R2, R4 recorded, replay exact. Next runtime step: the
+   annotator on the run path so `phases_*.json` is written next to each log by default, and the
+   L2 summary fields into `episode_results.jsonl` (open decision 3).
 3. Annotate the five `cli_*` corpora in proxy mode and report H7 and the phase-E statistics
    against the reviewer's modes.
 4. The `GRIPPER_FULLY_CLOSED` versus pad-force discrepancy on one episode.
