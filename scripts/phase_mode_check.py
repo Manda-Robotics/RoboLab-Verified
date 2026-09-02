@@ -60,7 +60,7 @@ def features(doc: dict) -> dict:
     picks = [a for a in at if a["label"] == "pick"]
     fails_by_obj = collections.Counter(a["object"] for a in picks if a["result"] == "fail")
     wrong = [a for a in picks if any(x.startswith("wrong_object") or x.startswith("destination_as") for x in a["attributes"])]
-    order = [(a["label"], a["result"]) for a in at]
+    order = [("drop" if a["label"] == "place" and any(x.startswith("dropped") for x in a["attributes"]) else a["label"], a["result"]) for a in at]
     drop_then_pass = any(order[i][0] == "drop" and any(o == ("pick", "pass") for o in order[i + 1:]) for i in range(len(order)))
     pass_after_fail = any(order[i] == ("pick", "fail") and any(o == ("pick", "pass") for o in order[i + 1:]) for i in range(len(order)))
     return {
@@ -72,7 +72,7 @@ def features(doc: dict) -> dict:
         "n_picks": len(picks), "n_picks_pass": sum(1 for a in picks if a["result"] == "pass"),
         "n_picks_target": sum(1 for a in picks if doc["roles"].get(a["object"]) == "target"),
         "n_picks_wrong": len(wrong), "first_pick_wrong": bool(picks) and picks[0] in wrong,
-        "n_drops": sum(1 for a in at if a["label"] == "drop"),
+        "n_drops": sum(1 for a in at if a["label"] == "place" and any(x.startswith("dropped") for x in a["attributes"])),
         "n_places_pass": sum(1 for a in at if a["label"] == "place" and a["result"] == "pass"),
         "n_places_fail": sum(1 for a in at if a["label"] == "place" and a["result"] == "fail"),
         "max_fails_one_object": max(fails_by_obj.values()) if fails_by_obj else 0,

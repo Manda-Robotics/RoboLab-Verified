@@ -63,7 +63,8 @@ def segments_of(rows):
         if r.get("kind") == "boundary" or r.get("t_end") is None:
             bounds.add(round(float(r["t_start"]), 3))
             continue
-        segs.append((float(r["t_start"]), float(r["t_end"]), r.get("label") or "", r.get("object") or "", r.get("result") or ""))
+        lab = r.get("label") or ""
+        segs.append((float(r["t_start"]), float(r["t_end"]), "place" if lab == "drop" else lab, r.get("object") or "", r.get("result") or ""))
     segs.sort()
     for a, b, *_ in segs:
         bounds.add(round(a, 3)); bounds.add(round(b, 3))

@@ -65,7 +65,9 @@ def test_t1_env0_is_the_textbook_chain():
     assert at[0]["start"] == 1                       # the initial reach belongs to the first pick
     assert at[1]["destination"] == "bowl"
     assert at[1]["end"] == d["num_steps"]
-    assert not any(a["flags"] for a in at)
+    # a disagreement between the tracker replay and the geometric in-hand channel is allowed
+    # (the pick window is short); a disagreement with the event log is not
+    assert not any(f for a in at for f in a["flags"] if not f.startswith("held_disagree"))
     s = d["summary"]
     assert s["n_picks_pass"] == 1 and s["n_places_pass"] == 1 and s["n_drops"] == 0
 

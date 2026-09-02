@@ -78,7 +78,7 @@ MIN_RUN = 4                      # steps runs shorter than this are absorbed int
 RELEASE_S = 0.5                  # s     the release phase after the hand opens on a held object
 GAP_NCS_S = 5.0                  # s     a stretch this long with no attempt is no_completed_subtask ...
 NCS_BREAKER_SHARE = 0.4          #       ... if at least this share of it is retreat / idle / hover / table / repositioning
-PICK_MIN_HOLD_S = 0.5            # s     held this long (and lifted) = pick complete
+PICK_MIN_HOLD_S = 0.25           # s     carried this long = pick complete (the reviewer counts 'off the ground' even when dropped at once)
 BREAK_RUN_S = 0.5                # s     a retreat/idle run this long, or an approach to another object, ends the approach that belongs to a pick
 CONTACT_PROXY_M = 0.02           # m     TCP to object box, when no contact/ group is recorded
 THRESHOLDS = {k: globals()[k] for k in (
@@ -136,6 +136,20 @@ def task_roles(task_dir: str) -> tuple[set[str], set[str]]:
                 bucket.update(re.findall(r"'([^']+)'", m.group(1)))
     dests.discard("table")
     return targets, dests
+
+
+def task_origins(task_dir: str) -> set[str]:
+    """Containers the task moves objects OUT of (``object_outside_of`` terminations). For the
+    attempt layer they are not destinations; the destination is the table."""
+    path = os.path.join(task_dir, "env_cfg.json")
+    out: set[str] = set()
+    if os.path.exists(path):
+        for name, term in (json.load(open(path)).get("terminations") or {}).items():
+            if isinstance(term, dict) and "outside" in str(term.get("func", "")):
+                c = (term.get("params") or {}).get("container")
+                if c:
+                    out.update(c if isinstance(c, list) else [c])
+    return out
 
 
 def task_kind(task_dir: str) -> str:
@@ -438,6 +452,17 @@ def _in_destination(rec: Recording, ch: Channels, o: str, d: str, t: int) -> boo
     """Object ``o`` inside / on destination ``d`` at row ``t``: the recorded pair-contact column
     if present, else the centroid inside the destination's box footprint and not above its
     top by more than 5 cm. ``None`` when nothing can be said."""
+    if d == "table":
+        # out-of-container tasks: at its destination once the centroid is outside the footprint
+        # of every origin container (the roles mark those as destination-role objects)
+        for x in rec.bbox_corners:
+            if x in (o, "table") or ch.roles.get(x) != "destination":
+                continue
+            lo, hi = rec.bbox_corners[x][t].min(axis=0), rec.bbox_corners[x][t].max(axis=0)
+            p = rec.obj_pos[o][t]
+            if lo[0] <= p[0] <= hi[0] and lo[1] <= p[1] <= hi[1] and p[2] <= hi[2] + 0.05:
+                return False
+        return True
     col = rec.pair_contact.get(f"{o}__{d}")
     if col is not None and col[t]:
         return True
@@ -470,16 +495,23 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
     break_run = max(1, int(round(BREAK_RUN_S / dt)))
     burst = max(1, int(round(GRASP_ATTEMPT_BURST_S / dt)))
     log_events = log_events or []
-    BREAKERS = {"retreat", "idle", "press_table", "close_empty", "disturb", "reposition"}
+    BREAKERS = {"retreat", "idle", "press_table", "close_empty", "disturb"}   # circling (reposition) and hovering over the target belong to its pick
 
     def engaged(o, u):
+        if ch.roles.get(o) == "destination":
+            return held[u] == o and ch.lift[o][u] > LIFT_M
         return ch.touch[o][u] or held[u] == o or ch.closed_on[o][u]
 
     raw: list[dict] = []
     last_parting: dict[str, int] = {}
     t = 0
     while t < T:
-        cand = held[t] or next((o for o in ch.objects if ch.closed_on[o][t]), None)
+        # a container is picked only when it is actually lifted; a finger dragging the bin floor
+        # or closing on its rim is not an attempt on it (P72/P78 make the same exclusion)
+        h = held[t]
+        if h is not None and ch.roles.get(h) == "destination" and ch.lift[h][t] <= LIFT_M:
+            h = None
+        cand = h or next((o for o in ch.objects if ch.closed_on[o][t] and ch.roles.get(o) != "destination"), None)
         if cand is None:
             t += 1
             continue
@@ -557,7 +589,7 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
         # the stretch before the approach is its own segment only when it is long and is
         # mostly not approaching (retreats, idling, pressing the table): a slow reach belongs
         # to the pick (the references' convention), indecision does not
-        breaker_share = (sum(1 for k in range(prev_end_row, start) if lab[k] in BREAKERS or lab[k] == "hover") / gap) if gap else 0.0
+        breaker_share = (sum(1 for k in range(prev_end_row, start) if lab[k] in BREAKERS) / gap) if gap else 0.0
         if gap * dt >= GAP_NCS_S and breaker_share >= NCS_BREAKER_SHARE:
             segs.append(_make_segment("no_completed_subtask", None, prev_end_row, start - 1, "fail", ch, lab, obj, targets, dests, dt))
         else:
@@ -598,20 +630,19 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
         if dests:
             dest = min((d for d in dests if d in rec.obj_pos),
                        key=lambda d: np.linalg.norm(rec.obj_pos[o][rest_at, :2] - rec.obj_pos[d][rest_at, :2]), default=None)
-        label = "place" if deliberate else "drop"
+        # one label, place: a human cannot see the gripper command, and the references have no
+        # drop label either; an uncommanded release is an attribute, the result is the outcome
         in_dest = _in_destination(rec, ch, o, dest, rest_at) if dest else None
-        result = "fail"
-        if label == "place":
-            result = "unknown" if kind == "pick" or in_dest is None or not settled else ("pass" if in_dest else "fail")
-        seg = _make_segment(label, o, pick_end + 1, rest_at, result, ch, lab, obj, targets, dests, dt, dest=dest)
+        result = "unknown" if kind == "pick" or in_dest is None or not settled else ("pass" if in_dest else "fail")
+        seg = _make_segment("place", o, pick_end + 1, rest_at, result, ch, lab, obj, targets, dests, dt, dest=dest)
+        if not deliberate:
+            seg["attributes"].append("dropped (gripper opened with the close command still on)")
         if interrupted:
             seg["attributes"].append("re-engaged before coming to rest")
         elif not settled:
             seg["attributes"].append("not at rest at episode end")
         if leave >= T - 3:
             seg["attributes"].append("released on the final steps")
-        if label == "drop" and in_dest:
-            seg["attributes"].append("landed_in_destination")
         segs.append(seg)
 
     if not segs:
@@ -775,17 +806,40 @@ def annotate(task_dir: str, env_id: int, run_index: int = 0, log_events: list[di
     rr = None
     warnings: list[str] = []
     contact_source = "pads" if rec.pads else "proxy"
+    origins = task_origins(task_dir)
+    if origins:
+        dests = (dests - origins) or {"table"}
     if contact_source == "proxy":
         rec.pads = proxy_pads(rec, dt)
         warnings.append(f"no contact/ group: touch is TCP within {CONTACT_PROXY_M * 100:.0f} cm of the object box with "
                         "evidence of interaction; the tracker replay runs on that proxy")
+    else:
+        # a recorded pad column can miss a grip outright (rc3, P62-era booleans: a can 20 cm in
+        # the air between jaws closed at 0.6 read [0, 0]); an object lifted next to closed jaws
+        # is in the hand, so the proxy fills in there and only there
+        prox = proxy_pads(rec, dt)
+        settle = max(1, int(round(SETTLE_WARMUP_S / dt)))
+        jaws_closed = (rec.closure() > 0.3) & (rec.actions[:, -1] > 0.5)
+        n_fix = 0
+        for o in rec.objects:
+            if o not in rec.pads or o not in prox:
+                continue
+            z = rec.obj_pos[o][:, 2]
+            rest_z = float(np.median(z[min(settle, rec.T - 1):min(settle + 15, rec.T)])) if rec.T > settle + 1 else float(z[0])
+            lifted = (z - rest_z) > 0.02
+            add = (prox[o] > 0) & (lifted & jaws_closed)[:, None] & (rec.pads[o] == 0)
+            if add.any():
+                rec.pads[o] = np.where(add, 1, rec.pads[o]).astype(rec.pads[o].dtype)
+                n_fix += int(add.any(axis=1).sum())
+        if n_fix:
+            warnings.append(f"recorded pads read no contact on {n_fix} steps with the object lifted next to closed jaws; proxy contact used there")
     if use_replay:
         try:
             from robolab.eval.tracker_replay import replay
             rr = replay(rec, dt, containers=dests)
         except Exception as exc:  # torch missing, or an unexpected recording layout
             warnings.append(f"tracker replay unavailable ({type(exc).__name__}: {exc}); in-hand from geometry")
-    ch = compute_channels(rec, dt, targets, dests, rr, contact_source)
+    ch = compute_channels(rec, dt, targets, dests | origins, rr, contact_source)   # origins keep the container role
     labels, objs = label_steps(ch)
     labels, objs = smooth_labels(labels, objs)
     phases, w2 = segment(labels, objs)
@@ -819,7 +873,7 @@ def summarize(phases: list[dict], segs: list[dict], ch: Channels) -> dict:
     for p in phases:
         fam[p["family"]] += (p["end"] - p["start"] + 1)
     picks = [s for s in segs if s["label"] == "pick"]
-    places = [s for s in segs if s["label"] in ("place", "drop")]
+    places = [s for s in segs if s["label"] == "place"]
     first_touch = next((p["start"] for p in phases if p["label"] in ("close_on", "pinch_no_lift", "open_contact")), None)
     return {
         "time_by_family_s": {k: round(v * dt, 2) for k, v in fam.most_common()},
@@ -827,7 +881,7 @@ def summarize(phases: list[dict], segs: list[dict], ch: Channels) -> dict:
         "n_picks": len(picks),
         "n_picks_pass": sum(1 for s in picks if s["result"] == "pass"),
         "n_picks_wrong_object": sum(1 for s in picks if any(a.startswith("wrong_object") for a in s["attributes"])),
-        "n_drops": sum(1 for s in places if s["label"] == "drop"),
+        "n_drops": sum(1 for s in places if any(a.startswith("dropped") for a in s["attributes"])),
         "n_places_pass": sum(1 for s in places if s["label"] == "place" and s["result"] == "pass"),
         "first_contact_s": round(first_touch * dt, 2) if first_touch else None,
         "time_in_hand_s": round(sum(1 for h in ch.held_tracker if h) * dt, 2),
