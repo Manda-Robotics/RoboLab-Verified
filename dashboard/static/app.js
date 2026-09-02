@@ -2674,9 +2674,10 @@ function buildTransport(videos) {
   const master = () => linked()[0];
 
   const fmtT = (s) => {
-    if (!Number.isFinite(s)) return '0:00';
-    const m = Math.floor(s / 60), r = Math.floor(s % 60);
-    return `${m}:${String(r).padStart(2, '0')}`;
+    // tenths, so a boundary can be read aloud from the clock while labelling
+    if (!Number.isFinite(s)) return '0:00.0';
+    const m = Math.floor(s / 60), r = (s % 60).toFixed(1).padStart(4, '0');
+    return `${m}:${r}`;
   };
 
   const playBtn = el('button', { class: 'transport-btn', title: 'Play/pause linked views (space)' });
