@@ -569,7 +569,7 @@ mode without it is 0.1 s).
 | H1 | **0** coverage or order violations in 240 episodes | by construction, after two guards the corpus forced: a drop's search for the object coming to rest stops at the next attempt (an onion re-grasped before it settled), and a single step of contact at the last row is not a pick |
 | H2 | **98.3 %** (4,285 of 4,361 log events) | remaining misses: pre-P84 carry onsets stamped before the grip (27), attempt lines stamped at a first contact that the phases read as approach or table (27), a drop that the phases read as the object still in the jaws (2) |
 | H3 | 3 % vs 28 % false "moving" on 149 untouched (object, episode) pairs; 10 of 10 bumps recovered either way | adopted: `disp_w` for `disturb`; P30's own velocity criterion kept for "at rest" so a place ends where the fork's success confirmation ends |
-| H4 | not run | the sensitivity table is the next offline job; every threshold is in `THRESHOLDS` and named in each output file |
+| H4 | run over 106 episodes (trial, rc7 upstream, rc3), each threshold halved and doubled; table in §9.6 | the physical thresholds are not doing work (`LIFT_M`, `V_LIFT`, `SLIP_V`, `RELEASE_S`, `DISP_M`: 0 to 5 % of episodes change their L2 set). The judgement calls are: the `no_completed_subtask` rule (`NCS_BREAKER_SHARE` 28 to 43 %, `GAP_NCS_S` 20 to 27 %), the approach-break run (18 to 30 %), the TCP "moving" speed (19 to 31 %), the closing-rate sign (12 to 25 %), `PICK_MIN_HOLD_S` (10 to 16 %). Those are what the gold set must pin, and the first narrated episode already voted on the first: the excursions between three failed attempts belong to the attempts, not to a separate segment |
 | H5 | **93.5 %** of logged tracker lines at the same detection step ±2; 89.6 % at the same onset ±1 | below the 98 % pass line. The shortfall is one cause: `hand_position` is `base_link` in the replay and the left inner finger live, so an object that shifts while the jaws close keeps a small `rel_dev` live and a larger one here (fewer carries, more failed attempts in the replay: 40 replay-only attempts against 34 log-only carries and 21 log-only drops). Fix is R1 (record the finger body), not a rule change |
 | H5b | `held_disagree` flag on 501 of ~1,800 L2 segments (7.6 per episode) | expected in drags and one-pad carries; the flag is doing its job. Not yet audited against video |
 | H7 | not run | needs the five `cli_*` corpora annotated in proxy mode (0.1 s each) |
@@ -636,9 +636,77 @@ Recorded here because they are judgement calls the gold set will test:
    second annotator against the first, then the machine against their consensus (segments both
    drew with the same label). Checked on synthetic labels over the fixture.
 
-### 9.5 Not done, in order
+### 9.5 First narrated episodes (2026-09-01 evening) and what they changed
 
-1. Label the gold set, run `scripts/score_gold.py` (H6, H8), then the threshold sensitivity table (H4).
+Three episodes narrated from the video with exact times (`analysis/phase_labels.jsonl`,
+annotator `finn`): `cli_g05 MustardInRightBin` env 0 (three failed attempts, then a pick held to
+the end), `cli_cosmos3 BananaOnPlate` env 1, `cli_cosmos3 BananasInCrate` env 8. All three are
+recordings without the contact group. Against them the machine scored recall 1.0, label and
+result accuracy 1.0, every boundary within ±0.5 s; F1 0.80, then 0.92 after two fixes the
+episodes forced:
+
+- the distance-only proxy touch read "touch" for 6.2 s of hovering next to the mustard; with
+  evidence of interaction required (jaws part-closed, a close command, or the object moving) it
+  reads 0.6 s outside the narrated contact windows and misses 0.3 of 7.9 s inside;
+- the in-hand channel on such recordings came from geometry and a distance blink ended a carry
+  (a spurious `place` where the reviewer saw the object held to the end); `proxy_pads()` now
+  builds synthetic pad columns and the real tracker replays on them, so carries are coupled
+  motion there too. A table proxy (fingertips within 1.5 cm above the top) gives `press_table`
+  on those recordings as well.
+
+The remaining machine-only segments are `place` after a lift the reviewer stopped narrating at;
+in one of them the gripper opens on the final step. Narrating to the end of the episode is now
+part of the protocol.
+
+The gold set is split 30 tune / 20 test (seeded, `split` field): rules and thresholds change
+against tune-split disagreements only; the 20 test episodes are labelled once and H8 is
+reported on them. `analysis/gold_set.jsonl` also carries the machine's flag count per episode,
+which orders the tune split by expected information for the next labelling batch.
+
+### 9.6 H4 sensitivity table
+
+106 episodes (trial, rc7 upstream, rc3). A changed L2 means a label, a result, or a boundary
+moved by more than 0.5 s. `CONTACT_PROXY_M` applies only to recordings without the contact group
+(none in this set).
+
+| threshold | default | factor | value | episodes with a changed L2 | L1 steps changed | mean boundary shift (s) | n |
+|---|---|---|---|---|---|---|---|
+| `V_MOVE` | 0.02 | 0.5 | 0.01 | 18.9% | 7.6% | 0.08 | 106 |
+| `V_MOVE` | 0.02 | 2 | 0.04 | 31.1% | 13.4% | 0.21 | 106 |
+| `V_LIFT` | 0.03 | 0.5 | 0.015 | 0.0% | 3.7% | 0.00 | 106 |
+| `V_LIFT` | 0.03 | 2 | 0.06 | 0.0% | 3.7% | 0.00 | 106 |
+| `LIFT_M` | 0.01 | 0.5 | 0.005 | 0.0% | 0.0% | 0.00 | 106 |
+| `LIFT_M` | 0.01 | 2 | 0.02 | 0.0% | 0.0% | 0.00 | 106 |
+| `NEAR_M` | 0.08 | 0.5 | 0.04 | 11.3% | 2.2% | 0.03 | 106 |
+| `NEAR_M` | 0.08 | 2 | 0.16 | 2.8% | 2.3% | 0.00 | 106 |
+| `APPROACH_M` | 0.25 | 0.5 | 0.125 | 2.8% | 9.9% | 0.00 | 106 |
+| `APPROACH_M` | 0.25 | 2 | 0.5 | 0.0% | 3.4% | 0.00 | 106 |
+| `CLOSING_RATE` | 0.01 | 0.5 | 0.005 | 12.3% | 2.6% | 0.03 | 106 |
+| `CLOSING_RATE` | 0.01 | 2 | 0.02 | 24.5% | 5.7% | 0.02 | 106 |
+| `DISP_M` | 0.01 | 0.5 | 0.005 | 3.8% | 0.9% | 0.00 | 106 |
+| `DISP_M` | 0.01 | 2 | 0.02 | 4.7% | 0.7% | 0.00 | 106 |
+| `SLIP_V` | 0.05 | 0.5 | 0.025 | 0.0% | 0.3% | 0.00 | 106 |
+| `SLIP_V` | 0.05 | 2 | 0.1 | 0.0% | 0.1% | 0.00 | 106 |
+| `SMOOTH_W` | 5 | 0.5 | 2 | 3.8% | 2.3% | 0.00 | 106 |
+| `SMOOTH_W` | 5 | 2 | 10 | 14.2% | 8.9% | 0.01 | 106 |
+| `MIN_RUN` | 4 | 0.5 | 2 | 10.4% | 0.0% | 0.01 | 106 |
+| `MIN_RUN` | 4 | 2 | 8 | 17.0% | 0.0% | 0.02 | 106 |
+| `RELEASE_S` | 0.5 | 0.5 | 0.25 | 0.9% | 0.7% | 0.00 | 106 |
+| `RELEASE_S` | 0.5 | 2 | 1.0 | 0.9% | 1.0% | 0.00 | 106 |
+| `GAP_NCS_S` | 5.0 | 0.5 | 2.5 | 19.8% | 0.0% | 0.00 | 106 |
+| `GAP_NCS_S` | 5.0 | 2 | 10.0 | 27.4% | 0.0% | 0.00 | 106 |
+| `NCS_BREAKER_SHARE` | 0.4 | 0.5 | 0.2 | 28.3% | 0.0% | 0.00 | 106 |
+| `NCS_BREAKER_SHARE` | 0.4 | 2 | 0.8 | 43.4% | 0.0% | 0.00 | 106 |
+| `PICK_MIN_HOLD_S` | 0.5 | 0.5 | 0.25 | 10.4% | 0.0% | 0.07 | 106 |
+| `PICK_MIN_HOLD_S` | 0.5 | 2 | 1.0 | 16.0% | 0.0% | 0.12 | 106 |
+| `BREAK_RUN_S` | 0.5 | 0.5 | 0.25 | 17.9% | 0.0% | 0.09 | 106 |
+| `BREAK_RUN_S` | 0.5 | 2 | 1.0 | 30.2% | 0.0% | 0.06 | 106 |
+| `CONTACT_PROXY_M` | 0.02 | 0.5 | 0.01 | 0.0% | 0.0% | 0.00 | 1 |
+| `CONTACT_PROXY_M` | 0.02 | 2 | 0.04 | 0.0% | 0.0% | 0.00 | 1 |
+
+### 9.7 Not done, in order
+
+1. Label the tune split (next batch ranked in `analysis/gold_set.jsonl`), run `scripts/score_gold.py` (H6, H8), triage each disagreement (rule / recording gap / convention / transcription), repeat; then one read of the test split.
 2. R1 on a pod: record the left inner finger pose and `joint_names`; re-measure H5.
 3. Annotate the five `cli_*` corpora in proxy mode and report H7 and the phase-E statistics
    against the reviewer's modes.
