@@ -636,10 +636,14 @@ def _make_segment(label, o, start_row, end_row, result, ch: Channels, lab, obj, 
             attrs.append("wrong_object" if role == "distractor" else "destination_as_target")
         if inside.get("slip"):
             attrs.append("slip")
-        if any(lab[k] == "open_contact" and obj[k] == o and ch.lift[o][k] > LIFT_M for k in rows):
-            attrs.append("open_hand_carry")
-        if any(ch.towed[o][k] for k in rows):
-            attrs.append("towed")
+        # the two physics-artifact attributes need real pad forces: on a proxy recording an
+        # "open hand" next to a lifted object is a geometry coincidence, and the mode check
+        # over 1,153 reviewed episodes had them firing on half the corpus
+        if ch.contact_source == "pads":
+            if any(lab[k] == "open_contact" and obj[k] == o and ch.lift[o][k] > LIFT_M for k in rows):
+                attrs.append("open_hand_carry")
+            if any(ch.towed[o][k] for k in rows):
+                attrs.append("towed")
         others = {obj[k] for k in rows if lab[k] == "disturb" and obj[k] not in (None, o)}
         for x in sorted(others):
             attrs.append(f"disturbed {x}")
