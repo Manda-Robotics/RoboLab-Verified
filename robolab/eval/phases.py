@@ -611,6 +611,9 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
         if last_move > 0:
             segs.append(_make_segment("no_completed_subtask", None, 0, last_move, "fail", ch, lab, obj, targets, dests, dt))
     _flag_against_log(segs, ch, log_events, dt, kind)
+    for seg in segs:                       # attributes added after the segment was built
+        base = seg["description"].split(" [")[0]
+        seg["description"] = base + (" [" + "; ".join(seg["attributes"]) + "]" if seg["attributes"] else "")
     return segs
 
 
