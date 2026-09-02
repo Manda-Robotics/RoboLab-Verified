@@ -56,10 +56,42 @@ def key(r):
     return (r["run"], r["task"], int(r["env"]), int(r.get("run_index", 0)))
 
 
-def segments_of(rows):
-    """label rows -> sorted [(start, end, label, object, result)] and boundary set."""
-    segs, bounds = [], set()
+REVIEW_STATS = collections.Counter()
+
+
+def review_segments(rows):
+    """Review rows (a verdict per machine segment, latest per seg_index wins) -> gold segments:
+    the machine's values where the verdict says they are right, the corrected ones where not;
+    a corrected label "none" removes the segment."""
+    latest = {}
     for r in rows:
+        if r.get("kind") == "review" and r.get("seg_index") is not None:
+            latest[int(r["seg_index"])] = r
+    out = []
+    for r in latest.values():
+        v = r.get("verdict") or {}
+        c = r.get("corrected") or {}
+        REVIEW_STATS["n"] += 1
+        for k in ("label", "result", "bounds"):
+            REVIEW_STATS[k + "_ok"] += bool(v.get(k, True))
+        lab = r.get("label") if v.get("label", True) else c.get("label")
+        obj = r.get("object") if v.get("label", True) else c.get("object")
+        res = r.get("result") if v.get("result", True) else c.get("result")
+        t0, t1 = (r["t_start"], r["t_end"]) if v.get("bounds", True) else (c.get("t_start"), c.get("t_end"))
+        if lab in (None, "", "none") or t0 is None or t1 is None:
+            REVIEW_STATS["removed"] += 1
+            continue
+        out.append((float(t0), float(t1), "place" if lab == "drop" else lab, obj or "", res or ""))
+    return out
+
+
+def segments_of(rows):
+    """label rows -> sorted [(start, end, label, object, result)] and boundary set. Free-form
+    segment marks and review verdicts both count; boundary marks add boundaries only."""
+    segs, bounds = list(review_segments(rows)), set()
+    for r in rows:
+        if r.get("kind") == "review":
+            continue
         if r.get("kind") == "boundary" or r.get("t_end") is None:
             bounds.add(round(float(r["t_start"]), 3))
             continue
@@ -107,7 +139,14 @@ def boundary_hits(pred_b, gold_b, tol):
     return hit
 
 
-def machine_segments(task_dir, env, run_index):
+def reviewed_indices(rows):
+    """seg_index of every machine segment that has a review verdict (None if the episode was
+    labelled from scratch): an unreviewed machine segment is unknown, not a false positive."""
+    idx = {int(r["seg_index"]) for r in rows if r.get("kind") == "review" and r.get("seg_index") is not None}
+    return idx or None
+
+
+def machine_segments(task_dir, env, run_index, keep=None):
     pf = os.path.join(task_dir, f"phases_{run_index}_env{env}.json")
     if os.path.exists(pf):
         doc = json.load(open(pf))
@@ -116,7 +155,7 @@ def machine_segments(task_dir, env, run_index):
         doc = annotate(task_dir, env, run_index).doc
     dt = doc["dt"]
     segs = [((a["start"] - 1) * dt, a["end"] * dt, a["label"], a.get("object") or "", a.get("result") or "")
-            for a in doc["attempts"] if a["label"] in LABELS]
+            for i, a in enumerate(doc["attempts"]) if a["label"] in LABELS and (keep is None or i in keep)]
     bounds = set()
     for a, b, *_ in segs:
         bounds.add(round(a, 3)); bounds.add(round(b, 3))
@@ -184,6 +223,12 @@ def main(argv=None) -> int:
         print(f"gold set: {len(wanted)} episodes; labelled by annotator 1: {len(set(a1) & wanted)}, "
               f"by annotator 2: {len(set(a2) & wanted)}; labelled outside the set: {len(labelled - wanted)}")
     g1 = {ep: segments_of(rows) for ep, rows in a1.items()}
+    if REVIEW_STATS["n"]:
+        n = REVIEW_STATS["n"]
+        print(f"review verdicts (annotator 1): {n} machine segments reviewed; label right {REVIEW_STATS['label_ok'] / n:.3f}, "
+              f"result right {REVIEW_STATS['result_ok'] / n:.3f}, bounds within tolerance {REVIEW_STATS['bounds_ok'] / n:.3f}, "
+              f"segments removed {REVIEW_STATS['removed']}")
+    REVIEW_STATS.clear()
     g2 = {ep: segments_of(rows) for ep, rows in a2.items()}
 
     if g2:
@@ -205,7 +250,7 @@ def main(argv=None) -> int:
             if td is None:
                 missing.append(ep); continue
             try:
-                pred[ep] = machine_segments(td, env, ri)
+                pred[ep] = machine_segments(td, env, ri, keep=reviewed_indices(a1.get(ep, [])))
             except Exception as exc:
                 print(f"[score_gold] {run}/{task} env{env}: {type(exc).__name__}: {exc}", file=sys.stderr)
                 missing.append(ep)

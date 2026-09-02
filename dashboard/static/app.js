@@ -4237,6 +4237,7 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
     const m = tr.master();
     const maxTime = Math.max((data && data.num_steps ? data.num_steps * (data.dt || 1 / 15) : 0), (m && m.duration) || 0, 1);
     for (const r of marks) {
+      if (r.kind === 'review') continue;          // verdicts render in the review list below
       const isSeg = r.kind === 'segment' && r.t_end != null;
       const n = el('div', {
         class: `phase-mark${isSeg ? ' seg' : ''}`,
@@ -4266,6 +4267,90 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
   } catch (e) { status.textContent = `labels: ${e.message}`; }
   draw();
 
+  // Review mode (plan §9.4): one verdict per machine segment. j/k select, 1/2/3 toggle whether the
+  // machine's label / result / bounds are right, Enter saves; a ✗ opens the correction inputs.
+  const reviewRows = [];
+  let sel = -1;
+  let saveReview = async () => {};
+  const attempts = (data && data.attempts) || [];
+  if (attempts.length) {
+    const rv = el('div', { class: 'review-list' });
+    panel.appendChild(el('div', { class: 'text-xs', style: { color: 'var(--text-2)', marginTop: '6px' } },
+      'Review the machine: j / k select a segment (seeks to its start) · 1 label · 2 result · 3 bounds (✓ = within 0.5 s) · Enter save · a ✗ opens the correction fields; label "none" = this segment should not exist.'));
+    panel.appendChild(rv);
+    const latestReview = (i) => { const rs = marks.filter((m) => m.kind === 'review' && m.seg_index === i); return rs.length ? rs[rs.length - 1] : null; };
+    const state = attempts.map((a, i) => ({ i, a, ok: { label: true, result: true, bounds: true },
+      corr: { label: a.label, object: a.object || '', result: a.result, t_start: a.start_s, t_end: a.end_s }, note: '' }));
+    const select = (i, seek = true) => {
+      sel = Math.max(0, Math.min(attempts.length - 1, i));
+      reviewRows.forEach((r, k) => r.classList.toggle('active', k === sel));
+      if (seek) seekAll(linkedVideos(camVideos), attempts[sel].start_s);
+    };
+    const drawReview = () => {
+      rv.innerHTML = ''; reviewRows.length = 0;
+      for (const st of state) {
+        const a = st.a, prev = latestReview(st.i);
+        const mark = (k, txt) => el('button', { class: `transport-btn verdict ${st.ok[k] ? 'ok' : 'bad'}`, title: `${txt}: click or press ${k === 'label' ? 1 : k === 'result' ? 2 : 3}`,
+          onclick: (e) => { e.stopPropagation(); st.ok[k] = !st.ok[k]; select(st.i, false); drawReview(); } }, `${txt} ${st.ok[k] ? '✓' : '✗'}`);
+        const row = el('div', { class: 'attempt-row review-row', onclick: () => select(st.i) },
+          el('span', { class: 'ev-time' }, `${a.start_s.toFixed(1)}–${a.end_s.toFixed(1)}s`),
+          el('span', { class: 'ev-info' }, `${a.label}${a.object ? ' ' + a.object : ''} · ${a.result}`),
+          mark('label', 'label'), mark('result', 'result'), mark('bounds', 'bounds'),
+          el('span', { class: 'ev-time', title: prev ? (prev.note || '') : '' },
+            prev ? `reviewed ${['label', 'result', 'bounds'].map((k) => (prev.verdict && prev.verdict[k] === false ? '✗' : '✓')).join('')}${prev.annotator ? ' ' + prev.annotator : ''}` : ''));
+        if (!st.ok.label || !st.ok.result || !st.ok.bounds) {
+          const labSel = el('select', {});
+          for (const k of [...LABEL_KINDS.filter((x) => x !== 'boundary'), 'none']) labSel.appendChild(el('option', { value: k, selected: k === st.corr.label }, k));
+          labSel.addEventListener('change', () => { st.corr.label = labSel.value; });
+          const objIn = el('input', { value: st.corr.object, placeholder: 'object', size: 10, list: 'phase-objects', oninput: (e) => { st.corr.object = e.target.value; } });
+          const resSel = el('select', {});
+          for (const r of ['pass', 'fail', 'unknown']) resSel.appendChild(el('option', { value: r, selected: r === st.corr.result }, r));
+          resSel.addEventListener('change', () => { st.corr.result = resSel.value; });
+          const t0 = el('input', { class: 'label-t', value: fmt(st.corr.t_start), size: 6, oninput: (e) => { st.corr.t_start = parseFloat(e.target.value); } });
+          const t1 = el('input', { class: 'label-t', value: fmt(st.corr.t_end), size: 6, oninput: (e) => { st.corr.t_end = parseFloat(e.target.value); } });
+          const b0 = el('button', { class: 'transport-btn', title: 'start = playhead', onclick: (e) => { e.stopPropagation(); st.corr.t_start = now(); t0.value = fmt(st.corr.t_start); } }, 'start=now');
+          const b1 = el('button', { class: 'transport-btn', title: 'end = playhead', onclick: (e) => { e.stopPropagation(); st.corr.t_end = now(); t1.value = fmt(st.corr.t_end); } }, 'end=now');
+          const corr = el('div', { class: 'label-row review-corr', onclick: (e) => e.stopPropagation() });
+          if (!st.ok.label) corr.append(labSel, objIn);
+          if (!st.ok.result) corr.append(resSel);
+          if (!st.ok.bounds) corr.append(b0, t0, b1, t1);
+          row.appendChild(corr);
+        }
+        const noteIn2 = el('input', { placeholder: 'note', size: 16, value: st.note, oninput: (e) => { st.note = e.target.value; }, onclick: (e) => e.stopPropagation() });
+        row.appendChild(noteIn2);
+        row.appendChild(el('button', { class: 'transport-btn', title: 'save this verdict (Enter)', onclick: (e) => { e.stopPropagation(); saveReview(st.i); } }, 'save'));
+        rv.appendChild(row); reviewRows.push(row);
+      }
+      reviewRows.forEach((r, k) => r.classList.toggle('active', k === sel));
+      const n = state.filter((st) => latestReview(st.i)).length;
+      rv.appendChild(el('div', { class: 'text-xs', style: { color: 'var(--text-2)' } }, `${n} of ${attempts.length} machine segments reviewed`));
+    };
+    saveReview = async (i) => {
+      const st = state[i]; if (!st) return;
+      const a = st.a;
+      const allOk = st.ok.label && st.ok.result && st.ok.bounds;
+      const payload = {
+        kind: 'review', seg_index: i, t_start: a.start_s, t_end: a.end_s, label: a.label, object: a.object || '', result: a.result,
+        verdict: { ...st.ok }, corrected: allOk ? null : { ...st.corr }, note: st.note, annotator: who.value,
+      };
+      if (!allOk && !st.ok.bounds && !(Number.isFinite(st.corr.t_start) && Number.isFinite(st.corr.t_end) && st.corr.t_end >= st.corr.t_start)) { status.textContent = 'corrected bounds invalid'; return; }
+      try {
+        const resp = await fetch(`${base}/phase_labels`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!resp.ok) throw new Error(`${resp.status} ${await resp.text()}`);
+        marks.push(await resp.json());
+        status.textContent = `review saved: segment ${i + 1}${allOk ? ' ✓✓✓' : ' with corrections'}`;
+        st.note = '';
+        if (i + 1 < attempts.length) select(i + 1); else select(i, false);
+        drawReview();
+      } catch (e) { status.textContent = `save failed: ${e.message}`; }
+    };
+    drawReview();
+    select(0, false);
+    window.__reviewKeys = { select: (d) => select(sel + d), toggle: (k) => { if (state[sel]) { state[sel].ok[k] = !state[sel].ok[k]; drawReview(); } }, save: () => saveReview(sel), rows: reviewRows };
+  } else {
+    window.__reviewKeys = null;
+  }
+
   const doSave = async () => {
     const k = kind.value;
     const payload = {
@@ -4292,10 +4377,19 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
     if (!document.body.contains(panel)) return;
     const tag = (e.target && e.target.tagName || '').toLowerCase();
     const inPanel = panel.contains(e.target);
+    const rk = window.__reviewKeys;
+    const inReview = rk && rk.rows.some((r) => r.contains(e.target));
+    if (e.key === 'Enter' && inReview) { e.preventDefault(); rk.save(); return; }
     if (e.key === 'Enter' && inPanel) { e.preventDefault(); doSave(); return; }
     if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
     if (e.key === 'i') { tStart.value = fmt(now()); status.textContent = `start ${tStart.value}s`; }
     else if (e.key === 'o') { tEnd.value = fmt(now()); status.textContent = `end ${tEnd.value}s`; }
+    else if (rk && e.key === 'j') { rk.select(1); }
+    else if (rk && e.key === 'k') { rk.select(-1); }
+    else if (rk && e.key === '1') { rk.toggle('label'); }
+    else if (rk && e.key === '2') { rk.toggle('result'); }
+    else if (rk && e.key === '3') { rk.toggle('bounds'); }
+    else if (rk && e.key === 'Enter') { e.preventDefault(); rk.save(); }
   };
   document.addEventListener('keydown', handler);
   window.__labelKeyHandler = handler;

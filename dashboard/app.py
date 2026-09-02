@@ -635,8 +635,8 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
         import time
         import uuid
         kind = payload.get("kind") or "segment"
-        if kind not in ("segment", "boundary"):
-            raise HTTPException(status_code=400, detail="kind must be segment or boundary")
+        if kind not in ("segment", "boundary", "review"):
+            raise HTTPException(status_code=400, detail="kind must be segment, boundary or review")
         try:
             t_start = float(payload.get("t_start"))
         except (TypeError, ValueError):
@@ -655,6 +655,25 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
             "annotator": (payload.get("annotator") or "").strip() or None,
             "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
         }
+        if kind == "review":
+            # Review mode (plan §9.4, 2026-09-02): a verdict on one machine segment. t_start/t_end,
+            # label, object, result are the machine's; `verdict` says which of the three are right;
+            # `corrected` carries the human's values where they are not (label "none" = the
+            # segment should not exist). The latest review of a seg_index wins in score_gold.py.
+            try:
+                row["seg_index"] = int(payload.get("seg_index"))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="seg_index is required for a review")
+            v = payload.get("verdict") or {}
+            row["verdict"] = {k: bool(v.get(k, True)) for k in ("label", "result", "bounds")}
+            c = payload.get("corrected") or None
+            row["corrected"] = None if c is None else {
+                "label": (c.get("label") or "").strip() or None,
+                "object": (c.get("object") or "").strip() or None,
+                "result": (c.get("result") or "").strip() or None,
+                "t_start": round(float(c["t_start"]), 3) if c.get("t_start") not in (None, "") else None,
+                "t_end": round(float(c["t_end"]), 3) if c.get("t_end") not in (None, "") else None,
+            }
         _labels_path.parent.mkdir(parents=True, exist_ok=True)
         with _labels_path.open("a") as fh:
             fh.write(json.dumps(row) + "\n")

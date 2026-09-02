@@ -64,6 +64,8 @@ All SR / Score cells carry **95% confidence intervals** with the half-width anno
 
 #### Dense annotation lanes
 
+Review mode: the label panel lists every machine segment with three verdicts (label, result, bounds within 0.5 s). `j` / `k` select and seek, `1` / `2` / `3` toggle, `Enter` saves a `kind: review` row to the labels file; a ✗ opens the correction fields (label `none` removes the segment). `scripts/score_gold.py` consumes the rows.
+
 Under the event strip of an episode, three lanes share the strip's time axis
 ([dense_annotations.md](verified/dense_annotations.md)):
 

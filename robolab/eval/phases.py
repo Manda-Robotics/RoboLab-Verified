@@ -909,6 +909,23 @@ def annotate(task_dir: str, env_id: int, run_index: int = 0, log_events: list[di
     return Annotation(doc, ch)
 
 
+def phases_path(task_dir: str, env_id: int, run_index: int = 0) -> str:
+    return os.path.join(task_dir, f"phases_{run_index}_env{env_id}.json")
+
+
+def write_phases(task_dir: str, env_id: int, run_index: int = 0, log_events: list[dict] | None = None,
+                 use_replay: bool = True) -> Annotation:
+    """Annotate one episode and write ``phases_<run>_env<env>.json`` next to its log (the run
+    path calls this after every episode when ``robolab.constants.ANNOTATE_PHASES`` is on; the
+    CLI calls it for existing runs). Returns the annotation."""
+    a = annotate(task_dir, env_id, run_index, log_events=log_events, use_replay=use_replay)
+    tmp = phases_path(task_dir, env_id, run_index) + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(a.doc, f)
+    os.replace(tmp, phases_path(task_dir, env_id, run_index))
+    return a
+
+
 def summarize(phases: list[dict], segs: list[dict], ch: Channels) -> dict:
     dt, T = ch.dt, ch.T
     fam = collections.Counter()

@@ -967,3 +967,10 @@ table thead th { padding: 0.5rem 0.75rem; font-weight: 500; }
 @media (prefers-reduced-motion: reduce) {
   .deeplink-spinner { animation-duration: 2.4s; }
 }
+
+/* review mode of the label panel (plan §9.4) */
+.review-list { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.review-row { flex-wrap: wrap; }
+.review-row .verdict.ok { color: var(--pass, #22c55e); }
+.review-row .verdict.bad { color: var(--fail, #ef4444); font-weight: 600; }
+.review-corr { width: 100%; margin: 2px 0 0 0; }

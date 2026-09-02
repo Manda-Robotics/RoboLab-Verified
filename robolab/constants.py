@@ -172,6 +172,10 @@ RECORD_IMAGE_DATA = False
 # R2 (docs/verified/dense_annotations.md §5): contact sensors on the robot's
 # `contact_extra_bodies`. Env ROBOLAB_EXTRA_CONTACT_BODIES=0 disables them (H10 cost check).
 RECORD_EXTRA_CONTACT_BODIES = os.environ.get("ROBOLAB_EXTRA_CONTACT_BODIES", "1") != "0"
+# Dense annotation on the run path (docs/verified/dense_annotations.md, open decision 3): after each
+# episode's log is written, robolab.eval.phases.write_phases writes phases_<run>_env<env>.json next
+# to it and the L2 summary lands in episode_results.jsonl under "phases". ROBOLAB_ANNOTATE_PHASES=0 disables.
+ANNOTATE_PHASES = os.environ.get("ROBOLAB_ANNOTATE_PHASES", "1") != "0"
 DEVICE = "cuda:0"
 
 # Difficulty scoring constants (authoritative source for compute_difficulty_score in subtask_utils.py)

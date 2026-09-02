@@ -629,7 +629,18 @@ Recorded here because they are judgement calls the gold set will test:
 4. Write the `annotator` field once; it persists in the browser. Both annotators label all 50
    without seeing each other's marks (the panel shows every mark on the episode, so the second
    annotator uses `ROBOLAB_PHASE_LABELS=analysis/phase_labels_<name>.jsonl`).
-5. Scoring (H6, H8): `scripts/score_gold.py --gold analysis/gold_set.jsonl --labels <file 1>
+5. **Review mode (2026-09-02, the protocol from here on).** The machine's segments are the
+   prior and the human judges them instead of drawing from scratch: in the label panel each
+   segment has three verdicts, *label* (kind and object), *result*, *bounds* (both ends within
+   0.5 s). `j` / `k` select a segment and seek to it, `1` / `2` / `3` toggle a verdict, `Enter`
+   saves; a ✗ opens the correction fields (label `none` = the segment should not exist), and a
+   segment the machine missed is still drawn with `i` / `o` as before. Each verdict is a
+   `kind: review` row in `analysis/phase_labels.jsonl` carrying the machine's values, the
+   verdict and the corrections; the latest review of a segment wins. About 20 s per segment
+   against 3 to 5 min per episode narrated. `score_gold.py` turns reviews into gold segments
+   (machine values where the verdict is ✓, corrections where it is ✗) and prints the verdict
+   rates, which are H8's label accuracy, result accuracy and boundary recall directly.
+6. Scoring (H6, H8): `scripts/score_gold.py --gold analysis/gold_set.jsonl --labels <file 1>
    --labels2 <file 2> --sources <run dirs>` reads the label files and the machine's
    `phases_*.json` (annotating on the fly where none was written), matches segments by IoU ≥ 0.5
    and internal boundaries at ±0.25 / 0.5 / 1 / 2 s, and reports the numbers of §6 phase B: the
@@ -880,11 +891,11 @@ a lower bound.
 
 ### 9.10 Not done, in order
 
-1. Continue labelling the tune split (order in §9.9), score, triage; the second annotator into a separate file for H6; then one read of the test split for the reported H8.
+1. Continue labelling the tune split (order in §9.9) in review mode (§9.4 item 5), score, triage; the second annotator into a separate file for H6; then one read of the test split for the reported H8. Prefer episodes recorded with the R1/R4 channels (`../TESTING/dense_output`) for new gold: no replay deviation there.
 2. Add the two findings above to the ledger (P62 booleans missing a grip; pi05 run without videos).
-2. ~~R1 on a pod~~ done (§9.11): R1, R2, R4 recorded, replay exact. Next runtime step: the
-   annotator on the run path so `phases_*.json` is written next to each log by default, and the
-   L2 summary fields into `episode_results.jsonl` (open decision 3).
+2. ~~R1 on a pod~~ done (§9.11). ~~Annotator on the run path~~ done (P107, `ROBOLAB_ANNOTATE_PHASES`),
+   not yet exercised on a pod: the first run after this should confirm `phases_*.json` appears
+   next to each log and `episode_results.jsonl` rows carry `phases`.
 3. Annotate the five `cli_*` corpora in proxy mode and report H7 and the phase-E statistics
    against the reviewer's modes.
 4. The `GRIPPER_FULLY_CLOSED` versus pad-force discrepancy on one episode.
