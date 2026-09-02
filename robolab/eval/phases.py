@@ -219,6 +219,14 @@ def proxy_pads(rec: Recording, dt: float) -> dict[str, np.ndarray]:
         engaged = (closure > 0.15) | cmd | (_win_disp(p, w) > 0.002)
         touch = (dd < CONTACT_PROXY_M) & engaged
         pads[o] = np.stack([touch, touch & (closure > 0.3)], axis=1).astype(np.uint8)
+    # the table: fingertips within 1.5 cm above the top, inside the footprint
+    corners = rec.bbox_corners.get("table")
+    if corners is not None:
+        lo, hi = corners.min(axis=1), corners.max(axis=1)          # (T, 3) each
+        inside = (tcp[:, 0] >= lo[:, 0]) & (tcp[:, 0] <= hi[:, 0]) & (tcp[:, 1] >= lo[:, 1]) & (tcp[:, 1] <= hi[:, 1])
+        near_top = (tcp[:, 2] - hi[:, 2]) < 0.015
+        t_touch = inside & near_top
+        pads["table"] = np.stack([t_touch, t_touch], axis=1).astype(np.uint8)
     return pads
 
 
