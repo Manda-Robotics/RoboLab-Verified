@@ -1807,6 +1807,30 @@ function writeHash(h) {
   // from the landing page leaves the app rather than bouncing on it.
   if (!location.hash) history.replaceState(null, '', h); else history.pushState(null, '', h);
 }
+
+// A deep link has to fetch the run index, the task's episode list and the
+// episode itself before anything paints. That is seconds on a large run, and
+// an empty pane reads as a broken link, so say what is happening first.
+function showHashLoading(parts) {
+  const pane = $('#pane');
+  if (!pane) return;
+  let what = 'the linked view';
+  if (parts[1] === 'run' && parts[2]) {
+    const task = parts[3] === 'task' ? parts[4] : null;
+    if (task && parts[5] === 'ep' && parts[6] != null) what = `episode ${parts[6]} of ${task}`;
+    else if (task) what = task;
+    else what = parts[2];
+  } else if (parts[1] === 'task' && parts[2]) {
+    what = `${parts[2]} across every run`;
+  }
+  pane.innerHTML = '';
+  pane.appendChild(el('div', { class: 'deeplink-loading' },
+    el('div', { class: 'deeplink-spinner' }),
+    el('div', { class: 'text-sm' }, `Loading ${what}…`),
+    el('div', { class: 'text-xs', style: { color: 'var(--text-2)' } },
+      'Reading the run index and episode results.')));
+}
+
 async function applyHash() {
   const h0 = location.hash || '';
   // optional ?t=<seconds>: open the episode paused at that time (review links)
@@ -1820,6 +1844,7 @@ async function applyHash() {
     if (parts[0] === 'scenes' || parts[0] === 'tasks' || parts[0] === 'home') { setRoute(parts[0]); return; }
     if (parts[0] !== 'results') { if (h) setRoute('home'); return; }
     if (state.route !== 'results') setRoute('results', false);
+    showHashLoading(parts);
     // results/run/<run>[/task/<task>[/ep/<env>/<runIndex>]]
     // P70: #/results/task/<Task> - one task across every experiment
     if (parts[1] === 'task' && parts[2]) { await selectTaskAll(parts[2]); return; }
@@ -4030,7 +4055,10 @@ async function boot() {
   // in the background and is ready by the time they click into Results.
   // A deep link (#/results/...) is remembered and applied once runs exist.
   const initialHash = location.hash;
-  setRoute('home');
+  if (initialHash && initialHash.startsWith('#/results')) {
+    setRoute('results', false);
+    showHashLoading(initialHash.split('?')[0].replace(/^#\//, '').split('/').map(decodeURIComponent));
+  } else setRoute('home');
   try {
     await renderSources();
     state.runs = await fetchJSON('/api/runs');
