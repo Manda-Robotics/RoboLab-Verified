@@ -74,13 +74,42 @@ class Recording:
     pair_contact: dict[str, np.ndarray]    # "<a>__<b>" -> (T,) uint8
     bbox_corners: dict[str, np.ndarray] = field(default_factory=dict)   # (T, 8, 3) metres
     objects: list[str] = field(default_factory=list)   # manipulable objects: rigid objects minus table
+    # R1/R2/R4 channels (docs/verified/dense_annotations.md §5), present on recordings made
+    # with the dense recorder terms; None / empty on older ones.
+    finger_left: np.ndarray | None = None      # (T, 3) left inner finger body, env-local (what the live tracker reads)
+    finger_right: np.ndarray | None = None     # (T, 3)
+    tracker_state: dict[str, np.ndarray] = field(default_factory=dict)   # obj -> (T, 2) uint8 [grasped, attempt_closed], live
+    conditions: dict[str, np.ndarray] = field(default_factory=dict)      # legend key -> (T,) uint8, the ladder each step
+    body_forces: dict[str, np.ndarray] = field(default_factory=dict)     # "<label>__<obj>" -> (T,) float32 N
+    joint_names: list[str] | None = None       # from env_cfg.json (robot_joint_names) when stamped
 
     @property
     def T(self) -> int:
         return int(self.actions.shape[0])
 
     def closure(self) -> np.ndarray:
-        return self.joint_pos[:, FINGER_JOINT_COL] / FINGER_JOINT_CLOSED
+        col = FINGER_JOINT_COL
+        if self.joint_names and "finger_joint" in self.joint_names:
+            col = self.joint_names.index("finger_joint")
+        return self.joint_pos[:, col] / FINGER_JOINT_CLOSED
+
+    @property
+    def hand_pos(self) -> np.ndarray:
+        """(T, 3) what ``GraspTracker.hand_position`` reads live: the left inner finger when
+        recorded (R1), else ``base_link`` (the pre-R1 deviation documented above)."""
+        return self.finger_left if self.finger_left is not None else self.ee_pos
+
+    @property
+    def finger_mid(self) -> np.ndarray | None:
+        """(T, 3) midpoint of the two inner finger *link origins*, or None on pre-R1 recordings.
+        Not a TCP: on the DROID asset both link origins coincide with ``base_link`` when the
+        jaws are open and part by ~4.6 cm as they close (d1, 2026-09-02), so the pads are a
+        constant offset inside each link that the recording does not carry. The channels
+        exist for the tracker replay, which reads the left one exactly as the live tracker
+        does; the TCP stays ``base_link`` + ``TCP_OFFSET``."""
+        if self.finger_left is None or self.finger_right is None:
+            return None
+        return 0.5 * (self.finger_left + self.finger_right)
 
     def contact(self, obj: str) -> np.ndarray:
         """(T,) bool: either pad on ``obj`` above the runtime contact threshold."""
@@ -117,6 +146,11 @@ def load_recording(h5_demo) -> Recording:
         for name in d["bbox/bbox_mm"].keys():
             bbox[name] = d["bbox/bbox_mm"][name][:].astype(np.float64) / 1000.0
     objects = [o for o in obj_pos if o != "table"]
+    fl = d["finger_left/position"][:].astype(np.float64) if "finger_left" in d else None
+    fr = d["finger_right/position"][:].astype(np.float64) if "finger_right" in d else None
+    tracker_state = {k: d["tracker"][k][:] for k in d["tracker"].keys()} if "tracker" in d else {}
+    conditions = {k: d["conditions"][k][:] for k in d["conditions"].keys()} if "conditions" in d else {}
+    body_forces = {k: d["contact_body"][k][:].astype(np.float64) for k in d["contact_body"].keys()} if "contact_body" in d else {}
     return Recording(
         dt=0.0,
         actions=d["actions"][:].astype(np.float64),
@@ -125,6 +159,7 @@ def load_recording(h5_demo) -> Recording:
         joint_pos=d["states/articulation/robot/joint_position"][:].astype(np.float64),
         obj_pos=obj_pos, obj_quat=obj_quat, obj_vel=obj_vel, pads=pads, pair_contact=pair,
         bbox_corners=bbox, objects=objects,
+        finger_left=fl, finger_right=fr, tracker_state=tracker_state, conditions=conditions, body_forces=body_forces,
     )
 
 
@@ -183,8 +218,10 @@ def _bound_accessors(rec: Recording, cursor: dict):
         c = contact.get(obj)
         return torch.tensor([bool(c[cursor["t"]])]) if c is not None else torch.tensor([False])
 
+    hand_pos = rec.hand_pos                  # left inner finger on R1 recordings, base_link before
+
     def hand_position(env, hand):
-        return torch.tensor(rec.ee_pos[cursor["t"]], dtype=torch.float32).unsqueeze(0)
+        return torch.tensor(hand_pos[cursor["t"]], dtype=torch.float32).unsqueeze(0)
 
     def object_position(env, obj):
         return torch.tensor(rec.obj_pos[obj][cursor["t"]], dtype=torch.float32).unsqueeze(0)
@@ -271,6 +308,32 @@ def replay(rec: Recording, dt: float, objects: list[str] | None = None,
         out.events.append({"step": step, "detected_step": detected, "code": code, "name": name,
                            "info": info, "object": o})
     out.events.sort(key=lambda e: (e["step"], e["detected_step"]))
+    return out
+
+
+def compare_state(rr: ReplayResult, rec: Recording) -> dict | None:
+    """R4 check: the replayed per-step tracker state against the state the live tracker
+    recorded (``tracker/<obj>``). Returns None on recordings without the channel. Row t of
+    the recording is the live tracker's state after its update on step t + 1, which is what
+    the replay computes at row t, so the two should agree row for row."""
+    if not rec.tracker_state:
+        return None
+    out = {"objects": {}, "steps": 0, "grasped_agree": 0, "attempt_agree": 0,
+           "grasped_onset_diffs": [], "attempt_onset_diffs": []}
+    for o, st in rec.tracker_state.items():
+        if o not in rr.grasped:
+            continue
+        g_rec, a_rec = st[:, 0].astype(bool), st[:, 1].astype(bool)
+        g_rep, a_rep = rr.grasped[o], rr.attempt_closed[o]
+        T = min(len(g_rec), len(g_rep))
+        ga = int((g_rec[:T] == g_rep[:T]).sum()); aa = int((a_rec[:T] == a_rep[:T]).sum())
+        out["objects"][o] = {"steps": T, "grasped_agree": ga, "attempt_agree": aa,
+                             "grasped_steps_rec": int(g_rec[:T].sum()), "grasped_steps_rep": int(g_rep[:T].sum())}
+        out["steps"] += T; out["grasped_agree"] += ga; out["attempt_agree"] += aa
+        for a, b, key in ((g_rec, g_rep, "grasped_onset_diffs"), (a_rec, a_rep, "attempt_onset_diffs")):
+            ia = np.flatnonzero(a[:T]); ib = np.flatnonzero(b[:T])
+            if len(ia) and len(ib):
+                out[key].append(int(ib[0]) - int(ia[0]))
     return out
 
 

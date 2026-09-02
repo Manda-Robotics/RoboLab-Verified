@@ -169,6 +169,9 @@ OFF_TABLE_DROP_M = 0.15
 # robolab.core.physics.friction.install at env-cfg build time. See docs/physics.md.
 FRICTION = "upstream"
 RECORD_IMAGE_DATA = False
+# R2 (docs/verified/dense_annotations.md §5): contact sensors on the robot's
+# `contact_extra_bodies`. Env ROBOLAB_EXTRA_CONTACT_BODIES=0 disables them (H10 cost check).
+RECORD_EXTRA_CONTACT_BODIES = os.environ.get("ROBOLAB_EXTRA_CONTACT_BODIES", "1") != "0"
 DEVICE = "cuda:0"
 
 # Difficulty scoring constants (authoritative source for compute_difficulty_score in subtask_utils.py)

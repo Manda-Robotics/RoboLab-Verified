@@ -116,6 +116,19 @@ def create_contact_sensors(env_cfg):
             contact_sensor = create_contact_sensor_cfg(gripper_prim_path, getattr(scene, obj_name).prim_path)
             setattr(scene, contact_sensor_name, contact_sensor)
 
+    # R2 (docs/verified/dense_annotations.md §5): one batch sensor per extra robot body
+    # (knuckles, outer fingers, wrist) against every contact object, table included --
+    # a knuckle grinding on the table is exactly what these are for. Read only by
+    # PostStepExtraContactRecorder; the event logic never queries them.
+    import robolab.constants  # noqa: PLC0415
+    extra_bodies = getattr(env_cfg, "contact_extra_bodies", None) or {}
+    if extra_bodies and robolab.constants.RECORD_EXTRA_CONTACT_BODIES:
+        all_prims = [getattr(scene, obj_name).prim_path for obj_name in env_cfg.contact_object_list]
+        for label, body_prim_path in extra_bodies.items():
+            if label in concrete_grippers:
+                raise ValueError(f"contact_extra_bodies label '{label}' collides with a contact_gripper label")
+            setattr(scene, f"{label}__all_objs", create_batch_contact_sensor_cfg(body_prim_path, all_prims))
+
     objects = env_cfg.contact_object_list
     for i in range(len(objects)):
         for j in range(i + 1, len(objects)):

@@ -169,6 +169,18 @@ def task_kind(task_dir: str) -> str:
     return "place"
 
 
+def robot_joint_names(task_dir: str) -> list[str] | None:
+    """``robot_joint_names`` stamped into ``env_cfg.json`` (R1), else None."""
+    path = os.path.join(task_dir, "env_cfg.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        names = json.load(open(path)).get("robot_joint_names")
+    except Exception:  # noqa: BLE001
+        return None
+    return list(names) if names else None
+
+
 def resolve_dt(task_dir: str, default: float = 1 / 15) -> float:
     path = os.path.join(task_dir, "env_cfg.json")
     try:
@@ -278,7 +290,7 @@ def compute_channels(rec: Recording, dt: float, targets: set[str], dests: set[st
     objects = list(rec.objects)
     roles = {o: ("target" if o in targets else "destination" if o in dests else "distractor") for o in objects}
     R = quat_rotmat(rec.ee_quat)
-    tcp = rec.ee_pos + np.einsum("tij,j->ti", R, np.asarray(TCP_OFFSET))
+    tcp = rec.ee_pos + np.einsum("tij,j->ti", R, np.asarray(TCP_OFFSET))   # finger link origins are not pads (tracker_replay.Recording.finger_mid)
     tcp_speed = _speed(tcp, dt)
     grip_cmd = rec.actions[:, -1] > 0.5
     closure = rec.closure()
@@ -822,6 +834,7 @@ def annotate(task_dir: str, env_id: int, run_index: int = 0, log_events: list[di
             raise KeyError(f"no demo for env {env_id} in {h5}")
         rec = load_recording(g[key])
     rec.dt = dt
+    rec.joint_names = robot_joint_names(task_dir)
     if log_events is None:
         lp = os.path.join(task_dir, f"log_{run_index}_env{env_id}.json")
         if os.path.exists(lp):

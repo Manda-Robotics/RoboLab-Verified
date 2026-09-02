@@ -170,7 +170,26 @@ DroidCfg.table_fixture = FRANKA_TABLE_FIXTURE
 # EE-pose recorder channels (HDF5 channel name -> EE body name), consumed by
 # create_recorder_config. "base_link" is the Robotiq 2F-85 gripper base
 # (Gripper/Robotiq_2F_85/base_link).
-DroidCfg.ee_recorder_bodies = {"ee_pose": "base_link"}
+# R1 (dense_annotations.md §5): the inner finger pads are what GraspTracker.hand_position
+# reads live; recording them makes the offline replay exact and gives the TCP as the
+# pad midpoint instead of a measured 15 cm offset from base_link.
+DroidCfg.ee_recorder_bodies = {
+    "ee_pose": "base_link",
+    "finger_left": "left_inner_finger",
+    "finger_right": "right_inner_finger",
+}
+# R2: robot bodies beyond the pads that get a per-object batch contact sensor and a
+# `contact_body/<label>__<object>` channel (robolab/core/events/dense_recorders.py).
+# Switch off with ROBOLAB_EXTRA_CONTACT_BODIES=0 (robolab.constants) to measure the cost.
+DroidCfg.contact_extra_bodies = {
+    "knuckle_outer_left": "{ENV_REGEX_NS}/robot/Gripper/Robotiq_2F_85/left_outer_knuckle",
+    "knuckle_outer_right": "{ENV_REGEX_NS}/robot/Gripper/Robotiq_2F_85/right_outer_knuckle",
+    "knuckle_inner_left": "{ENV_REGEX_NS}/robot/Gripper/Robotiq_2F_85/left_inner_knuckle",
+    "knuckle_inner_right": "{ENV_REGEX_NS}/robot/Gripper/Robotiq_2F_85/right_inner_knuckle",
+    "finger_outer_left": "{ENV_REGEX_NS}/robot/Gripper/Robotiq_2F_85/left_outer_finger",
+    "finger_outer_right": "{ENV_REGEX_NS}/robot/Gripper/Robotiq_2F_85/right_outer_finger",
+    "gripper_base": "{ENV_REGEX_NS}/robot/Gripper/Robotiq_2F_85/base_link",
+}
 # P79: the finger-pad bodies a `--friction` override is applied to (the two prims that
 # carry the Robotiq PhysicsMaterial in the USD). See docs/physics.md#friction.
 DroidCfg.friction_bodies = ["left_inner_finger", "right_inner_finger"]
