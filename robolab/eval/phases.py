@@ -194,6 +194,34 @@ def _bbox_dist(point: np.ndarray, corners: np.ndarray) -> float:
     return float(np.linalg.norm(d))
 
 
+def proxy_pads(rec: Recording, dt: float) -> dict[str, np.ndarray]:
+    """Synthetic ``contact/<obj>`` columns for a recording without the contact group: pad 1 =
+    the TCP within CONTACT_PROXY_M of the object's box AND evidence of interaction (jaws
+    part-closed, a close command, or the object moving); pad 2 = the same with the jaws at
+    least 30 % closed (so "both pads" means a pinch). Distance alone read "touch" for 6.2 s of
+    hovering next to the mustard in the first narrated episode; this composite reads 0.6 s
+    outside the narrated contact windows and misses 0.3 of 7.9 s inside. Feeding these to the
+    tracker replay gives coupled-motion carries on such recordings instead of a distance blink."""
+    T = rec.T
+    R = quat_rotmat(rec.ee_quat)
+    tcp = rec.ee_pos + np.einsum("tij,j->ti", R, np.asarray(TCP_OFFSET))
+    closure = rec.closure()
+    cmd = rec.actions[:, -1] > 0.5
+    w = max(1, int(round(DISP_WIN_S / dt)))
+    pads = {}
+    for o in rec.objects:
+        p = rec.obj_pos[o]
+        corners = rec.bbox_corners.get(o)
+        if corners is not None:
+            dd = np.array([_bbox_dist(tcp[t], corners[t]) for t in range(T)])
+        else:
+            dd = np.linalg.norm(tcp - p, axis=1) - 0.04
+        engaged = (closure > 0.15) | cmd | (_win_disp(p, w) > 0.002)
+        touch = (dd < CONTACT_PROXY_M) & engaged
+        pads[o] = np.stack([touch, touch & (closure > 0.3)], axis=1).astype(np.uint8)
+    return pads
+
+
 @dataclass
 class Channels:
     T: int
@@ -223,7 +251,7 @@ class Channels:
 
 
 def compute_channels(rec: Recording, dt: float, targets: set[str], dests: set[str],
-                     replay_result=None) -> Channels:
+                     replay_result=None, contact_source: str = "pads") -> Channels:
     T = rec.T
     objects = list(rec.objects)
     roles = {o: ("target" if o in targets else "destination" if o in dests else "distractor") for o in objects}
@@ -240,26 +268,9 @@ def compute_channels(rec: Recording, dt: float, targets: set[str], dests: set[st
     settle_rows = max(1, int(round(SETTLE_WARMUP_S / dt)))
 
     touch, pinch, dist, rate, lift, speed, disp, rest = {}, {}, {}, {}, {}, {}, {}, {}
-    contact_source = "pads" if rec.pads else "proxy"
     for o in objects:
         p = rec.obj_pos[o]
-        if rec.pads:
-            touch[o], pinch[o] = rec.contact(o), rec.pinch(o)
-        else:
-            # no contact/ group (upstream-era recording): TCP within CONTACT_PROXY_M of the box,
-            # AND some evidence of interaction (jaws part-closed, a close command, or the object
-            # moving). Distance alone read "touch" for 6.2 s of hovering next to the mustard in
-            # the one episode with narrated ground truth; the composite reads 0.6 s outside the
-            # narrated contact windows and misses 0.3 s of 7.9 s inside them.
-            corners = rec.bbox_corners.get(o)
-            if corners is not None:
-                dd = np.array([_bbox_dist(tcp[t], corners[t]) for t in range(T)])
-            else:
-                dd = np.linalg.norm(tcp - p, axis=1) - 0.04
-            moved = _win_disp(p, max(1, int(round(DISP_WIN_S / dt)))) > 0.002
-            engaged = (closure > 0.15) | (rec.actions[:, -1] > 0.5) | moved
-            touch[o] = (dd < CONTACT_PROXY_M) & engaged
-            pinch[o] = touch[o] & (closure > 0.3)
+        touch[o], pinch[o] = rec.contact(o), rec.pinch(o)     # recorded pads, or proxy_pads()
         dist[o] = np.linalg.norm(tcp - p, axis=1)
         rate[o] = np.gradient(dist[o], dt) if T > 2 else np.zeros(T)
         rest_z = float(np.median(p[min(settle_rows, T - 1):min(settle_rows + 15, T), 2])) if T > settle_rows + 1 else float(p[0, 2])
@@ -283,8 +294,6 @@ def compute_channels(rec: Recording, dt: float, targets: set[str], dests: set[st
     towed = {o: np.zeros(T, bool) for o in objects}
     replay_events: list[dict] = []
     held_tracker: list[str | None]
-    if contact_source == "proxy":
-        replay_result = None          # the tracker needs pad contact; without it, geometry decides
     if replay_result is not None:
         held_tracker = []
         for t in range(T):
@@ -575,7 +584,7 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
         while w < T and w < nxt_first and not ch.at_rest[o][w]:
             w += 1
         settled = w < T and w < nxt_first
-        interrupted = (not settled) and w >= nxt_first
+        interrupted = (not settled) and nxt_first < T and w >= nxt_first
         rest_at = max(leave, min(w if settled else w - 1 if interrupted else T - 1, T - 1))
         dest = None
         if dests:
@@ -591,6 +600,8 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
             seg["attributes"].append("re-engaged before coming to rest")
         elif not settled:
             seg["attributes"].append("not at rest at episode end")
+        if leave >= T - 3:
+            seg["attributes"].append("released on the final steps")
         if label == "drop" and in_dest:
             seg["attributes"].append("landed_in_destination")
         segs.append(seg)
@@ -748,22 +759,22 @@ def annotate(task_dir: str, env_id: int, run_index: int = 0, log_events: list[di
             log_events = []
     rr = None
     warnings: list[str] = []
-    if use_replay and not rec.pads:
-        use_replay = False
-        warnings.append("tracker replay skipped: no contact/ group to feed it")
+    contact_source = "pads" if rec.pads else "proxy"
+    if contact_source == "proxy":
+        rec.pads = proxy_pads(rec, dt)
+        warnings.append(f"no contact/ group: touch is TCP within {CONTACT_PROXY_M * 100:.0f} cm of the object box with "
+                        "evidence of interaction; the tracker replay runs on that proxy")
     if use_replay:
         try:
             from robolab.eval.tracker_replay import replay
             rr = replay(rec, dt, containers=dests)
         except Exception as exc:  # torch missing, or an unexpected recording layout
             warnings.append(f"tracker replay unavailable ({type(exc).__name__}: {exc}); in-hand from geometry")
-    ch = compute_channels(rec, dt, targets, dests, rr)
+    ch = compute_channels(rec, dt, targets, dests, rr, contact_source)
     labels, objs = label_steps(ch)
     labels, objs = smooth_labels(labels, objs)
     phases, w2 = segment(labels, objs)
     warnings += w2
-    if ch.contact_source == "proxy":
-        warnings.append(f"no contact/ group: touch is TCP within {CONTACT_PROXY_M * 100:.0f} cm of the object box")
     segs = attempts(rec, ch, phases, targets, dests, kind, log_events)
     for p in phases:
         p["role"] = ch.roles.get(p["object"]) if p["object"] else None
