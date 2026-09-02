@@ -4,6 +4,7 @@ __pycache__
 *.egg-info/
 *.log
 *.hdf5
+!offline_tests/fixtures/**/*.hdf5
 **/build/
 *.thumbs/
 *log/*

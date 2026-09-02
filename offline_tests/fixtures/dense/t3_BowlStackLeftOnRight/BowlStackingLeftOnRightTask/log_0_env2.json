@@ -1,0 +1,1 @@
+{"schema_version": 2, "dt": 0.06666666666666667, "task": "BowlStackingLeftOnRightTask", "env_id": 2, "run": 0, "success": false, "final_step": 300, "events": [{"step": 256, "detected_step": 287, "code": 266, "name": "GRASP_ATTEMPT_FAILED", "info": "Grasp attempt on 'bowl_2' failed (contact lost before a carry was established)", "score": 0.0}]}
