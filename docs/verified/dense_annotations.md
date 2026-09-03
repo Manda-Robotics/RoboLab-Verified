@@ -1047,6 +1047,46 @@ Three readings, in order of confidence:
    segments or the picks adjacent to them. That is the retreat question again, found
    independently by a method that never saw a human label.
 
+**Corpus scale (288 episodes, rc3 to rc7, trial, d1 to d6; 2,201 segments, 20 min on a laptop).**
+Same ordering: perfectly stable share place 83.5 %, pick 58.5 %, no_completed_subtask 38.1 %
+(means 0.965 / 0.905 / 0.787); 62.5 % of all segments survive every one of 40 jitters, 4.5 %
+survive fewer than half. The cause axis over the 568 places, unlabelled and for free:
+released 359 (63 %), knocked 97 (17 %), slipped 84 (15 %), unclear 18, still held 10. Stability
+by cause is flat (0.95 to 0.97): the cause depends on the gripper command and contact pairs,
+not on the jittered thresholds, which is what a physics-defined field should look like.
+`analysis/phase_stability_corpus.jsonl` has every row.
+
+**The retreat vote, tested as a rule (P115).** The L1 record of the five voted stretches
+separates them without a label: the two "bugging in the wall" stretches are 43 % and 69 %
+`open_contact` on `bin_a06(destination)`, the two "travelling" stretches have none of it, the
+"not focusing on a single object" stretch has the target on 5 % of object steps. Two rule
+pieces follow: retreats and `disturb` are hesitation inside an approach, not breakers
+(`RETREAT_BREAKS_APPROACH` off, `disturb` out of `BREAKERS`, tolerance 30 s), and a **jam**,
+open-hand contact with a non-target totalling `JAM_S` between two grasp attempts on one object,
+keeps those attempts from folding into one pick and counts toward the ncs share. Six probe
+stretches, A/B over the 14 episodes under the corrected scoring:
+
+| variant | F1 | label | result | ±0.5 s | probes right (of 6) |
+|---|---|---|---|---|---|
+| current | 0.942 | 0.951 | 0.988 | 0.835 | 3 |
+| retreats neutral | 0.929 | 0.924 | 0.962 | 0.810 | 3 (wall ramming becomes a 33 s pick) |
+| + disturb neutral | 0.936 | 0.950 | 0.975 | 0.785 | 4 (both "travelling" picks, with the reviewer's own bounds) |
+| + jam (2 to 8 s, identical) | 0.920 | 0.950 | 0.950 | 0.772 | **6** |
+
+The combination is right on every disputed stretch, including `no_c61-73 pick73-81` for the
+"ncs first, then the pick" note, and worse on the aggregate. Reading the defect table, the
+aggregate loss is mostly not the rule: review mode can only relabel a machine segment or move
+its edges, never *split* it, so the reviewer's corrections on rc3 env 2 left two overlapping
+gold picks (17.87 to 35.67 and 20.03 to 38.13) that no segmentation can both match, and on
+env 3 the whole 61 to 81 s span stayed one `ncs` although the note says the pick starts inside
+it. The jam threshold not mattering between 2 and 8 s says the fold-break itself is rare and the
+whole effect is the ncs-share term. Decision: **`JAM_S` stays 0 (off) and the approach rule
+stays as it is** until the two rc3 episodes are re-reviewed against the variant's output; the
+code is in place and `rule_ab.py` / `jam_sweep.py` in the session scratchpad rerun the table.
+Splitting a segment in review mode already works in two moves: correct the bounds of the
+machine segment to one half, then add a free-form mark for the other half (the P111 overlap
+rule keeps a mark that a reviewed segment does not cover).
+
 ### 9.9 Handoff
 
 - Branch `dense-annotations` in this clone, never pushed; `main` equals `origin/main`. The
@@ -1079,9 +1119,12 @@ Three readings, in order of confidence:
 
 ### 9.10 Not done, in order
 
-1. Re-review the four narration-era episodes that still carry defects, in review mode, so the
-   gold uses the current conventions: rc3 FoodPacking2Cans env 2, rc3 PutMugsOnShelf env 0,
-   rc5 BananasOutOfBin env 3, cli_pi05_rerun MustardInLeftBin env 3 (§9.12). The two places in
+1. Re-review in review mode, with the cause key: rc3 PutMugsOnShelf env 0, rc5 BananasOutOfBin
+   env 3, cli_pi05_rerun MustardInLeftBin env 3 (still narration-era, §9.12), the rest of d6
+   BananasInCrate env 2 (segments 7 to 15 were never reviewed), and rc3 FoodPacking2Cans env 2
+   and env 3 once more with `JAM_S` = 2 and retreats neutral switched on, to adjudicate P115
+   (§9.13); where the machine merged two things, correct one half's bounds and add a mark for
+   the other. The two places in
    rc3 and rc5 also settle the open landing-versus-at-rest vote. This is safe now that
    `segments_of` supersedes an overlapped free-form mark; before that fix it double-counted.
 2. Continue labelling the tune split (order in §9.9), score, triage with `--diff`; the second annotator into a separate file for H6; then one read of the test split for the reported H8.
