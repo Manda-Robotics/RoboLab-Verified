@@ -66,6 +66,10 @@ TCP_OFFSET = (0.15, 0.03, 0.0)   # base_link -> fingertip midpoint, base_link fr
 V_MOVE = 0.02                    # m/s   TCP counts as moving
 V_LIFT = 0.03                    # m/s   object rising / descending while held
 LIFT_M = 0.01                    # m     above its own rest height = lifted
+LANDING_VZ = 0.05                # m/s   falling slower than this while touching a support = landed
+DROP_ENDS_AT_LANDING = True      # a place/drop segment ends at first support contact after leaving the hand (else at rest)
+RETREAT_BREAKS_APPROACH = True   # a retreat run of BREAK_RUN_S ends the approach that belongs to a pick (False: only idle/table/close-empty/disturb do; one vote for it, d5 env 0, against rc3 env 2's narration; §9.8b) ...
+RETREAT_TOLERANCE_S = 15.0       # s     ... within this much approach before the grip; a struggle longer than that is not one approach (rc3 FoodPacking env 2: 28 s of ramming the bin, narrated as no completed subtask)
 HELD_LIFT_M = 0.03               # m     pinched and this far up = in hand, whatever the tracker's coupling says (d5 env 0, 2026-09-02)
 NEAR_M = 0.08                    # m     hover radius around an object
 APPROACH_M = 0.25                # m     approach (inside) vs reach (outside)
@@ -85,7 +89,7 @@ CONTACT_PROXY_M = 0.02           # m     TCP to object box, when no contact/ gro
 THRESHOLDS = {k: globals()[k] for k in (
     "TCP_OFFSET", "V_MOVE", "V_LIFT", "LIFT_M", "HELD_LIFT_M", "NEAR_M", "APPROACH_M", "CLOSING_RATE", "DISP_WIN_S", "DISP_M",
     "REST_M", "SLIP_V", "SMOOTH_W", "MIN_RUN", "RELEASE_S", "GAP_NCS_S", "NCS_BREAKER_SHARE", "PICK_MIN_HOLD_S",
-    "CONTACT_PROXY_M", "BREAK_RUN_S", "SETTLE_WARMUP_S", "GRASP_HOLD_S", "GRASP_ATTEMPT_BURST_S",
+    "CONTACT_PROXY_M", "BREAK_RUN_S", "RETREAT_TOLERANCE_S", "DROP_ENDS_AT_LANDING", "RETREAT_BREAKS_APPROACH", "SETTLE_WARMUP_S", "GRASP_HOLD_S", "GRASP_ATTEMPT_BURST_S",
     "SUCCESS_REST_S", "SUCCESS_MAX_SPEED")}
 
 PHASES = {
@@ -468,6 +472,18 @@ def segment(labels: list[str], objs: list[str | None], min_run: int = MIN_RUN) -
 
 
 # --------------------------------------------------------------------------- L2
+def _support_contact(rec: Recording, o: str) -> np.ndarray | None:
+    """(T,) bool: ``o`` touches anything the recorder pairs it with (table, destination, another
+    object), or None when the recording has no pair-contact column for it (proxy recordings)."""
+    cols = [v for k, v in rec.pair_contact.items() if o in k.split("__")]
+    if not cols:
+        return None
+    out = np.zeros(len(cols[0]), bool)
+    for c in cols:
+        out[:len(c)] |= c[:len(out)].astype(bool)
+    return out
+
+
 def _in_destination(rec: Recording, ch: Channels, o: str, d: str, t: int) -> bool | None:
     """Object ``o`` inside / on destination ``d`` at row ``t``: the recorded pair-contact column
     if present, else the centroid inside the destination's box footprint and not above its
@@ -602,6 +618,13 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
                 break
             if l in ("approach", "reach", "hover") and obj[back - 1] not in (None, o):
                 break                                # heading for a different object: not this pick's approach
+            if l == "retreat" and not RETREAT_BREAKS_APPROACH and (first - back) * dt < RETREAT_TOLERANCE_S:
+                # backing off and returning to the same object is hesitation inside its pick
+                # (G17, then d5 env 0: "definitely travelling to the tuna can, a bit distracted");
+                # heading for another object breaks the approach above, a retreat alone does not
+                run_lab, run_len = None, 0
+                back -= 1
+                continue
             if l in BREAKERS:
                 run_len = run_len + 1 if l == run_lab else 1
                 run_lab = l
@@ -672,7 +695,21 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
         # drop label either; an uncommanded release is an attribute, the result is the outcome
         in_dest = _in_destination(rec, ch, o, dest, rest_at) if dest else None
         result = "unknown" if kind == "pick" or in_dest is None or not settled else ("pass" if in_dest else "fail")
-        seg = _make_segment("place", o, pick_end + 1, rest_at, result, ch, lab, obj, targets, dests, dt, dest=dest)
+        # The segment ends when the object lands (first support contact after it left the hand;
+        # a deliberate place is already resting when the hand lets go, so that is the release),
+        # not when it stops rolling: the reviewer's edge (d5 env 0: left the jaws 6.0 s, landed
+        # 6.3 s, at rest 7.7 s) and the sharp one. The result is still read at rest.
+        end_row = rest_at
+        support = _support_contact(rec, o)
+        if DROP_ENDS_AT_LANDING and support is not None and settled:
+            # landed = touching a support while no longer falling; a bounce off a bin wall on
+            # the way down (rc5 BananasOutOfBin env 3) is contact, not a landing
+            vz = rec.obj_vel[o][:, 2]
+            w2 = leave
+            while w2 < rest_at and not (support[w2] and vz[w2] > -LANDING_VZ):
+                w2 += 1
+            end_row = max(leave, w2)
+        seg = _make_segment("place", o, pick_end + 1, end_row, result, ch, lab, obj, targets, dests, dt, dest=dest)
         if not deliberate:
             seg["attributes"].append("dropped (gripper opened with the close command still on)")
         if interrupted:

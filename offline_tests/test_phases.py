@@ -64,7 +64,9 @@ def test_t1_env0_is_the_textbook_chain():
     assert [(a["label"], a["result"], a["object"]) for a in at] == [("pick", "pass", "banana"), ("place", "pass", "banana")]
     assert at[0]["start"] == 1                       # the initial reach belongs to the first pick
     assert at[1]["destination"] == "bowl"
-    assert at[1]["end"] == d["num_steps"]
+    # the place ends when the banana lands in the bowl (support contact, no longer falling); the
+    # episode ends at rest a few steps later
+    assert at[1]["end"] <= d["num_steps"] and d["num_steps"] - at[1]["end"] < 15
     # a disagreement between the tracker replay and the geometric in-hand channel is allowed
     # (the pick window is short); a disagreement with the event log is not
     assert not any(f for a in at for f in a["flags"] if not f.startswith("held_disagree"))
