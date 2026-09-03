@@ -864,15 +864,14 @@ three bounds verdicts said, against the recording:
 | reviewed moment | machine | data | rule now |
 |---|---|---|---|
 | second pick of the soup can: "a clear pick at 18.3, 20.3 is mid carry" | pick closes 20.3 s | both pads on the can from 17.4 s, lifted 6 cm at 18.2, 20 cm at 19.4; the live tracker's `grasped` only from 20.0 s. Its carry needs the object-to-hand offset to drift < 5 mm per 0.2 s in world coordinates, and the offset moved 6 to 12 mm per 0.2 s while the wrist turned with the can held | `HELD_LIFT_M`: pinched, commanded closed and more than 3 cm above rest is in hand whatever the coupling says (the tracker keeps its `held_disagree` flag). Pick now closes at 18.3 s |
-| drop of the soup can: "the drop already happened at 6.4; after that it is still in motion" | place/drop closes at rest, 7.7 s | leaves the jaws 6.0 s, lands 6.3 s, rolls until 7.2 s, at rest by P30 at 7.7 s | **decided (delegated): a place or drop ends when the object lands**, the first support contact after leaving the hand while no longer falling faster than 5 cm/s (`LANDING_VZ`; a bounce off a bin wall on the way down is not a landing). The result is still read at rest. Now 6.1 s |
+| drop of the soup can: "the drop already happened at 6.4; after that it is still in motion" | place/drop closes at rest, 7.7 s | leaves the jaws 6.0 s, lands 6.3 s, rolls until 7.2 s, at rest by P30 at 7.7 s | **decided (delegated): a place or drop ends when the object lands**, touching a support with no vertical motion (|vz| < 5 cm/s, `LANDING_VZ`) for 0.2 s (`LANDING_HOLD_S`): neither a bounce off a bin wall on the way down (rc5 BananasOutOfBin env 3) nor the apex of a bounce back up (d6 BananasInCrate env 2) is down. The result is still read at rest. Now 6.6 s; the reviewer's own edge was 6.4. Symmetric with the pick: it ends when the object is securely held, the place when it is securely down |
 | 8.5 s between the place and the tuna pick: "it is definitely travelling to the tuna can, a bit distracted once there" (marked unsure) | `no_completed_subtask` (approach 4.1 s, retreat 3.1 s) | one object approached throughout, with retreats | **tried and reverted**: with retreats neutral, rc3 FoodPacking env 2's 28 s of ramming the bin (narrated `no_completed_subtask`) folds into one 33 s pick and H8 over the 12 labelled episodes falls (F1 0.883 → 0.864; counting open-hand contact with the bin as a breaker made it 0.860). The old rule stays, behind `RETREAT_BREAKS_APPROACH`; the vote is recorded and waits for more verdicts |
 
 H8 over the 12 labelled episodes, before and after the `HELD_LIFT_M` rule: F1 0.833 → 0.883,
 boundaries within ±0.5 s 59 → 67 %, label accuracy 0.96, result accuracy 0.94. With the landing
-rule on top: F1 0.850, ±0.5 s 63 %, label 0.96, result 0.94; the difference is two narrated drops
-in rc5 BananasOutOfBin env 3 (10.2 to 11.3 s and 36.0 to 38.0 s) whose ends were narrated at rest
-under the old convention and now fall below IoU 0.5 against a 0.5 s landing segment: convention
-lag in the gold, to be re-judged in review mode, not a rule error. Tripwire after `HELD_LIFT_M`:
+rule on top: F1 0.869, ±0.5 s 63 %, label 0.96, result 0.94 (an earlier "first contact" version
+scored 0.850 because two narrated drops in rc5 BananasOutOfBin env 3 bounce off the bin wall; the
+0.2 s hold recovers them). Tripwire after `HELD_LIFT_M`:
 H1 0, H2 98.1 → 97.8 % (13 carry lines now stamped after the phase already reads in-hand, which
 is the finding below, not a regression); with the landing rule: H1 0, H2 97.8 %, unchanged.
 

@@ -66,7 +66,8 @@ TCP_OFFSET = (0.15, 0.03, 0.0)   # base_link -> fingertip midpoint, base_link fr
 V_MOVE = 0.02                    # m/s   TCP counts as moving
 V_LIFT = 0.03                    # m/s   object rising / descending while held
 LIFT_M = 0.01                    # m     above its own rest height = lifted
-LANDING_VZ = 0.05                # m/s   falling slower than this while touching a support = landed
+LANDING_VZ = 0.05                # m/s   |vertical speed| below this while touching a support ...
+LANDING_HOLD_S = 0.2             # s     ... for this long = down (landed); the apex of a bounce is one row of it
 DROP_ENDS_AT_LANDING = True      # a place/drop segment ends at first support contact after leaving the hand (else at rest)
 RETREAT_BREAKS_APPROACH = True   # a retreat run of BREAK_RUN_S ends the approach that belongs to a pick (False: only idle/table/close-empty/disturb do; one vote for it, d5 env 0, against rc3 env 2's narration; §9.8b) ...
 RETREAT_TOLERANCE_S = 15.0       # s     ... within this much approach before the grip; a struggle longer than that is not one approach (rc3 FoodPacking env 2: 28 s of ramming the bin, narrated as no completed subtask)
@@ -89,7 +90,7 @@ CONTACT_PROXY_M = 0.02           # m     TCP to object box, when no contact/ gro
 THRESHOLDS = {k: globals()[k] for k in (
     "TCP_OFFSET", "V_MOVE", "V_LIFT", "LIFT_M", "HELD_LIFT_M", "NEAR_M", "APPROACH_M", "CLOSING_RATE", "DISP_WIN_S", "DISP_M",
     "REST_M", "SLIP_V", "SMOOTH_W", "MIN_RUN", "RELEASE_S", "GAP_NCS_S", "NCS_BREAKER_SHARE", "PICK_MIN_HOLD_S",
-    "CONTACT_PROXY_M", "BREAK_RUN_S", "RETREAT_TOLERANCE_S", "DROP_ENDS_AT_LANDING", "RETREAT_BREAKS_APPROACH", "SETTLE_WARMUP_S", "GRASP_HOLD_S", "GRASP_ATTEMPT_BURST_S",
+    "CONTACT_PROXY_M", "BREAK_RUN_S", "RETREAT_TOLERANCE_S", "LANDING_VZ", "LANDING_HOLD_S", "DROP_ENDS_AT_LANDING", "RETREAT_BREAKS_APPROACH", "SETTLE_WARMUP_S", "GRASP_HOLD_S", "GRASP_ATTEMPT_BURST_S",
     "SUCCESS_REST_S", "SUCCESS_MAX_SPEED")}
 
 PHASES = {
@@ -702,11 +703,14 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
         end_row = rest_at
         support = _support_contact(rec, o)
         if DROP_ENDS_AT_LANDING and support is not None and settled:
-            # landed = touching a support while no longer falling; a bounce off a bin wall on
-            # the way down (rc5 BananasOutOfBin env 3) is contact, not a landing
+            # landed = touching a support with no vertical motion left: neither still falling (a
+            # bounce off a bin wall on the way down, rc5 BananasOutOfBin env 3) nor bouncing back
+            # up (d6 BananasInCrate env 2, 36 cm/s upward at first table contact)
             vz = rec.obj_vel[o][:, 2]
+            down = support & (np.abs(vz) < LANDING_VZ)
+            k = max(1, int(round(LANDING_HOLD_S / dt)))          # the apex of a low bounce also has vz ~ 0
             w2 = leave
-            while w2 < rest_at and not (support[w2] and vz[w2] > -LANDING_VZ):
+            while w2 < rest_at and not (w2 + 1 >= k and down[w2 + 1 - k:w2 + 1].all()):
                 w2 += 1
             end_row = max(leave, w2)
         seg = _make_segment("place", o, pick_end + 1, end_row, result, ch, lab, obj, targets, dests, dt, dest=dest)
