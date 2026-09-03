@@ -1,0 +1,28 @@
+{
+ "agg": {
+  "episodes": 1200,
+  "h1_violations": 0,
+  "phases": 113363,
+  "attempts": 11631,
+  "steps": 1451470
+ },
+ "flags": {
+  "no GRASP_ATTEMPT_FAILED in log": 3094,
+  "no OBJECT_CARRIED in log": 3605,
+  "place pass, no SUBTASK_COMPLETED in log": 553,
+  "held_disagree": 4805,
+  "place fail, log credits SUBTASK_COMPLETED": 8
+ },
+ "h2": {},
+ "h5": {},
+ "family_time": {
+  "grasp": 24830.59,
+  "motion": 35537.44999999999,
+  "in_hand": 13623.019999999986,
+  "still": 13271.619999999994,
+  "scene": 1643.6599999999992,
+  "table": 7466.340000000009,
+  "settle": 392.2899999999942
+ },
+ "seconds": 4234.669589996338
+}

@@ -1087,6 +1087,67 @@ Splitting a segment in review mode already works in two moves: correct the bound
 machine segment to one half, then add a free-form mark for the other half (the P111 overlap
 rule keeps a mark that a reviewed segment does not cover).
 
+### 9.14 Morning 2026-09-03: the knife edge is continuous, and five policies fail in different ways
+
+**Why the ncs boundary is unstable, and what to do about it (P116).** Halving or doubling one
+threshold at a time over the 100 least stable corpus segments: `NCS_BREAKER_SHARE` alone flips
+86 % of them, `GAP_NCS_S` 63 %, `BREAK_RUN_S` 56 %; nothing else reaches 55 %. So the decision
+"is the stretch before this pick its approach, or a `no_completed_subtask`" is the knife edge,
+as §9.13 inferred from the label means. Tracing every one of the 1,104 gap decisions the
+annotator makes over the 288-episode corpus (`_GAP_TRACE`): 14 % of gaps are 4 to 6 s long,
+against the 5 s minimum; and among gaps of 5 s or more the breaker share is **unimodal with its
+mode on the threshold**: 0.2 to 0.3 holds 21 %, 0.3 to 0.4 19 %, 0.4 to 0.5 18 %. 26 % of all gap
+decisions sit inside the knife edge (gap 4 to 6 s, or share 0.3 to 0.5). No value of
+`NCS_BREAKER_SHARE` is stable because the underlying quantity is continuous where the mass is.
+
+The consequence is not a new threshold. Every ncs decision now records `boundary_margin`, the
+relative distance from whichever threshold would flip it, on the ncs segment and on the pick
+whose start it set, and below `KNIFE_EDGE_MARGIN` = 0.25 both carry `knife_edge_ncs`. On the 84
+judged segments the flag alone separates human agreement on all three axes **0.667** (knife
+edge, n = 12) from 0.814 (clear margin, n = 43) and 0.897 (no ncs decision, n = 29), and the
+mean 40-sample stability of those groups is 0.656 / 0.951 / 0.997. A one-pass flag, computed
+for free at annotation time, reproduces the jitter study. It is the abstention design of §9.13
+applied to the boundary the data says cannot be sharp; review routing can start from it.
+
+**Five policies, 6,000 episodes, one taxonomy (P117, `scripts/policy_failure_taxonomy.py`).**
+The `cli_*_robolab120` corpora (120 tasks × 10 episodes per policy) annotated in proxy mode
+in 90 minutes on ten laptop cores. The question the dense annotation exists to answer: do
+policies with the same success rate fail in the same way?
+
+| | cosmos3 | g05 | gr00t | molmoact2 | π0.5 |
+|---|---|---|---|---|---|
+| success | **35 %** | 10 % | 10 % | 14 % | 28 % |
+| picks per success | 15.8 | 49.0 | 39.8 | 27.9 | 20.3 |
+| pick pass | 50 % | 46 % | 42 % | 45 % | 54 % |
+| wrong-object picks | 35 % | 41 % | **47 %** | 35 % | 37 % |
+| regrasps | 5 % | 3 % | **13 %** | 7 % | 5 % |
+| places per episode | 2.56 | 2.27 | 1.63 | 1.61 | 2.80 |
+| place pass | 30 % | **12 %** | 19 % | 18 % | 24 % |
+| uncommanded release | **31 %** | 13 % | 12 % | 23 % | 20 % |
+| time in no_completed_subtask | 22 % | 36 % | **45 %** | 37 % | 35 % |
+| time pressing the table | 5 % | 11 % | **16 %** | 5 % | 11 % |
+| first contact (median) | 6.9 s | 5.8 s | **2.9 s** | 5.8 s | 5.4 s |
+| never touched anything | 1 % | 5 % | 2 % | **8 %** | 2 % |
+
+They do not. **g05 and gr00t both score 10 % and fail at opposite ends of the pipeline.** gr00t
+reaches an object fastest (2.9 s) and then cannot hold it: the most regrasps (13 %), the most
+wrong-object picks (47 %), the most time pressing the table (16 %) and idling in ncs (45 %),
+the fewest places. Its failures are grasp failures. g05 grasps about as well as π0.5 does
+(pick pass 46 % vs 54 %) and then puts the object in the wrong place: place pass 12 %, the
+lowest of the five, with 84 % of releases deliberate. Its failures are placement failures. A
+success rate cannot tell those two apart; the training data each one needs is different.
+Two more that the scalar hides: cosmos3 has the highest success *and* the highest share of
+uncommanded releases (31 %; it drops what it carries more than any other policy, and still
+wins on placement); molmoact2 never touches anything in 8 % of episodes, four times π0.5.
+
+Caveats that belong next to the table. These recordings have no contact group, so touch is
+the geometric proxy, the tracker replays on it, and `cause` can only say released or unclear
+(unclear here means an uncommanded release whose mechanism the recording cannot show; knocked
+and slipped need contact pairs). The annotator has been validated against human verdicts on
+π0.5 pads recordings; on these four policies it is validated on six short gold episodes only,
+so the *ordering* of the policies on each row is the claim, not the third digit. The
+per-episode `phases_*.json` now sit next to every `cli_*` log and the dashboard reads them.
+
 ### 9.9 Handoff
 
 - Branch `dense-annotations` in this clone, never pushed; `main` equals `origin/main`. The
@@ -1132,6 +1193,7 @@ rule keeps a mark that a reviewed segment does not cover).
 2. ~~R1 on a pod~~ done (§9.11): R1, R2, R4 recorded, replay exact. Next runtime step: the
    annotator on the run path so `phases_*.json` is written next to each log by default, and the
    L2 summary fields into `episode_results.jsonl` (open decision 3).
-3. Annotate the five `cli_*` corpora in proxy mode and report H7 and the phase-E statistics
-   against the reviewer's modes.
+3. ~~Annotate the five `cli_*` corpora in proxy mode~~ done (§9.14, P117); still open: H7 and
+   the phase-E statistics against the reviewer's modes (`phase_mode_check.py` over the new
+   `phases_*.json`).
 4. The `GRIPPER_FULLY_CLOSED` versus pad-force discrepancy on one episode.
