@@ -5,7 +5,7 @@ Three rigs are adopted. They are not equally usable, and the difference is about
 
 | rig | file | state |
 |---|---|---|
-| **bimanual YAM** | `bimanual_yam.py` | **verified with a released policy**: Ai2's MolmoAct 2 bimanual checkpoint, 7/8 on the parity task in the final acceptance run, 5–6/8 in earlier rig variants (Ai2's own simulator: 4/8); 0/4 on each of three benchmark tasks outside its training distribution. The rig to reach for: it is what the labs collect bimanual data on. |
+| **bimanual YAM** | `bimanual_yam.py` | **verified with a released policy**: Ai2's MolmoAct 2 bimanual checkpoint, 5/8 on the parity task (Ai2's own simulator: 4/8); 0/4 on each of three benchmark tasks outside its training distribution. The rig to reach for: it is what the labs collect bimanual data on. |
 | **dual-Franka** | `bimanual_franka.py` | **verified 6/6 clean**, max 0.18 rad/step. The default choice. |
 | **bimanual ViperX (ALOHA)** | `aloha.py` | rig verified (arms build, wrist cams track, per-arm metrics record). **No working policy**: the released pi05 checkpoint scores **0/6** — coherent reach, twitchy, no grasp. Out of distribution for this embodiment; fine-tuning is the only path we found. |
 

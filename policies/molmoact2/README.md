@@ -48,7 +48,7 @@ assumes.
 
 | task | success |
 |---|---|
-| YamPutEverythingInBoxTask, 67 s cap | 7 / 8 in the final acceptance run, 5–6 / 8 in earlier rig variants (Ai2's ManiSkill harness, same checkpoint: 4 / 8) |
+| YamPutEverythingInBoxTask, 67 s cap | 5 / 8 (Ai2's ManiSkill harness, same checkpoint: 4 / 8) |
 | BananaInBowlTask | 0 / 4: reaches the banana and hovers, never commands a grasp |
 | BBQSauceInBinTask | 0 / 4: coherent grasp and lift of the wrong object |
 | FoodPacking2CansTask | 0 / 4: grasps the cans, then commands release; 40–120 drops per episode |

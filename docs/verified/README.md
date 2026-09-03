@@ -106,7 +106,7 @@ overhead and two wrist RealSense views, the station most bimanual training data 
 on), a dual-Franka rig and a bimanual ViperX (ALOHA) rig. Each is one articulation with
 per-arm end-effector recording, tracking wrist cameras, and the unchanged success predicates.
 Ai2's released MolmoAct 2 bimanual checkpoint drives the YAM rig through the shipped client:
-7/8 on a put-everything-in-the-box task that copies Ai2's own simulator layout (their
+5/8 on a put-everything-in-the-box task that copies Ai2's own simulator layout (their
 ManiSkill harness: 4/8), 0/4 on each of three benchmark tasks it was not trained on.
 
 **VLM and LLM policies.** A connector for running a pointing-capable vision-language model as

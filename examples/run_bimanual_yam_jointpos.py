@@ -138,6 +138,27 @@ def main() -> None:
                 print(f"  FAIL: {s} arm tracking error too large")
         gp = {s: robot.data.body_pos_w[0, body_idx[s]].cpu().numpy().round(3).tolist() for s in ARMS}
         print(f"gripper world positions at end: {gp}")
+
+        # Kinematic check against the URDF: hold Ai2's rest pose and compare the simulated
+        # flange position with the URDF forward kinematics (the asset builder's own FK).
+        import sys as _sys
+        _sys.path.insert(0, os.path.join(PACKAGE_DIR, "assets", "robots", "_utils"))
+        import build_bimanual_yam as bb
+        links, _, root_name = bb.parse_urdf(bb.SOURCE_URDF)
+        rest_q = {f"joint{i + 1}": float(REST[i]) for i in range(6)}
+        fk_rest = bb.fk(links, root_name, rest_q)["gripper"][:3, 3]
+        hold = torch.cat([REST, torch.tensor([-FINGER_TRAVEL_M, -FINGER_TRAVEL_M])] * 2).unsqueeze(0).to(env.device)
+        for _ in range(90):
+            obs, _, _, _, _ = env.step(hold)
+        root_pos = robot.data.root_pos_w[0].cpu().numpy()
+        for s, y in (("left", 0.24), ("right", -0.24)):
+            sim = robot.data.body_pos_w[0, body_idx[s]].cpu().numpy() - root_pos
+            want = fk_rest + np.array([0.0, y, 0.0])
+            err = float(np.linalg.norm(sim - want))
+            print(f"{s}: flange at rest pose sim {np.round(sim, 3)} vs URDF FK {np.round(want, 3)} -> {err * 1000:.1f} mm")
+            if err > 0.01:
+                ok = False
+                print(f"  FAIL: {s} simulated kinematics differ from the URDF by {err * 1000:.1f} mm")
         print(f"Saved: {out_dir}")
         print("BIMANUAL_YAM_SMOKE_OK" if ok else "BIMANUAL_YAM_SMOKE_FAILED")
         if not ok:

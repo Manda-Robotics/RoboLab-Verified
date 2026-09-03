@@ -131,6 +131,25 @@ def test_hierarchy_composes_to_urdf_fk(stage):
             assert np.allclose(got, want, atol=1e-5), f"{side}_{name}: {got} vs {want}"
 
 
+def _usd_rotation(prim) -> np.ndarray:
+    m = UsdGeom.Xformable(prim).ComputeLocalToWorldTransform(Usd.TimeCode.Default())
+    return np.array([[m[i][j] for j in range(3)] for i in range(3)]).T   # Gf is row-vector
+
+
+def test_hierarchy_orientations_match_urdf_fk(stage):
+    """Rotations too, not only translations: a NumPy->Gf convention slip inverts every
+    rotation and only shows on asymmetric joints (the camera bracket chain)."""
+    links, _, root_name = bb.parse_urdf(bb.SOURCE_URDF)
+    t = bb.fk(links, root_name, {})
+    for side in ("left", "right"):
+        for name in ("base", "link1", "link2", "link3", "link4", "link5", "gripper", "tip_left", "tip_right"):
+            prim = stage.GetPrimAtPath(f"/robot/{side}_arm/{side}_{name}")
+            assert np.allclose(_usd_rotation(prim), t[name][:3, :3], atol=1e-5), f"{side}_{name} orientation"
+        for name in ("camera_bracket", "camera_body", "camera"):
+            prim = stage.GetPrimAtPath(f"/robot/{side}_arm/{side}_gripper/{side}_{name}")
+            assert np.allclose(_usd_rotation(prim), t[name][:3, :3], atol=1e-5), f"{side}_{name} orientation"
+
+
 def test_wrist_camera_frame_is_merged_into_gripper(stage):
     """The camera frame is an Xform under the gripper *body* (not a fixed-jointed link), and its
     pose matches I2RT's published extrinsics: flange -> camera (-0.07, 0, -0.077)."""

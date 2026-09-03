@@ -189,8 +189,18 @@ def load_stl(path: str) -> tuple[np.ndarray, np.ndarray]:
 
 
 # ----------------------------------------------------------------------------- USD helpers
+def _gf_rotation(mat3: np.ndarray) -> Gf.Rotation:
+    """NumPy rotation (column-vector convention, R @ v) -> Gf.Rotation.
+
+    Gf matrices are row-vector (v * M), so the NumPy matrix must be transposed on the way in;
+    feeding the rows straight in yields the inverse rotation. That bug survived every
+    translation-only check and only showed on the one asymmetric joint in the chain (the
+    wrist-camera bracket), so ``tests/test_bimanual_yam_asset.py`` now compares orientations too."""
+    return Gf.Matrix3d(*np.asarray(mat3, dtype=float).T.flatten().tolist()).ExtractRotation()
+
+
 def _quat(mat3: np.ndarray) -> Gf.Quatf:
-    q = Gf.Matrix3d(*mat3.flatten().tolist()).ExtractRotation().GetQuat()
+    q = _gf_rotation(mat3).GetQuat()
     q.Normalize()
     return Gf.Quatf(q.GetReal(), *q.GetImaginary())
 
@@ -199,8 +209,7 @@ def _set_xform(prim: Usd.Prim, t: np.ndarray) -> None:
     x = UsdGeom.Xformable(prim)
     x.ClearXformOpOrder()
     x.AddTranslateOp().Set(Gf.Vec3d(*t[:3, 3].tolist()))
-    q = Gf.Matrix3d(*t[:3, :3].flatten().tolist()).ExtractRotation().GetQuat()
-    x.AddOrientOp().Set(Gf.Quatf(q.GetReal(), *q.GetImaginary()))
+    x.AddOrientOp().Set(_quat(t[:3, :3]))
 
 
 def _author_mesh(stage: Usd.Stage, path: str, pts: np.ndarray, tris: np.ndarray, t: np.ndarray,
@@ -246,9 +255,16 @@ def _make_material(stage: Usd.Stage, path: str, rgb: tuple[float, float, float])
     shader = UsdShade.Shader.Define(stage, path + "/Shader")
     shader.CreateIdAttr("UsdPreviewSurface")
     shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(*rgb))
-    shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.6)
-    shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.1)
+    # Matte: any metallic term mirrors the bright room dome and turns the black parts light
+    # grey in the policy cameras (seen in the first top-camera renders).
+    shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.75)
+    shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.0)
+    # Declare the shader outputs explicitly: without ``outputs:surface`` on the shader the RTX
+    # tiled cameras rendered the meshes light grey while the viewport honoured the material.
+    shader.CreateOutput("surface", Sdf.ValueTypeNames.Token)
+    shader.CreateOutput("displacement", Sdf.ValueTypeNames.Token)
     mat.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
+    mat.CreateDisplacementOutput().ConnectToSource(shader.ConnectableAPI(), "displacement")
     return mat
 
 
@@ -343,7 +359,7 @@ class Builder:
         drive.CreateMaxForceAttr().Set(f)
         joint.CreateBody0Rel().SetTargets([parent_path])
         joint.CreateBody1Rel().SetTargets([child_path])
-        r0 = Gf.Matrix3d(*j.origin[:3, :3].flatten().tolist()).ExtractRotation()
+        r0 = _gf_rotation(j.origin[:3, :3])
         r1 = Gf.Rotation(Gf.Quatd(1, 0, 0, 0))
         if fix is not None:
             r0 = fix * r0   # apply fix in the joint frame, then the origin rotation
