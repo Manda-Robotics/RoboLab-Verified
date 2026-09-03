@@ -188,6 +188,18 @@ def load_stl(path: str) -> tuple[np.ndarray, np.ndarray]:
     return pts, inv.reshape(-1, 3).astype(np.int32)
 
 
+def _vertex_normals(pts: np.ndarray, tris: np.ndarray) -> np.ndarray:
+    """Area-weighted vertex normals; STL welding already merged coincident vertices."""
+    v = pts[tris].astype(np.float64)
+    fn = np.cross(v[:, 1] - v[:, 0], v[:, 2] - v[:, 0])          # length = 2 * area
+    n = np.zeros((len(pts), 3))
+    for k in range(3):
+        np.add.at(n, tris[:, k], fn)
+    lengths = np.linalg.norm(n, axis=1, keepdims=True)
+    lengths[lengths == 0] = 1.0
+    return (n / lengths).astype(np.float32)
+
+
 # ----------------------------------------------------------------------------- USD helpers
 def _gf_rotation(mat3: np.ndarray) -> Gf.Rotation:
     """NumPy rotation (column-vector convention, R @ v) -> Gf.Rotation.
@@ -220,6 +232,10 @@ def _author_mesh(stage: Usd.Stage, path: str, pts: np.ndarray, tris: np.ndarray,
     mesh.CreateFaceVertexCountsAttr().Set([3] * len(tris))
     mesh.CreateFaceVertexIndicesAttr().Set(tris.flatten().tolist())
     mesh.CreateSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
+    # Smooth vertex normals (area-weighted over the welded vertices): without authored normals
+    # the RTX renderer shades each triangle flat and the CAD-exported STLs look faceted.
+    mesh.CreateNormalsAttr().Set([Gf.Vec3f(*n.tolist()) for n in _vertex_normals(pts, tris)])
+    mesh.SetNormalsInterpolation(UsdGeom.Tokens.vertex)
     ext = UsdGeom.PointBased(mesh).ComputeExtent(mesh.GetPointsAttr().Get())
     mesh.CreateExtentAttr().Set(ext)
     _set_xform(mesh.GetPrim(), t)
@@ -250,14 +266,15 @@ def _author_mass(prim: Usd.Prim, link: Link) -> None:
     m.CreatePrincipalAxesAttr().Set(_quat(v))
 
 
-def _make_material(stage: Usd.Stage, path: str, rgb: tuple[float, float, float]) -> UsdShade.Material:
+def _make_material(stage: Usd.Stage, path: str, rgb: tuple[float, float, float],
+                   roughness: float = 0.75) -> UsdShade.Material:
     mat = UsdShade.Material.Define(stage, path)
     shader = UsdShade.Shader.Define(stage, path + "/Shader")
     shader.CreateIdAttr("UsdPreviewSurface")
     shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(*rgb))
     # Matte: any metallic term mirrors the bright room dome and turns the black parts light
     # grey in the policy cameras (seen in the first top-camera renders).
-    shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.75)
+    shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(roughness)
     shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.0)
     # Declare the shader outputs explicitly: without ``outputs:surface`` on the shader the RTX
     # tiled cameras rendered the meshes light grey while the viewport honoured the material.
@@ -394,7 +411,7 @@ def build(source: str = SOURCE_URDF, output: str = OUTPUT_USD) -> str:
     UsdPhysics.ArticulationRootAPI.Apply(robot.GetPrim())
     looks = UsdGeom.Scope.Define(stage, "/robot/Looks")
     arm_mat = _make_material(stage, "/robot/Looks/yam_black", ARM_RGB)
-    shell_mat = _make_material(stage, "/robot/Looks/yam_white", SHELL_RGB)
+    shell_mat = _make_material(stage, "/robot/Looks/yam_white", SHELL_RGB, roughness=0.45)  # glossy covers
     profile_mat = _make_material(stage, "/robot/Looks/profile_grey", (0.55, 0.56, 0.58))
     pad_mat = UsdShade.Material.Define(stage, "/robot/Looks/finger_pad_physics")
     pad_api = UsdPhysics.MaterialAPI.Apply(pad_mat.GetPrim())
