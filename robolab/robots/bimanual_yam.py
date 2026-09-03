@@ -174,7 +174,6 @@ _CAM_RIGHT_WRIST = _wrist_cam("right")
 # Articulation
 ########################################################
 
-
 @configclass
 class BimanualYamCfg:
     """Fixed-base bimanual YAM articulation plus its three cameras."""
@@ -193,8 +192,8 @@ class BimanualYamCfg:
                 solver_position_iteration_count=64,
                 solver_velocity_iteration_count=0,
             ),
-            # Colours live in the asset (white upper-arm and forearm shells, black joints and
-            # gripper, as in Ai2's rig photo); no root-level material override.
+            # Colours live in the asset: white upper-arm and forearm shells, black joints and
+            # gripper, from Ai2's rig photo.
         ),
         init_state=ArticulationCfg.InitialStateCfg(
             pos=(RIG_X_M, 0.0, 0.0),

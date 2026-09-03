@@ -331,7 +331,11 @@ class Builder:
                              None, approx, None,
                              physics_material=self.pad_material if link.name in ("tip_left", "tip_right") else None)
                 coll = self.stage.GetPrimAtPath(prim.GetPath().AppendChild(f"collision_{i}"))
+                # Guide purpose hides the hull in the viewport; the RTX tiled cameras that feed
+                # the policy still drew it as a light-grey shell around every link, so it is
+                # made invisible outright (PhysX uses the collision geometry regardless).
                 UsdGeom.Imageable(coll).CreatePurposeAttr().Set(UsdGeom.Tokens.guide)
+                UsdGeom.Imageable(coll).MakeInvisible()
 
     def _joint(self, j: Joint, parent_path: Sdf.Path, child_path: Sdf.Path) -> None:
         jpath = parent_path.AppendChild(self.p(j.name))
