@@ -14,6 +14,10 @@ Two comparisons, both over the segment layer (L2) only:
   at IoU 0.5, boundary recall at the four tolerances, label and result accuracy on matched
   segments, recall by segment duration (0-1, 1-2, 2-4, 4-8, 8+ s).
 
+Only the annotated span counts: a machine segment lying more than half outside
+[first gold start, last gold end] is unknown, not a false positive (the same principle as
+``reviewed_indices`` for review mode). ``--no-span-clip`` restores the old, harsher count.
+
 Scoring follows the labeler's ``eval/metrics.py``: greedy one-to-one matching by descending
 IoU, internal boundaries only (the first start and the last end are dictated by the episode),
 counts pooled over the set. A ``boundary`` mark counts as a boundary but not as a segment.
@@ -89,8 +93,21 @@ def segments_of(rows):
     """label rows -> sorted [(start, end, label, object, result)] and boundary set. Free-form
     segment marks and review verdicts both count; boundary marks add boundaries only."""
     segs, bounds = list(review_segments(rows)), set()
+    reviewed = list(segs)
+
+    def superseded(t0, t1):
+        """An episode narrated under an older convention and later re-reviewed keeps only the
+        review pass: a free-form mark that a reviewed segment already covers would double-count
+        it. A mark the reviewer *added* to fill a gap the machine missed overlaps nothing."""
+        span = t1 - t0
+        return span > 0 and any(
+            max(0.0, min(t1, b) - max(t0, a)) > 0.5 * span for a, b, *_ in reviewed)
+
     for r in rows:
         if r.get("kind") == "review":
+            continue
+        if (r.get("kind") != "boundary" and r.get("t_end") is not None
+                and superseded(float(r["t_start"]), float(r["t_end"]))):
             continue
         if r.get("kind") == "boundary" or r.get("t_end") is None:
             bounds.add(round(float(r["t_start"]), 3))
@@ -162,13 +179,98 @@ def machine_segments(task_dir, env, run_index, keep=None):
     return segs, bounds
 
 
-def score(pred_by_ep, gold_by_ep, name):
+def fmt_seg(seg):
+    a, b, lab, obj, res = seg
+    return f"[{a:6.2f},{b:6.2f}] {lab:<20} {(obj or '-'):<14} {(res or '-'):<7}"
+
+
+BLANK = " " * 52
+
+
+def episode_diff(ep, psegs, gsegs, m, errors):
+    """One episode's alignment, gold on the left and machine on the right, in time order.
+    Appends one dict per defect to `errors` for the taxonomy table."""
+    run, task, env, ri = ep
+    g_to_p = {j: i for i, j, _ in m}
+    p_to_g = {i: j for i, j, _ in m}
+    rows = []
+    for j, g in enumerate(gsegs):
+        i = g_to_p.get(j)
+        rows.append((g[0], j, i))
+    for i, p in enumerate(psegs):
+        if i not in p_to_g:
+            rows.append((p[0], None, i))
+    rows.sort(key=lambda r: (r[0], r[1] is None))
+    print(f"\n### {run}/{task} env{env} run{ri}   gold {len(gsegs)}, machine {len(psegs)}, matched {len(m)}")
+    print(f"  {'gold':<52}   {'machine':<52}  notes")
+    for _, j, i in rows:
+        g = gsegs[j] if j is not None else None
+        p = psegs[i] if i is not None else None
+        notes = []
+        if g is None:
+            notes.append("EXTRA (machine only)")
+            errors.append({"ep": ep, "kind": "extra", "seg": p})
+        elif p is None:
+            notes.append("MISS (gold only)")
+            errors.append({"ep": ep, "kind": "miss", "seg": g})
+        else:
+            ds, de = p[0] - g[0], p[1] - g[1]
+            notes.append(f"ds {ds:+.2f} de {de:+.2f}")
+            if p[2] != g[2]:
+                notes.append(f"LABEL {g[2]} -> {p[2]}")
+                errors.append({"ep": ep, "kind": "label", "seg": g, "got": p})
+            if (p[4] or "unknown") != (g[4] or "unknown"):
+                notes.append(f"RESULT {g[4] or 'unknown'} -> {p[4] or 'unknown'}")
+                errors.append({"ep": ep, "kind": "result", "seg": g, "got": p})
+            if (p[3] or "") != (g[3] or "") and g[3]:
+                notes.append(f"OBJECT {g[3]} -> {p[3] or '-'}")
+                errors.append({"ep": ep, "kind": "object", "seg": g, "got": p})
+            for edge, d in (("start", ds), ("end", de)):
+                if abs(d) > 0.5:
+                    errors.append({"ep": ep, "kind": f"bound_{edge}", "seg": g, "got": p, "delta": d})
+        print(f"  {fmt_seg(g) if g else BLANK}   {fmt_seg(p) if p else BLANK}  {'; '.join(notes)}")
+
+
+def error_table(errors):
+    if not errors:
+        return
+    by = collections.Counter(e["kind"] for e in errors)
+    print("\n## defects by kind")
+    for kind, n in by.most_common():
+        print(f"  {kind:<14} {n}")
+    print("\n## the worst boundaries (|delta| > 0.5 s), largest first")
+    bad = [e for e in errors if e["kind"].startswith("bound_")]
+    bad.sort(key=lambda e: -abs(e["delta"]))
+    for e in bad[:15]:
+        run, task, env, ri = e["ep"]
+        edge = e["kind"].split("_")[1]
+        print(f"  {e['delta']:+7.2f}s {edge:<5} {run}/{task} env{env} run{ri}  gold {fmt_seg(e['seg'])}")
+    for kind, title in (("miss", "gold segments the machine never produced"),
+                        ("extra", "machine segments with no gold match")):
+        rows = [e for e in errors if e["kind"] == kind]
+        if not rows:
+            continue
+        print(f"\n## {title}")
+        for e in rows:
+            run, task, env, ri = e["ep"]
+            print(f"  {run}/{task} env{env} run{ri}  {fmt_seg(e['seg'])}")
+
+
+def score(pred_by_ep, gold_by_ep, name, detail=False, span_clip=True):
     c = collections.Counter()
     by_bucket = collections.Counter()
     tol_hit = collections.Counter(); tol_n = 0
     label_ok = result_ok = matched = 0
-    for ep, (gsegs, gbounds) in gold_by_ep.items():
+    errors = []
+    outside = 0
+    for ep, (gsegs, gbounds) in sorted(gold_by_ep.items()):
         psegs, pbounds = pred_by_ep.get(ep, ([], set()))
+        if span_clip and gsegs:
+            lo, hi = gsegs[0][0], gsegs[-1][1]
+            kept = [p for p in psegs if max(0.0, min(p[1], hi) - max(p[0], lo)) >= 0.5 * (p[1] - p[0])]
+            outside += len(psegs) - len(kept)
+            psegs = kept
+            pbounds = {round(b, 3) for a, b_, *_ in psegs for b in (a, b_)}
         m = match(psegs, gsegs)
         c["pred"] += len(psegs); c["gold"] += len(gsegs); c["matched"] += len(m)
         for i, j, v in m:
@@ -182,6 +284,8 @@ def score(pred_by_ep, gold_by_ep, name):
                 if lo <= dur < hi:
                     by_bucket[(lo, hi, "n")] += 1
                     by_bucket[(lo, hi, "hit")] += j in matched_g
+        if detail:
+            episode_diff(ep, psegs, gsegs, m, errors)
         gi = internal(gbounds, gsegs); pi = internal(pbounds, psegs)
         tol_n += len(gi)
         for tol in TOLS:
@@ -189,8 +293,12 @@ def score(pred_by_ep, gold_by_ep, name):
     P = c["matched"] / c["pred"] if c["pred"] else 0.0
     R = c["matched"] / c["gold"] if c["gold"] else 0.0
     F1 = 2 * P * R / (P + R) if P + R else 0.0
+    if detail:
+        error_table(errors)
     print(f"\n## {name}")
     print(f"episodes {len(gold_by_ep)}, gold segments {c['gold']}, predicted {c['pred']}, matched (IoU>=0.5) {c['matched']}")
+    if outside:
+        print(f"{outside} machine segment(s) outside the annotated span ignored (unknown, not false positives; --no-span-clip counts them)")
     print(f"segment precision {P:.3f}  recall {R:.3f}  F1 {F1:.3f}")
     if matched:
         print(f"label accuracy on matched {label_ok / matched:.3f}   result accuracy {result_ok / matched:.3f}")
@@ -209,12 +317,18 @@ def main(argv=None) -> int:
     ap.add_argument("--labels2", default=None, help="annotator 2 (enables H6)")
     ap.add_argument("--sources", nargs="*", default=["output"], help="directories that hold the runs")
     ap.add_argument("--no-machine", action="store_true", help="skip H8")
+    ap.add_argument("--no-span-clip", action="store_true",
+                    help="count machine segments outside the annotated span as false positives")
+    ap.add_argument("--diff", action="store_true", help="per-episode gold/machine alignment and a defect table")
+    ap.add_argument("--only", default=None, help="restrict to episodes whose run name contains this")
     args = ap.parse_args(argv)
 
     gold_eps = [json.loads(l) for l in open(args.gold) if l.strip()] if os.path.exists(args.gold) else []
     wanted = {(g["run"], g["task"], int(g["env"]), int(g.get("run_index", 0))) for g in gold_eps}
     a1 = collections.defaultdict(list); a2 = collections.defaultdict(list)
     for r in live_labels(load_jsonl(args.labels)):
+        if args.only and args.only not in r["run"]:
+            continue
         a1[key(r)].append(r)
     for r in live_labels(load_jsonl(args.labels2)) if args.labels2 else []:
         a2[key(r)].append(r)
@@ -271,7 +385,7 @@ def main(argv=None) -> int:
                     bounds.add(round(a, 3)); bounds.add(round(b, 3))
                 gold[ep] = (keep, bounds)
         score({ep: pred[ep] for ep in gold if ep in pred}, {ep: v for ep, v in gold.items() if ep in pred},
-              "H8: machine against " + ("the consensus" if g2 else "annotator 1"))
+              "H8: machine against " + ("the consensus" if g2 else "annotator 1"), detail=args.diff, span_clip=not args.no_span_clip)
     return 0
 
 

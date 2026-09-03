@@ -882,21 +882,108 @@ phases see a pinched, lifted object where the live tracker never issued the carr
 is the offset in the hand frame (a tracker change, next pod session); until then the phases'
 override and the flag carry it.
 
+### 9.12 Iteration 3: two measurement bugs, and the narrated gold is convention-stale (2026-09-02)
+
+A second review-mode episode (d6 BananasInCrate env 2, 7 segments) came back with every
+verdict true: label, result and bounds right on all seven. Two review episodes now stand
+clean end to end. That prompted a look at *why* the reported H8 was still middling, and the
+answer was mostly measurement, not annotation.
+
+**The one-frame bug (measurement).** A 1-based step `k` covers `[(k-1)*dt, k*dt)`, which is
+what `machine_segments` in `score_gold.py` has always used. `dashboard/app.py` published
+`start_s = start * dt`, one frame late. Three consequences: the L1/L2 lanes drew every
+segment one frame late and adjacent segments showed a phantom one-frame gap; seeking to a
+segment landed a frame late; and, worst, every review row written through the panel recorded
+a `t_start` one frame after the machine's own. That made the gold segments non-contiguous, so
+each internal boundary of a reviewed episode entered the boundary set **twice** (7.000 and
+7.067) while the machine offered one, and the second copy could never be matched. Boundary
+recall was measuring the bug. Fixed in `dashboard/app.py` for phases and attempts; the 15
+existing review rows were shifted back one frame and snapped to the frame grid (a
+reviewer-typed corrected bound was left alone, a still-prefilled one followed the machine).
+
+**The unannotated tail (measurement).** `reviewed_indices` already encodes the principle that
+an unreviewed machine segment is unknown rather than wrong, but it only applied to review
+mode. Under narration the annotator often stopped part way (rc3 PutMugsOnShelf env 0 was
+narrated to 55 s of a 180 s episode; three `cli_*` episodes were marked for a few segments
+only), and everything the machine produced afterwards was counted as a false positive: 7 of
+the 10 unmatched machine segments lay wholly outside the annotated span. `score_gold.py` now
+scores only `[first gold start, last gold end]`, prints how many segments it ignored, and
+keeps the old count behind `--no-span-clip`.
+
+Both together, on the same 13 episodes, no rule changed:
+
+| | F1 | P | R | ±0.25 s | ±0.5 s | ±1 s | ±2 s | n bounds |
+|---|---|---|---|---|---|---|---|---|
+| as measured before | 0.881 | 0.855 | 0.908 | 0.455 | 0.606 | 0.712 | 0.712 | 66 |
+| frame fix | 0.881 | 0.855 | 0.908 | 0.545 | 0.727 | 0.855 | 0.855 | 55 |
+| frame fix + span clip | **0.929** | 0.952 | 0.908 | 0.545 | 0.727 | 0.855 | 0.855 | 55 |
+
+Label accuracy 0.966, result accuracy 0.949 throughout. The flat ±1 s / ±2 s column is the
+honest signal: what is left is not jitter, it is whole segments the two sides disagree about.
+
+**What the remaining defects actually are.** `scripts/score_gold.py --diff` is new: it prints
+the per-episode gold/machine alignment with each boundary delta, then a defect table (misses,
+extras, label/result/object swaps, the worst boundaries). Run it after any rule change. Every
+surviving defect sits in the four narration-era episodes; d5 and d6, both reviewed, are clean.
+And two of the six misses pair with two of the three extras as *near* matches thrown out by
+the IoU 0.5 threshold, both of the same shape:
+
+| episode | gold (narrated) | machine | IoU |
+|---|---|---|---|
+| rc3 FoodPacking2Cans env 2 | place 14.70 to 20.00 | place 15.33 to 17.87 | 0.48 |
+| rc5 BananasOutOfBin env 3 | place 36.00 to 38.00 | place 36.13 to 37.00 | 0.44 |
+
+Both are the landing convention. Against the recording, rc3's can is released at 17.20 to
+17.33 and down at 17.87, then knocked about by the gripper (transport 17.73 to 18.47 and
+18.73 to 19.07, release, disturb to 20.67) until it finally settles near 20; rc5's banana
+slips at 36.53, is down at 37.00, and is disturbed until 38.13. The narrator ran each place
+to *stopped moving*; §9.8b decided a place ends when the object **lands**. Same for the
+disputed start in rc3 (gold 14.70 at grasp closure, machine 15.33 at pinched-and-lifted),
+which is `HELD_LIFT_M`. Both conventions were settled after those episodes were narrated.
+
+So the narrated gold is stale, not the rules, and it is now the thing limiting the measured
+number. It is also double-charged: each stale place costs a miss *and* an extra. The fix is
+to re-review the narration-era episodes in review mode, which is far cheaper for the
+annotator than narrating (j/k, 1/2/3, Enter) and applies the current conventions by
+construction. That is the top item in §9.10.
+
+**A bug that would have bitten on the first re-review.** `segments_of` merged review rows and
+free-form marks unconditionally, so a narrated episode re-reviewed later would have counted
+both readings and roughly doubled its gold. It cannot simply drop the free-form marks either:
+a reviewer legitimately *adds* a mark for a segment the machine missed entirely. The rule now
+is overlap based. A free-form mark that a reviewed segment already covers by more than half
+its own length is superseded; one that fills a gap stands. `offline_tests/test_score_gold_conventions.py`
+pins all three conventions, including that the dashboard and the scorer agree on step-to-seconds.
+
+One convention question is still genuinely open, and the d6 reviewer note reopened it: the
+note on a place whose bounds he marked right reads "we take the label until the dropped object
+is no longer moving, then its correct". In d6 the banana lands and stops at the same moment,
+so both readings agree there and the note does not discriminate. §9.8b's landing rule stands
+until a case where they differ is reviewed; rc3 env 2 and rc5 env 3 above are exactly those
+cases, so re-reviewing them settles it either way.
+
 ### 9.9 Handoff
 
 - Branch `dense-annotations` in this clone, never pushed; `main` equals `origin/main`. The
   maintainer does not want any of this on the public fork yet.
 - Run things with `/usr/local/bin/python3.12` (torch, h5py, fastapi); the repo venv lacks torch.
-  `python3.12 -m pytest offline_tests` (251 tests). Dashboard for labelling:
+  `python3.12 -m pytest offline_tests` (266 tests). Dashboard for labelling:
   `python3.12 -m dashboard.cli --host 127.0.0.1 --port 1880`.
-- Labels: `analysis/phase_labels.jsonl` (transcribed from the maintainer's audio; `gold_id`
-  per row). Score: `scripts/score_gold.py --gold analysis/gold_set.jsonl --labels
-  analysis/phase_labels.jsonl --sources ../RoboLab/output`. Tripwire after any rule change:
+- Labels: `analysis/phase_labels.jsonl` (narrated rows transcribed from audio carry a
+  `gold_id`; review rows carry a `seg_index` and a verdict). Score: `scripts/score_gold.py
+  --gold analysis/gold_set.jsonl --labels analysis/phase_labels.jsonl --sources
+  ../RoboLab/output ../TESTING/trial_output ../TESTING/dense_output`; add `--diff` for the
+  per-episode alignment and the defect table (§9.12), `--only <run>` to look at one run. Tripwire after any rule change:
   `scripts/annotate_phases.py --summary --check-events` over the trial and rc3 to rc7 runs
   (`../TESTING/trial_output/t?_*`, `../RoboLab/output/rc*`, ~9 min).
 - Gold set: `analysis/gold_set.jsonl`, `split` tune/test; labelled so far: G17 G03 G37 G46
-  G42 G12 G13 G29 (all tune). Do not tune on the test split. Next to label, other policies
+  G42 G12 G13 G29 (all tune), plus d5 FoodPacking2Cans env 0 and d6 BananasInCrate env 2
+  reviewed outside the set. Do not tune on the test split. Next to label, other policies
   first: G41, G50, G10, G36; then G15, G21, G20, G07, G06, G01.
+- H8 stands at F1 0.929 over 13 episodes (P 0.952, R 0.908, label 0.966, result 0.949,
+  boundaries ±0.5 s 0.727, ±1 s 0.855). Both reviewed episodes are clean; every defect left
+  is in a narration-era episode, and §9.12 shows most of them are convention drift in the
+  gold rather than a rule fault.
 - Convention decisions taken so far are in §9.3 and the table above; the protocol for narrating
   is §9.4 (narrate through to where the object ends up).
 - Pod recordings with the R1/R2/R4 channels: `../TESTING/dense_output/d1..d6` (48 π0.5 episodes,
@@ -907,7 +994,12 @@ override and the flag carry it.
 
 ### 9.10 Not done, in order
 
-1. Continue labelling the tune split (order in §9.9), score, triage; the second annotator into a separate file for H6; then one read of the test split for the reported H8.
+1. Re-review the four narration-era episodes that still carry defects, in review mode, so the
+   gold uses the current conventions: rc3 FoodPacking2Cans env 2, rc3 PutMugsOnShelf env 0,
+   rc5 BananasOutOfBin env 3, cli_pi05_rerun MustardInLeftBin env 3 (§9.12). The two places in
+   rc3 and rc5 also settle the open landing-versus-at-rest vote. This is safe now that
+   `segments_of` supersedes an overlapped free-form mark; before that fix it double-counted.
+2. Continue labelling the tune split (order in §9.9), score, triage with `--diff`; the second annotator into a separate file for H6; then one read of the test split for the reported H8.
 2. Add the two findings above to the ledger (P62 booleans missing a grip; pi05 run without videos).
 2. ~~R1 on a pod~~ done (§9.11): R1, R2, R4 recorded, replay exact. Next runtime step: the
    annotator on the run path so `phases_*.json` is written next to each log by default, and the

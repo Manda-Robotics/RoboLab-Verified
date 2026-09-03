@@ -588,8 +588,11 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
         dt = float(doc.get("dt") or _resolve_dt(task_dir, env_id, run_index) or 0.0)
         out = dict(doc)
         out["source"] = source
-        out["phases"] = [dict(p, start_s=p["start"] * dt, end_s=p["end"] * dt) for p in doc.get("phases", [])]
-        out["attempts"] = [dict(a, start_s=a["start"] * dt, end_s=a["end"] * dt) for a in doc.get("attempts", [])]
+        # A 1-based step k covers [(k-1)*dt, k*dt), so a segment starts one frame before
+        # start*dt: with start*dt adjacent segments render with a phantom one-frame gap and
+        # every reviewed boundary lands one frame late (scripts/score_gold.py agrees).
+        out["phases"] = [dict(p, start_s=(p["start"] - 1) * dt, end_s=p["end"] * dt) for p in doc.get("phases", [])]
+        out["attempts"] = [dict(a, start_s=(a["start"] - 1) * dt, end_s=a["end"] * dt) for a in doc.get("attempts", [])]
         return out
 
     # ---- gold labels for the phase track (plan phase B) ---------------------------
