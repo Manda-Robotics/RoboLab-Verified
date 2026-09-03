@@ -70,6 +70,7 @@ LANDING_VZ = 0.05                # m/s   |vertical speed| below this while touch
 LANDING_HOLD_S = 0.2             # s     ... for this long = down (landed); the apex of a bounce is one row of it
 DROP_ENDS_AT_LANDING = True      # a place/drop segment ends at first support contact after leaving the hand (else at rest)
 RETREAT_BREAKS_APPROACH = True   # a retreat run of BREAK_RUN_S ends the approach that belongs to a pick (False: only idle/table/close-empty/disturb do; one vote for it, d5 env 0, against rc3 env 2's narration; §9.8b) ...
+_GAP_TRACE: list | None = None     # a study sets this to a list to record every (gap_s, breaker_share) the ncs decision sees
 BREAKERS = {"retreat", "idle", "press_table", "close_empty", "disturb"}   # L1 runs that end the approach belonging to a pick; circling (reposition) and hovering over the target belong to it
 JAM_S = 0.0                      # s     open-hand contact with a non-target (bin wall, distractor) totalling this much between two grasp attempts on one object is a jam: the attempts do not fold into one pick (0 = off)
 RETREAT_TOLERANCE_S = 15.0       # s     ... within this much approach before the grip; a struggle longer than that is not one approach (rc3 FoodPacking env 2: 28 s of ramming the bin, narrated as no completed subtask)
@@ -85,6 +86,7 @@ SMOOTH_W = 5                     # steps mode filter
 MIN_RUN = 4                      # steps runs shorter than this are absorbed into the predecessor
 RELEASE_S = 0.5                  # s     the release phase after the hand opens on a held object
 GAP_NCS_S = 5.0                  # s     a stretch this long with no attempt is no_completed_subtask ...
+KNIFE_EDGE_MARGIN = 0.25         #       an ncs decision closer than this (relative) to GAP_NCS_S or NCS_BREAKER_SHARE is flagged knife_edge_ncs on both segments it shaped
 NCS_BREAKER_SHARE = 0.4          #       ... if at least this share of it is retreat / idle / hover / table / repositioning
 PICK_MIN_HOLD_S = 0.25           # s     carried this long = pick complete (the reviewer counts 'off the ground' even when dropped at once)
 BREAK_RUN_S = 0.5                # s     a retreat/idle run this long, or an approach to another object, ends the approach that belongs to a pick
@@ -692,12 +694,35 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
         # mostly not approaching (retreats, idling, pressing the table): a slow reach belongs
         # to the pick (the references' convention), indecision does not
         breaker_share = (sum(1 for k in range(prev_end_row, start) if lab[k] in BREAKERS or jammed(k, o)) / gap) if gap else 0.0
-        if gap * dt >= GAP_NCS_S and breaker_share >= NCS_BREAKER_SHARE:
-            segs.append(_make_segment("no_completed_subtask", None, prev_end_row, start - 1, "fail", ch, lab, obj, targets, dests, dt))
+        if _GAP_TRACE is not None and gap:
+            _GAP_TRACE.append((gap * dt, breaker_share))
+        # How close this decision sat to its knife edge (§9.14): the corpus puts the mode of
+        # the breaker share right on NCS_BREAKER_SHARE, so no threshold is stable here and the
+        # annotator says so instead. 0 = on the edge, 1 = a threshold's width away.
+        long_enough, breaker_heavy = gap * dt >= GAP_NCS_S, breaker_share >= NCS_BREAKER_SHARE
+        d_gap = abs(gap * dt - GAP_NCS_S) / GAP_NCS_S
+        d_share = abs(breaker_share - NCS_BREAKER_SHARE) / NCS_BREAKER_SHARE
+        if long_enough and breaker_heavy:
+            margin = min(d_gap, d_share)                  # either falling flips it
+        elif not long_enough and not breaker_heavy:
+            margin = max(d_gap, d_share)                  # both must rise to flip it
+        else:
+            margin = d_share if long_enough else d_gap    # only the failing condition matters
+        margin = round(min(margin, 1.0), 3) if gap else 1.0
+        knife = gap > 0 and margin < KNIFE_EDGE_MARGIN
+        if long_enough and breaker_heavy:
+            ncs_seg = _make_segment("no_completed_subtask", None, prev_end_row, start - 1, "fail", ch, lab, obj, targets, dests, dt)
+            ncs_seg["boundary_margin"] = margin
+            if knife:
+                ncs_seg["flags"].append(f"knife_edge_ncs {margin:.2f}")
+            segs.append(ncs_seg)
         else:
             start = prev_end_row
         pick_end = min((r["held_at"] + min_hold - 1) if r["passed"] else r["end_contact"], T - 1)
         seg = _make_segment("pick", o, start, pick_end, "pass" if r["passed"] else "fail", ch, lab, obj, targets, dests, dt)
+        seg["boundary_margin"] = margin                    # its start is the other side of the same decision
+        if knife:
+            seg["flags"].append(f"knife_edge_ncs {margin:.2f}")
         if r["n_attempts"] > 1:
             seg["attributes"].append(f"regrasp x{r['n_attempts']}")
         if r["passed"] and not r["lifted"]:
