@@ -4088,6 +4088,12 @@ const PHASE_FAMILY_COLOR = {
   motion: '#60a5fa', still: '#6b7280', scene: '#a78bfa',
 };
 const ATTEMPT_RESULT_COLOR = { pass: '#34d399', fail: '#f87171', unknown: '#6b7280' };
+// A place whose object left the hand with the close command still on is shown as a drop: the file
+// keeps label "place" + attribute "dropped" (the reviewer cannot see the command; the result is the
+// outcome), the display says what happened.
+const isDrop = (a) => a.label === 'place' && (a.attributes || []).some((x) => String(x).startsWith('dropped'));
+const shownLabel = (a) => (a.label === 'no_completed_subtask' ? 'no completed subtask' : isDrop(a) ? 'drop' : a.label);
+const attemptColor = (a) => (isDrop(a) ? '#fb923c' : (ATTEMPT_RESULT_COLOR[a.result] || '#6b7280'));
 const LABEL_KINDS = ['pick', 'place', 'drop', 'no_completed_subtask', 'boundary'];
 
 async function loadAndRenderPhases(host, runId, task, envId, runIndex, camVideos, ep) {
@@ -4125,10 +4131,10 @@ async function loadAndRenderPhases(host, runId, task, envId, runIndex, camVideos
 
   for (const a of data.attempts || []) {
     const cls = `phase-seg attempt ${a.result}${a.label === 'no_completed_subtask' ? ' ncs' : ''}`;
-    const text = a.label === 'no_completed_subtask' ? 'no completed subtask' : `${a.label}${a.object ? ' ' + a.object : ''}`;
-    const title = `${a.start_s.toFixed(1)}–${a.end_s.toFixed(1)}s · ${a.label} ${a.result}\n${a.description || ''}`
+    const text = `${shownLabel(a)}${a.object && a.label !== 'no_completed_subtask' ? ' ' + a.object : ''}`;
+    const title = `${a.start_s.toFixed(1)}–${a.end_s.toFixed(1)}s · ${shownLabel(a)} ${a.result}\n${a.description || ''}`
       + (a.flags && a.flags.length ? `\nflags: ${a.flags.join('; ')}` : '');
-    block(lanes.l2, cls, a.start_s, a.end_s, text, title, ATTEMPT_RESULT_COLOR[a.result] || '#6b7280', () => seek(a.start_s));
+    block(lanes.l2, cls, a.start_s, a.end_s, text, title, attemptColor(a), () => seek(a.start_s));
   }
   for (const p of data.phases || []) {
     const title = `${p.start_s.toFixed(2)}–${p.end_s.toFixed(2)}s · ${p.label}${p.object ? ` ${p.object} (${p.role})` : ''}`;
@@ -4159,6 +4165,7 @@ async function loadAndRenderPhases(host, runId, task, envId, runIndex, camVideos
   for (const [fam, col] of Object.entries(PHASE_FAMILY_COLOR)) {
     legend.appendChild(el('span', {}, el('i', { style: { background: col } }), fam.replace('_', ' ')));
   }
+  legend.appendChild(el('span', { title: 'a place whose object left the hand with the close command still on' }, el('i', { style: { background: '#fb923c' } }), 'drop'));
   const s = data.summary || {};
   const fam = s.time_by_family_s || {};
   const famText = Object.entries(fam).map(([k, v]) => `${k.replace('_', ' ')} ${v.toFixed(1)}s`).join(' · ');
@@ -4174,7 +4181,7 @@ async function loadAndRenderPhases(host, runId, task, envId, runIndex, camVideos
   const rows = (data.attempts || []).map((a) => {
     const r = el('div', { class: 'attempt-row', onclick: () => seek(a.start_s) },
       el('span', { class: 'ev-time' }, `${a.start_s.toFixed(1)}–${a.end_s.toFixed(1)}s`),
-      el('span', { class: 'attempt-dot', style: { background: ATTEMPT_RESULT_COLOR[a.result] || '#6b7280' } }),
+      el('span', { class: 'attempt-dot', style: { background: attemptColor(a) } }),
       el('span', { class: 'ev-info', title: (a.flags || []).join('; ') }, a.description || a.label),
       el('span', { class: 'ev-time' }, (a.flags && a.flags.length) ? `⚑ ${a.flags.length}` : ''));
     list.appendChild(r);
@@ -4294,7 +4301,7 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
           onclick: (e) => { e.stopPropagation(); st.ok[k] = !st.ok[k]; select(st.i, false); drawReview(); } }, `${txt} ${st.ok[k] ? '✓' : '✗'}`);
         const row = el('div', { class: 'attempt-row review-row', onclick: () => select(st.i) },
           el('span', { class: 'ev-time' }, `${a.start_s.toFixed(1)}–${a.end_s.toFixed(1)}s`),
-          el('span', { class: 'ev-info' }, `${a.label}${a.object ? ' ' + a.object : ''} · ${a.result}`),
+          el('span', { class: 'ev-info' }, `${shownLabel(a)}${a.object ? ' ' + a.object : ''} · ${a.result}`),
           mark('label', 'label'), mark('result', 'result'), mark('bounds', 'bounds'),
           el('span', { class: 'ev-time', title: prev ? (prev.note || '') : '' },
             prev ? `reviewed ${['label', 'result', 'bounds'].map((k) => (prev.verdict && prev.verdict[k] === false ? '✗' : '✓')).join('')}${prev.annotator ? ' ' + prev.annotator : ''}` : ''));
