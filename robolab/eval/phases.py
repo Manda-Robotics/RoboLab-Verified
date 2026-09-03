@@ -66,6 +66,7 @@ TCP_OFFSET = (0.15, 0.03, 0.0)   # base_link -> fingertip midpoint, base_link fr
 V_MOVE = 0.02                    # m/s   TCP counts as moving
 V_LIFT = 0.03                    # m/s   object rising / descending while held
 LIFT_M = 0.01                    # m     above its own rest height = lifted
+HELD_LIFT_M = 0.03               # m     pinched and this far up = in hand, whatever the tracker's coupling says (d5 env 0, 2026-09-02)
 NEAR_M = 0.08                    # m     hover radius around an object
 APPROACH_M = 0.25                # m     approach (inside) vs reach (outside)
 CLOSING_RATE = 0.01              # m/s   |d dist/dt| below this is neither approach nor retreat
@@ -82,7 +83,7 @@ PICK_MIN_HOLD_S = 0.25           # s     carried this long = pick complete (the 
 BREAK_RUN_S = 0.5                # s     a retreat/idle run this long, or an approach to another object, ends the approach that belongs to a pick
 CONTACT_PROXY_M = 0.02           # m     TCP to object box, when no contact/ group is recorded
 THRESHOLDS = {k: globals()[k] for k in (
-    "TCP_OFFSET", "V_MOVE", "V_LIFT", "LIFT_M", "NEAR_M", "APPROACH_M", "CLOSING_RATE", "DISP_WIN_S", "DISP_M",
+    "TCP_OFFSET", "V_MOVE", "V_LIFT", "LIFT_M", "HELD_LIFT_M", "NEAR_M", "APPROACH_M", "CLOSING_RATE", "DISP_WIN_S", "DISP_M",
     "REST_M", "SLIP_V", "SMOOTH_W", "MIN_RUN", "RELEASE_S", "GAP_NCS_S", "NCS_BREAKER_SHARE", "PICK_MIN_HOLD_S",
     "CONTACT_PROXY_M", "BREAK_RUN_S", "SETTLE_WARMUP_S", "GRASP_HOLD_S", "GRASP_ATTEMPT_BURST_S",
     "SUCCESS_REST_S", "SUCCESS_MAX_SPEED")}
@@ -332,6 +333,13 @@ def compute_channels(rec: Recording, dt: float, targets: set[str], dests: set[st
         held_tracker = []
         for t in range(T):
             cands = [o for o in objects if replay_result.grasped.get(o, np.zeros(T, bool))[t]]
+            if not cands and grip_cmd[t]:
+                # The tracker's carry needs the object-to-hand offset to drift < 5 mm over 0.2 s
+                # in WORLD coordinates, so a can pinched between the pads and lifted 20 cm while
+                # the wrist turns is "not carried" for 2 s (d5 FoodPacking2Cans env 0, 17.8 to
+                # 20.0 s; the reviewer put the pick's end at 18.3). Pinched, commanded closed and
+                # clearly off its rest height is in the hand; the tracker keeps the flag.
+                cands = [o for o in objects if pinch[o][t] and lift[o][t] > HELD_LIFT_M]
             held_tracker.append(min(cands, key=lambda o: dist[o][t]) if cands else None)
         towed = {o: replay_result.towed.get(o, np.zeros(T, bool)) for o in objects}
         closed_on = {o: replay_result.attempt_closed.get(o, np.zeros(T, bool)) for o in objects}
