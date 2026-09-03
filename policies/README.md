@@ -14,6 +14,7 @@ For writing your own inference client, see [Evaluating a New Policy](../docs/pol
 | [`dreamzero/`](dreamzero/README.md) | DreamZero-DROID | [Code](https://github.com/dreamzero0/dreamzero), [Paper](https://arxiv.org/abs/2602.15922) |
 | [`volo/`](volo/README.md) | VoLoAgent | [Website](https://chicychen.github.io/VoLo/), [Code](https://github.com/NVlabs/RoboVoLo), [Paper](https://arxiv.org/abs/2606.07723) |
 | [`vlm_pinpoint/`](vlm_pinpoint/connector.py) | A pointing-capable VLM as a policy (the model returns an image point and a phase; a geometric controller does the metric work). Connector only — the controller is the `vlm-pinpoint` package | [Code](https://github.com/Manda-Robotics/vlm-pinpoint) |
+| [`molmoact2/`](molmoact2/README.md) | MolmoAct 2 bimanual YAM checkpoint (Ai2) on the bimanual YAM rig, through Ai2's own inference server | [Code](https://github.com/allenai/molmoact2), [Model](https://huggingface.co/allenai/MolmoAct2-BimanualYAM), [Blog](https://allenai.org/blog/molmoact2) |
 | [`bimanual/`](bimanual/run.py) | Scripted client for the dual-Franka and ALOHA rigs — proves the two-arm stack turns end to end; not a policy | [Robots](../robolab/robots/README.md) |
 
 **π0.5 on the DROID joint-position action space** needs the `pi05_droid_jointpos`

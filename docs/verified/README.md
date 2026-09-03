@@ -101,10 +101,13 @@ machine.
 `?t=` permalinks, a subgoal checklist that fills with the playhead, a per-task page across
 experiments, runs grouped by policy family, and HTTP range requests so that seeking works.
 
-**Embodiments.** A dual-Franka rig and a bimanual ViperX (ALOHA) rig. Each is one
-articulation with per-arm end-effector recording, tracking wrist cameras, and the unchanged
-success predicates. A scripted runner exercises the two-arm stack end to end. No released
-checkpoint drives two arms well.
+**Embodiments.** A bimanual YAM rig (two I2RT YAM arms side by side at the table edge, one
+overhead and two wrist RealSense views, the station most bimanual training data is collected
+on), a dual-Franka rig and a bimanual ViperX (ALOHA) rig. Each is one articulation with
+per-arm end-effector recording, tracking wrist cameras, and the unchanged success predicates.
+Ai2's released MolmoAct 2 bimanual checkpoint drives the YAM rig through the shipped client:
+7/8 on a put-everything-in-the-box task that copies Ai2's own simulator layout (their
+ManiSkill harness: 4/8), 0/4 on each of three benchmark tasks it was not trained on.
 
 **VLM and LLM policies.** A connector for running a pointing-capable vision-language model as
 a policy: the model returns an image point and a phase, and a geometric controller does the

@@ -87,6 +87,7 @@ the spawn state was read. Candidates it cannot verify are listed as not asserted
 | rc3 | P01–P66 | π0.5 | 13 | the pre-Batch-14 baseline; every P71–P75 FAIL below is measured on it |
 | rc4, rc5, rc6 | P01–P78 | π0.5 | 10 runs | P61, P71–P77 PASS on every run, with FAILs on rc3 for the same predicates; P72/P73 met their worst cases (`BananasOutOfBin`, `FoodPacking2Cans`) |
 | rc7 | P01–P79 | π0.5 | 8 tasks × 4 friction conditions, 32 runs | P79 PASS on all 24 override runs; the friction sensitivity table in [physics.md](../physics.md); `TOWED_WITHOUT_GRASP` fired for the first time at runtime |
+| bimanual YAM | rig + MolmoAct 2 client | MolmoAct 2 (Ai2, released) | 1 | parity task 7/8 in RoboLab (final acceptance run; 5–6/8 in earlier rig variants) vs 4/8 in Ai2's ManiSkill harness, same checkpoint; BananaInBowl, BBQSauceInBin, FoodPacking2Cans 0/4 each (policy hovers, picks the wrong object, or releases) |
 | bimanual | rigs + scripted client | scripted | 1 | the dual-Franka stack turns end to end (6/6 clean lifts); ALOHA: rig turns, π0.5 base 0/6 |
 
 About 25 of the 120 benchmark tasks have been run against patched code. Most runs are 4
