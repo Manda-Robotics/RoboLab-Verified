@@ -55,7 +55,11 @@ SOURCE_URDF = os.path.join(SOURCE_DIR, "yam_linear_4310_d405.urdf")
 OUTPUT_USD = os.path.join(ROBOTS_DIR, "bimanual_yam", "bimanual_yam.usd")
 
 ARM_SPACING_M = 0.48          # Ai2 sim: left_arm at y=+0.24, right_arm at y=-0.24
-ARM_RGB = (0.16, 0.16, 0.17)  # YAM arms are black; MolmoAct 2 was trained on black arms
+# Colours from Ai2's rig photo (arXiv 2605.02881, Fig. "setup"): the upper-arm and forearm shells
+# (link2, link3) are white; base, joints, wrist links and gripper are black.
+ARM_RGB = (0.06, 0.06, 0.065)
+SHELL_RGB = (0.88, 0.88, 0.87)
+WHITE_LINKS = {"link2", "link3"}
 SIDES = (("left", +ARM_SPACING_M / 2), ("right", -ARM_SPACING_M / 2))
 # The 2060 profile the arms clamp to (Ai2 kit: 80 cm). Visual + a little mass; fixed to world.
 PROFILE_SIZE = (0.06, 0.80, 0.02)
@@ -201,7 +205,7 @@ def _set_xform(prim: Usd.Prim, t: np.ndarray) -> None:
 
 def _author_mesh(stage: Usd.Stage, path: str, pts: np.ndarray, tris: np.ndarray, t: np.ndarray,
                  rgba, collision: str | None, material: UsdShade.Material | None,
-                 physics_material: UsdShade.Material | None = None) -> None:
+                 physics_material: UsdShade.Material | None = None, display_rgb=None) -> None:
     mesh = UsdGeom.Mesh.Define(stage, path)
     mesh.CreatePointsAttr().Set([Gf.Vec3f(*p.tolist()) for p in pts])
     mesh.CreateFaceVertexCountsAttr().Set([3] * len(tris))
@@ -212,9 +216,8 @@ def _author_mesh(stage: Usd.Stage, path: str, pts: np.ndarray, tris: np.ndarray,
     _set_xform(mesh.GetPrim(), t)
     if material is not None:
         UsdShade.MaterialBindingAPI.Apply(mesh.GetPrim()).Bind(material)
-        # Fallback colour for renderers that do not resolve the preview surface: real YAMs
-        # (and Ai2's sim, rgba 0.25) are black; the policy was trained on black arms.
-        mesh.CreateDisplayColorAttr().Set([Gf.Vec3f(*ARM_RGB)])
+        # Fallback colour for renderers that do not resolve the preview surface.
+        mesh.CreateDisplayColorAttr().Set([Gf.Vec3f(*(display_rgb or ARM_RGB))])
     if collision:
         UsdPhysics.CollisionAPI.Apply(mesh.GetPrim())
         UsdPhysics.MeshCollisionAPI.Apply(mesh.GetPrim()).CreateApproximationAttr().Set(collision)
@@ -253,9 +256,10 @@ def _make_material(stage: Usd.Stage, path: str, rgb: tuple[float, float, float])
 class Builder:
     def __init__(self, stage: Usd.Stage, links: dict[str, Link], side: str, arm_root: Sdf.Path,
                  material: UsdShade.Material, meshes: dict[str, tuple[np.ndarray, np.ndarray]],
-                 pad_material: UsdShade.Material | None = None):
+                 pad_material: UsdShade.Material | None = None, shell_material: UsdShade.Material | None = None):
         self.stage, self.links, self.side, self.material, self.meshes = stage, links, side, material, meshes
         self.pad_material = pad_material
+        self.shell_material = shell_material
         self.arm_root = arm_root
         self.body_paths: dict[str, Sdf.Path] = {}
         self.joint_paths: dict[str, Sdf.Path] = {}
@@ -302,8 +306,10 @@ class Builder:
             if collision == "auto":
                 approx = None if link.name in NO_COLLISION else (
                     "convexDecomposition" if link.name in CONVEX_DECOMP else "convexHull")
+            shell = link.name in WHITE_LINKS and self.shell_material is not None
             _author_mesh(self.stage, str(prim.GetPath().AppendChild(f"visual_{i}")), pts, tris, t @ vt,
-                         rgba, None, self.material)
+                         rgba, None, self.shell_material if shell else self.material,
+                         display_rgb=SHELL_RGB if shell else ARM_RGB)
             if approx:
                 _author_mesh(self.stage, str(prim.GetPath().AppendChild(f"collision_{i}")), pts, tris, t @ vt,
                              None, approx, None,
@@ -368,6 +374,7 @@ def build(source: str = SOURCE_URDF, output: str = OUTPUT_USD) -> str:
     UsdPhysics.ArticulationRootAPI.Apply(robot.GetPrim())
     looks = UsdGeom.Scope.Define(stage, "/robot/Looks")
     arm_mat = _make_material(stage, "/robot/Looks/yam_black", ARM_RGB)
+    shell_mat = _make_material(stage, "/robot/Looks/yam_white", SHELL_RGB)
     profile_mat = _make_material(stage, "/robot/Looks/profile_grey", (0.55, 0.56, 0.58))
     pad_mat = UsdShade.Material.Define(stage, "/robot/Looks/finger_pad_physics")
     pad_api = UsdPhysics.MaterialAPI.Apply(pad_mat.GetPrim())
@@ -395,7 +402,7 @@ def build(source: str = SOURCE_URDF, output: str = OUTPUT_USD) -> str:
         placement = np.eye(4)
         placement[:3, 3] = [0.0, y, 0.0]
         _set_xform(arm.GetPrim(), placement)
-        b = Builder(stage, links, side, arm_root, arm_mat, meshes, pad_material=pad_mat)
+        b = Builder(stage, links, side, arm_root, arm_mat, meshes, pad_material=pad_mat, shell_material=shell_mat)
         base_path = b.body(links[root_name], arm_root, np.eye(4))
         mount = UsdPhysics.FixedJoint.Define(stage, arm_root.AppendChild(f"{side}_mount_joint"))
         mount.CreateBody0Rel().SetTargets(["/robot/torso"])

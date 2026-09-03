@@ -193,13 +193,8 @@ class BimanualYamCfg:
                 solver_position_iteration_count=64,
                 solver_velocity_iteration_count=0,
             ),
-            # Real YAMs are black and MolmoAct 2 was trained on black arms. The asset carries a
-            # dark UsdPreviewSurface, but the RTX renderer showed the links light grey; binding
-            # the material on the spawned root (stronger than descendants) is what renders black,
-            # as for the ALOHA asset (robolab/robots/aloha.py).
-            visual_material=sim_utils.PreviewSurfaceCfg(
-                diffuse_color=(0.04, 0.04, 0.045), roughness=0.6, metallic=0.0),
-            visual_material_path="yam_black",
+            # Colours live in the asset (white upper-arm and forearm shells, black joints and
+            # gripper, as in Ai2's rig photo); no root-level material override.
         ),
         init_state=ArticulationCfg.InitialStateCfg(
             pos=(RIG_X_M, 0.0, 0.0),
