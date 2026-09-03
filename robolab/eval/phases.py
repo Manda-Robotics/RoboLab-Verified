@@ -70,6 +70,8 @@ LANDING_VZ = 0.05                # m/s   |vertical speed| below this while touch
 LANDING_HOLD_S = 0.2             # s     ... for this long = down (landed); the apex of a bounce is one row of it
 DROP_ENDS_AT_LANDING = True      # a place/drop segment ends at first support contact after leaving the hand (else at rest)
 RETREAT_BREAKS_APPROACH = True   # a retreat run of BREAK_RUN_S ends the approach that belongs to a pick (False: only idle/table/close-empty/disturb do; one vote for it, d5 env 0, against rc3 env 2's narration; §9.8b) ...
+BREAKERS = {"retreat", "idle", "press_table", "close_empty", "disturb"}   # L1 runs that end the approach belonging to a pick; circling (reposition) and hovering over the target belong to it
+JAM_S = 0.0                      # s     open-hand contact with a non-target (bin wall, distractor) totalling this much between two grasp attempts on one object is a jam: the attempts do not fold into one pick (0 = off)
 RETREAT_TOLERANCE_S = 15.0       # s     ... within this much approach before the grip; a struggle longer than that is not one approach (rc3 FoodPacking env 2: 28 s of ramming the bin, narrated as no completed subtask)
 HELD_LIFT_M = 0.03               # m     pinched and this far up = in hand, whatever the tracker's coupling says (d5 env 0, 2026-09-02)
 NEAR_M = 0.08                    # m     hover radius around an object
@@ -86,11 +88,12 @@ GAP_NCS_S = 5.0                  # s     a stretch this long with no attempt is 
 NCS_BREAKER_SHARE = 0.4          #       ... if at least this share of it is retreat / idle / hover / table / repositioning
 PICK_MIN_HOLD_S = 0.25           # s     carried this long = pick complete (the reviewer counts 'off the ground' even when dropped at once)
 BREAK_RUN_S = 0.5                # s     a retreat/idle run this long, or an approach to another object, ends the approach that belongs to a pick
+KNOCK_WIN_S = 0.4                # s     a contact that begins this close before the object leaves a closed hand knocked it out (release cause)
 CONTACT_PROXY_M = 0.02           # m     TCP to object box, when no contact/ group is recorded
 THRESHOLDS = {k: globals()[k] for k in (
     "TCP_OFFSET", "V_MOVE", "V_LIFT", "LIFT_M", "HELD_LIFT_M", "NEAR_M", "APPROACH_M", "CLOSING_RATE", "DISP_WIN_S", "DISP_M",
     "REST_M", "SLIP_V", "SMOOTH_W", "MIN_RUN", "RELEASE_S", "GAP_NCS_S", "NCS_BREAKER_SHARE", "PICK_MIN_HOLD_S",
-    "CONTACT_PROXY_M", "BREAK_RUN_S", "RETREAT_TOLERANCE_S", "LANDING_VZ", "LANDING_HOLD_S", "DROP_ENDS_AT_LANDING", "RETREAT_BREAKS_APPROACH", "SETTLE_WARMUP_S", "GRASP_HOLD_S", "GRASP_ATTEMPT_BURST_S",
+    "CONTACT_PROXY_M", "BREAK_RUN_S", "KNOCK_WIN_S", "JAM_S", "RETREAT_TOLERANCE_S", "LANDING_VZ", "LANDING_HOLD_S", "DROP_ENDS_AT_LANDING", "RETREAT_BREAKS_APPROACH", "SETTLE_WARMUP_S", "GRASP_HOLD_S", "GRASP_ATTEMPT_BURST_S",
     "SUCCESS_REST_S", "SUCCESS_MAX_SPEED")}
 
 PHASES = {
@@ -512,6 +515,44 @@ def _in_destination(rec: Recording, ch: Channels, o: str, d: str, t: int) -> boo
     return bool(inside_xy and p[2] <= hi[2] + 0.05 and p[2] >= lo[2] - 0.02)
 
 
+def _release_cause(rec: Recording, o: str, leave: int, deliberate: bool, dt: float):
+    """Why the object left the hand; one of the three axes of a place (label, result, cause).
+
+    ``released``: the gripper was commanded open. Otherwise it was still commanded closed and
+    the object left anyway: ``knocked`` when the object (or a hand body, on recordings with the
+    P106 sensors) came into *new* contact with another body in the ``KNOCK_WIN_S`` before it
+    left (a bin wall rammed, another object hit; a contact that was already continuous, such
+    as the table under a dragged object, is not a knock), ``slipped`` when nothing was touched,
+    ``unclear`` when the recording has no contact pairs to tell. Returns (cause, culprits)."""
+    if deliberate:
+        return "released", None
+    if not rec.pair_contact and not rec.body_forces:
+        return "unclear", None
+    k = max(1, int(round(KNOCK_WIN_S / dt)))
+    a, b = max(0, leave - k), min(rec.T, leave + 1)
+    culprits = []
+    for key, col in rec.pair_contact.items():
+        parts = key.split("__")
+        if o not in parts or len(parts) != 2:
+            continue
+        other = parts[1] if parts[0] == o else parts[0]
+        win = np.asarray(col[a:b]) > 0
+        before = np.asarray(col[max(0, a - k):a]) > 0
+        if win.any() and not (before.size and before.all() and win.all()):
+            culprits.append(other)
+    for key, col in rec.body_forces.items():
+        parts = key.split("__")
+        if len(parts) != 2 or parts[1] == o:
+            continue
+        win = np.asarray(col[a:b]) > 0
+        before = np.asarray(col[max(0, a - k):a]) > 0
+        if win.any() and not (before.size and before.all() and win.all()):
+            culprits.append(f"hand:{parts[1]}")
+    if culprits:
+        return "knocked", sorted(set(culprits))
+    return "slipped", None
+
+
 def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str], dests: set[str],
              kind: str, log_events: list[dict] | None) -> list[dict]:
     """L2 segments. A pick opens when the jaws close on an object (the tracker's
@@ -528,11 +569,19 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
         for t in range(s["start"] - 1, s["end"]):
             lab[t], obj[t] = s["label"], s["object"]
     held = ch.held_tracker
+
+    def jammed(k, o=None):
+        """Open-hand contact with something that is not this pick's object: a bin wall rammed,
+        a distractor fingered. Counts like a breaker, and enough of it between two grasp
+        attempts on one object (JAM_S) keeps them from folding into one pick (§9.13: rc3
+        FoodPacking2Cans env 3, 61 to 81 s, "briefly bugging in the wall before the pick")."""
+        return JAM_S > 0 and lab[k] in ("open_contact", "close_on", "pinch_no_lift") and obj[k] is not None and obj[k] != o \
+            and (o is not None or ch.roles.get(obj[k]) != "target")
+
     min_hold = max(1, int(round(PICK_MIN_HOLD_S / dt)))
     break_run = max(1, int(round(BREAK_RUN_S / dt)))
     burst = max(1, int(round(GRASP_ATTEMPT_BURST_S / dt)))
     log_events = log_events or []
-    BREAKERS = {"retreat", "idle", "press_table", "close_empty", "disturb"}   # circling (reposition) and hovering over the target belong to its pick
 
     def engaged(o, u):
         if ch.roles.get(o) == "destination":
@@ -591,7 +640,9 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
     folded: list[dict] = []
     for r in raw:
         prev = folded[-1] if folded else None
-        same_burst = prev is not None and prev["o"] == r["o"] and r["first"] - prev["end_contact"] <= burst
+        jam = sum(1 for k in range(prev["end_contact"] + 1, r["first"]) if jammed(k, r["o"])) * dt if prev is not None else 0.0
+        same_burst = prev is not None and prev["o"] == r["o"] and r["first"] - prev["end_contact"] <= burst \
+            and (JAM_S <= 0 or jam < JAM_S)
         if same_burst and not prev["passed"] and not r["passed"]:
             prev["end_contact"] = r["end_contact"]
             prev["n_attempts"] = prev.get("n_attempts", 1) + 1
@@ -640,7 +691,7 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
         # the stretch before the approach is its own segment only when it is long and is
         # mostly not approaching (retreats, idling, pressing the table): a slow reach belongs
         # to the pick (the references' convention), indecision does not
-        breaker_share = (sum(1 for k in range(prev_end_row, start) if lab[k] in BREAKERS) / gap) if gap else 0.0
+        breaker_share = (sum(1 for k in range(prev_end_row, start) if lab[k] in BREAKERS or jammed(k, o)) / gap) if gap else 0.0
         if gap * dt >= GAP_NCS_S and breaker_share >= NCS_BREAKER_SHARE:
             segs.append(_make_segment("no_completed_subtask", None, prev_end_row, start - 1, "fail", ch, lab, obj, targets, dests, dt))
         else:
@@ -714,8 +765,13 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
                 w2 += 1
             end_row = max(leave, w2)
         seg = _make_segment("place", o, pick_end + 1, end_row, result, ch, lab, obj, targets, dests, dt, dest=dest)
+        cause, culprits = _release_cause(rec, o, leave, deliberate, dt)
+        seg["cause"] = cause
         if not deliberate:
             seg["attributes"].append("dropped (gripper opened with the close command still on)")
+            seg["attributes"].append({"knocked": "knocked out by " + ", ".join(culprits or []),
+                                      "slipped": "slipped out of the closed hand",
+                                      "unclear": "cause unclear (no contact pairs recorded)"}[cause])
         if interrupted:
             seg["attributes"].append("re-engaged before coming to rest")
         elif not settled:
@@ -733,7 +789,7 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
         # table, retreating) is a failure stretch, not the references' retreat tail
         tail_start = segs[-1]["end"]
         gap = T - tail_start
-        share = (sum(1 for k in range(tail_start, T) if lab[k] in BREAKERS) / gap) if gap else 0.0
+        share = (sum(1 for k in range(tail_start, T) if lab[k] in BREAKERS or jammed(k)) / gap) if gap else 0.0
         if gap * dt >= GAP_NCS_S and share >= NCS_BREAKER_SHARE and segs[-1]["label"] != "carry":
             segs.append(_make_segment("no_completed_subtask", None, tail_start, T - 1, "fail", ch, lab, obj, targets, dests, dt))
     _flag_against_log(segs, ch, log_events, dt, kind)
@@ -866,8 +922,10 @@ class Annotation:
     channels: Channels = field(repr=False)
 
 
-def annotate(task_dir: str, env_id: int, run_index: int = 0, log_events: list[dict] | None = None,
-             use_replay: bool = True) -> Annotation:
+def prepare_recording(task_dir: str, env_id: int, run_index: int = 0, use_replay: bool = True) -> dict:
+    """Everything in :func:`annotate` the annotator's thresholds do not touch: the recording,
+    the roles, the boolean-pad fill and the tracker replay. :func:`derive` does the rest, so a
+    sensitivity or stability study replays once and re-derives many times."""
     h5py = _real_h5py()
 
     h5 = find_hdf5(task_dir, run_index)
@@ -884,13 +942,6 @@ def annotate(task_dir: str, env_id: int, run_index: int = 0, log_events: list[di
         rec = load_recording(g[key])
     rec.dt = dt
     rec.joint_names = robot_joint_names(task_dir)
-    if log_events is None:
-        lp = os.path.join(task_dir, f"log_{run_index}_env{env_id}.json")
-        if os.path.exists(lp):
-            lg = json.load(open(lp))
-            log_events = lg.get("events", lg if isinstance(lg, list) else [])
-        else:
-            log_events = []
     rr = None
     warnings: list[str] = []
     contact_source = "pads" if rec.pads else "proxy"
@@ -930,25 +981,48 @@ def annotate(task_dir: str, env_id: int, run_index: int = 0, log_events: list[di
             rr = replay(rec, dt, containers=dests)
         except Exception as exc:  # torch missing, or an unexpected recording layout
             warnings.append(f"tracker replay unavailable ({type(exc).__name__}: {exc}); in-hand from geometry")
-    ch = compute_channels(rec, dt, targets, dests | origins, rr, contact_source)   # origins keep the container role
+    return {"task_dir": task_dir, "env_id": env_id, "run_index": run_index, "rec": rec, "dt": dt,
+            "targets": targets, "dests": dests, "origins": origins, "kind": kind, "rr": rr,
+            "contact_source": contact_source, "warnings": warnings}
+
+
+def derive(prep: dict, log_events: list[dict] | None):
+    """The threshold-dependent layers over a prepared recording: channels, L1 labels, phases,
+    L2 attempts. Returns (phases, attempts, channels, warnings)."""
+    rec, dt = prep["rec"], prep["dt"]
+    targets, dests, origins, kind = prep["targets"], prep["dests"], prep["origins"], prep["kind"]
+    ch = compute_channels(rec, dt, targets, dests | origins, prep["rr"], prep["contact_source"])   # origins keep the container role
     labels, objs = label_steps(ch)
-    labels, objs = smooth_labels(labels, objs)
-    phases, w2 = segment(labels, objs)
-    warnings += w2
+    labels, objs = smooth_labels(labels, objs, SMOOTH_W)
+    phases, w2 = segment(labels, objs, MIN_RUN)
     segs = attempts(rec, ch, phases, targets, dests, kind, log_events)
     for p in phases:
         p["role"] = ch.roles.get(p["object"]) if p["object"] else None
         p["family"] = FAMILY_OF[p["label"]]
+    return phases, segs, ch, list(prep["warnings"]) + w2
+
+
+def annotate(task_dir: str, env_id: int, run_index: int = 0, log_events: list[dict] | None = None,
+             use_replay: bool = True) -> Annotation:
+    prep = prepare_recording(task_dir, env_id, run_index, use_replay)
+    if log_events is None:
+        lp = os.path.join(task_dir, f"log_{run_index}_env{env_id}.json")
+        if os.path.exists(lp):
+            lg = json.load(open(lp))
+            log_events = lg.get("events", lg if isinstance(lg, list) else [])
+        else:
+            log_events = []
+    phases, segs, ch, warnings = derive(prep, log_events)
     task_name = os.path.basename(os.path.normpath(task_dir))
     doc = {
         "schema_version": SCHEMA_VERSION,
-        "dt": dt,
+        "dt": prep["dt"],
         "task": task_name, "env_id": env_id, "run": run_index,
-        "num_steps": rec.T,
+        "num_steps": prep["rec"].T,
         "step_convention": "1-based, same as log_*.json (episode_length_buf = HDF5 row + 1); time_s = step * dt",
         "annotator": {"name": ANNOTATOR, "version": ANNOTATOR_VERSION, "thresholds": THRESHOLDS,
                       "contact_source": ch.contact_source, "tracker_replay": ch.replay_ok},
-        "task_kind": kind,
+        "task_kind": prep["kind"],
         "roles": ch.roles,
         "phases": phases,
         "attempts": segs,
@@ -956,6 +1030,7 @@ def annotate(task_dir: str, env_id: int, run_index: int = 0, log_events: list[di
         "warnings": warnings,
     }
     return Annotation(doc, ch)
+
 
 
 def phases_path(task_dir: str, env_id: int, run_index: int = 0) -> str:
@@ -990,6 +1065,7 @@ def summarize(phases: list[dict], segs: list[dict], ch: Channels) -> dict:
         "n_picks_pass": sum(1 for s in picks if s["result"] == "pass"),
         "n_picks_wrong_object": sum(1 for s in picks if any(a.startswith("wrong_object") for a in s["attributes"])),
         "n_drops": sum(1 for s in places if any(a.startswith("dropped") for a in s["attributes"])),
+        "n_places_by_cause": dict(collections.Counter(s.get("cause") or "none" for s in places)),
         "n_places_pass": sum(1 for s in places if s["label"] == "place" and s["result"] == "pass"),
         "first_contact_s": round(first_touch * dt, 2) if first_touch else None,
         "time_in_hand_s": round(sum(1 for h in ch.held_tracker if h) * dt, 2),

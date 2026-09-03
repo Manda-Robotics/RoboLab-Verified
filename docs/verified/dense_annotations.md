@@ -962,6 +962,91 @@ so both readings agree there and the note does not discriminate. §9.8b's landin
 until a case where they differ is reviewed; rc3 env 2 and rc5 env 3 above are exactly those
 cases, so re-reviewing them settles it either way.
 
+### 9.13 Overnight 2026-09-02/03: the drop ghost, a cause axis, and whether an annotation can certify itself
+
+Two more episodes reviewed (rc3 FoodPacking2Cans env 2 and env 3, 12 + 22 segments), then the
+maintainer asked how failure-cause annotations ("gripper just opened", "bumped and lost grip",
+"slipped out") can ever be made reliable when the old flags were not. Three pieces of work.
+
+**H8 with 14 episodes: F1 0.942** (P 0.964, R 0.920), label 0.951, result 0.988, boundaries
+±0.25 s 0.722, ±0.5 s 0.835. Over 49 review verdicts the three axes separate cleanly: result
+right 1.000, bounds 0.878, label 0.837. Result is solved; everything left is the label, and
+the label disagreements are exactly two questions: drop versus place, and the retreat vote.
+
+**The drop ghost (P113).** The file never had a drop label: `phases.py` writes `place` plus the
+attribute `dropped (gripper opened with the close command still on)`, on purpose (a human
+cannot see the gripper command). But `b0db82d` rendered such a place as "drop" with its own
+colour, `LABEL_KINDS` offered `drop` in the review correction select, and `score_gold.py` folds
+`drop` back to `place`. Three of the maintainer's eight label corrections (drop → place) were
+therefore no-ops that changed nothing in the gold and cost three points of "label right". The
+panel now shows the real label everywhere (the orange colour still marks a drop) and the
+review select no longer offers `drop`.
+
+**A third axis, `cause` (P113).** What the maintainer wants is why the object left the hand,
+and that is a field orthogonal to label (what was attempted) and result (did the subtask
+succeed), not a fourth label. Putting all three claims in one flag vocabulary is a fair
+diagnosis of why the old flags were unusable: each flag could be wrong three ways. Every place
+now carries `cause` from `_release_cause`, each value a decision procedure over recorded
+channels, never an appearance:
+
+| cause | signal |
+|---|---|
+| `released` | the open command was given as the object left (`deliberate`) |
+| `knocked` | still commanded closed, and the object (`pair_contact`) or a hand body (`body_forces`, P106) came into *new* contact with another body in the `KNOCK_WIN_S` = 0.4 s before it left; a contact that was already continuous, such as the table under a dragged object, is not a knock |
+| `slipped` | still commanded closed, nothing touched |
+| `unclear` | no contact pairs recorded (proxy recordings): the annotator abstains rather than guess |
+
+On the four reviewed episodes the 21 places read released 12, knocked 3 (all d6 bananas against
+the crate), slipped 2, unclear 4 (the proxy `cli_*` rows). The label panel has a fourth
+verdict key (`4 cause`, places only) with its own correction select; `score_gold.py` reports
+"cause right" on its own line so cause errors can never leak into label accuracy the way drop
+did. A cause verdict at the leave frame itself is ambiguous at 15 Hz (contact beginning on the
+same row could be consequence, not cause); the verdicts will say whether the window is right.
+
+**Can a segment certify itself? (P114, `scripts/phase_stability.py`).** Every threshold in
+`THRESHOLDS` is a knife edge, and a pick whose object cleared `HELD_LIFT_M` by 12 cm comes out
+identical to one that cleared it by 2 mm. `annotate()` was split into `prepare_recording()`
+(recording, pad fill, tracker replay) and `derive()` (the numpy layers), behaviour identical
+(`offline_tests/test_release_cause.py`), so an episode is replayed once and re-derived 40 times
+with all 27 thresholds multiplied by independent log-uniform factors in [1/1.5, 1.5]. A
+segment's **stability** is the share of samples in which a same-label segment overlaps it at
+IoU ≥ 0.5; `stab_bounds` also asks both edges within 0.5 s. No human involved, 23 s for the 14
+labelled episodes, so it runs at corpus scale.
+
+Against the human record (a review verdict on the same machine segment where one exists,
+judged on the *corrected* value where the reviewer gave one since the rules have moved since;
+else the narrated gold at IoU ≥ 0.5), 84 of 103 machine segments have a judgement:
+
+| stability | n | label | result | bounds | all three |
+|---|---|---|---|---|---|
+| = 1.00 | 59 | 0.983 | 1.000 | 0.881 | 0.864 |
+| [0.90, 1.00) | 10 | 0.700 | 0.800 | 0.700 | 0.600 |
+| [0.50, 0.90) | 12 | 1.000 | 1.000 | 0.917 | 0.917 |
+| < 0.50 | 3 | 0.667 | 1.000 | 0.667 | 0.333 |
+| all | 84 | 0.940 | 1.000 | 0.857 | 0.821 |
+
+And by `stab_bounds` = 1.00 (56 % of segments): label 0.979, bounds 0.936, all three 0.915.
+Three readings, in order of confidence:
+
+1. *Stability is a real but partial confidence signal.* Perfectly stable segments agree with
+   the human on all three axes 0.864 against 0.821 overall, and 0.915 when the bounds are
+   also stable. The bins in between are small (n = 10, 12, 3) and not monotone; more verdicts
+   are needed before a threshold is chosen.
+2. *Where it fails, it fails for a reason it cannot see.* Of the 13 perfectly stable segments
+   the human still disagreed with, 2 were drop-ghost no-ops, 3 were d5 bounds corrections the
+   current rules already satisfy (fixed in the judge), 6 are narrated bounds in the
+   convention-stale episodes of §9.12, 1 is a malformed correction (`t_end` 0.0), and 1 is the
+   retreat vote. Convention disagreements are not marginal in the machine's own terms, so
+   threshold jitter is blind to them by construction. Stability separates the two failure
+   modes: threshold fragility, which it measures, and convention drift, which needs a decision.
+3. *Fragility is concentrated where the votes are.* Mean stability by label: place 0.996
+   (91.7 % perfectly stable), pick 0.900 (59.6 %), no_completed_subtask 0.732 (30.0 %). Places
+   are defined by physics (the object leaves, the object lands) and sit still under any
+   jitter. The ncs / pick-approach boundary (`BREAK_RUN_S`, `GAP_NCS_S`, `NCS_BREAKER_SHARE`) is
+   the knife edge, and the eleven least stable segments with a human record are all ncs
+   segments or the picks adjacent to them. That is the retreat question again, found
+   independently by a method that never saw a human label.
+
 ### 9.9 Handoff
 
 - Branch `dense-annotations` in this clone, never pushed; `main` equals `origin/main`. The

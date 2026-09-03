@@ -4092,7 +4092,11 @@ const ATTEMPT_RESULT_COLOR = { pass: '#34d399', fail: '#f87171', unknown: '#6b72
 // keeps label "place" + attribute "dropped" (the reviewer cannot see the command; the result is the
 // outcome), the display says what happened.
 const isDrop = (a) => a.label === 'place' && (a.attributes || []).some((x) => String(x).startsWith('dropped'));
-const shownLabel = (a) => (a.label === 'no_completed_subtask' ? 'no completed subtask' : isDrop(a) ? 'drop' : a.label);
+// The file has no drop label (plan §9.13): a place whose gripper was still commanded closed carries the
+// `dropped` attribute and a `cause` (released / knocked / slipped / unclear). Render the real label so a
+// verdict on it is a verdict on what score_gold.py scores; the colour still marks a drop.
+const shownLabel = (a) => (a.label === 'no_completed_subtask' ? 'no completed subtask' : a.label);
+const causeText = (a) => (a.label === 'place' && a.cause ? ` · ${a.cause}` : '');
 const attemptColor = (a) => (isDrop(a) ? '#fb923c' : (ATTEMPT_RESULT_COLOR[a.result] || '#6b7280'));
 const LABEL_KINDS = ['pick', 'place', 'drop', 'no_completed_subtask', 'boundary'];
 
@@ -4132,7 +4136,7 @@ async function loadAndRenderPhases(host, runId, task, envId, runIndex, camVideos
   for (const a of data.attempts || []) {
     const cls = `phase-seg attempt ${a.result}${a.label === 'no_completed_subtask' ? ' ncs' : ''}`;
     const text = `${shownLabel(a)}${a.object && a.label !== 'no_completed_subtask' ? ' ' + a.object : ''}`;
-    const title = `${a.start_s.toFixed(1)}–${a.end_s.toFixed(1)}s · ${shownLabel(a)} ${a.result}\n${a.description || ''}`
+    const title = `${a.start_s.toFixed(1)}–${a.end_s.toFixed(1)}s · ${shownLabel(a)}${causeText(a)} ${a.result}\n${a.description || ''}`
       + (a.flags && a.flags.length ? `\nflags: ${a.flags.join('; ')}` : '');
     block(lanes.l2, cls, a.start_s, a.end_s, text, title, attemptColor(a), () => seek(a.start_s));
   }
@@ -4283,11 +4287,12 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
   if (attempts.length) {
     const rv = el('div', { class: 'review-list' });
     panel.appendChild(el('div', { class: 'text-xs', style: { color: 'var(--text-2)', marginTop: '6px' } },
-      'Review the machine: j / k select a segment (seeks to its start) · 1 label · 2 result · 3 bounds (✓ = within 0.5 s) · Enter save · a ✗ opens the correction fields; label "none" = this segment should not exist.'));
+      'Review the machine: j / k select a segment (seeks to its start) · 1 label · 2 result · 3 bounds (✓ = within 0.5 s) · 4 cause (places: released / knocked / slipped) · Enter save · a ✗ opens the correction fields; label "none" = this segment should not exist.'));
     panel.appendChild(rv);
     const latestReview = (i) => { const rs = marks.filter((m) => m.kind === 'review' && m.seg_index === i); return rs.length ? rs[rs.length - 1] : null; };
-    const state = attempts.map((a, i) => ({ i, a, ok: { label: true, result: true, bounds: true },
-      corr: { label: a.label, object: a.object || '', result: a.result, t_start: a.start_s, t_end: a.end_s }, note: '' }));
+    const hasCause = (a) => a.label === 'place' && !!a.cause;
+    const state = attempts.map((a, i) => ({ i, a, ok: { label: true, result: true, bounds: true, cause: true },
+      corr: { label: a.label, object: a.object || '', result: a.result, cause: a.cause || '', t_start: a.start_s, t_end: a.end_s }, note: '' }));
     const select = (i, seek = true) => {
       sel = Math.max(0, Math.min(attempts.length - 1, i));
       reviewRows.forEach((r, k) => r.classList.toggle('active', k === sel));
@@ -4297,22 +4302,25 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
       rv.innerHTML = ''; reviewRows.length = 0;
       for (const st of state) {
         const a = st.a, prev = latestReview(st.i);
-        const mark = (k, txt) => el('button', { class: `transport-btn verdict ${st.ok[k] ? 'ok' : 'bad'}`, title: `${txt}: click or press ${k === 'label' ? 1 : k === 'result' ? 2 : 3}`,
+        const mark = (k, txt) => el('button', { class: `transport-btn verdict ${st.ok[k] ? 'ok' : 'bad'}`, title: `${txt}: click or press ${{ label: 1, result: 2, bounds: 3, cause: 4 }[k]}`,
           onclick: (e) => { e.stopPropagation(); st.ok[k] = !st.ok[k]; select(st.i, false); drawReview(); } }, `${txt} ${st.ok[k] ? '✓' : '✗'}`);
         const row = el('div', { class: 'attempt-row review-row', onclick: () => select(st.i) },
           el('span', { class: 'ev-time' }, `${a.start_s.toFixed(1)}–${a.end_s.toFixed(1)}s`),
-          el('span', { class: 'ev-info' }, `${shownLabel(a)}${a.object ? ' ' + a.object : ''} · ${a.result}`),
-          mark('label', 'label'), mark('result', 'result'), mark('bounds', 'bounds'),
+          el('span', { class: 'ev-info' }, `${shownLabel(a)}${a.object ? ' ' + a.object : ''}${causeText(a)} · ${a.result}`),
+          mark('label', 'label'), mark('result', 'result'), mark('bounds', 'bounds'), ...(hasCause(a) ? [mark('cause', 'cause')] : []),
           el('span', { class: 'ev-time', title: prev ? (prev.note || '') : '' },
-            prev ? `reviewed ${['label', 'result', 'bounds'].map((k) => (prev.verdict && prev.verdict[k] === false ? '✗' : '✓')).join('')}${prev.annotator ? ' ' + prev.annotator : ''}` : ''));
-        if (!st.ok.label || !st.ok.result || !st.ok.bounds) {
+            prev ? `reviewed ${['label', 'result', 'bounds', ...(prev.verdict && 'cause' in prev.verdict ? ['cause'] : [])].map((k) => (prev.verdict && prev.verdict[k] === false ? '✗' : '✓')).join('')}${prev.annotator ? ' ' + prev.annotator : ''}` : ''));
+        if (!st.ok.label || !st.ok.result || !st.ok.bounds || !st.ok.cause) {
           const labSel = el('select', {});
-          for (const k of [...LABEL_KINDS.filter((x) => x !== 'boundary'), 'none']) labSel.appendChild(el('option', { value: k, selected: k === st.corr.label }, k));
+          for (const k of [...LABEL_KINDS.filter((x) => x !== 'boundary' && x !== 'drop'), 'none']) labSel.appendChild(el('option', { value: k, selected: k === st.corr.label }, k));
           labSel.addEventListener('change', () => { st.corr.label = labSel.value; });
           const objIn = el('input', { value: st.corr.object, placeholder: 'object', size: 10, list: 'phase-objects', oninput: (e) => { st.corr.object = e.target.value; } });
           const resSel = el('select', {});
           for (const r of ['pass', 'fail', 'unknown']) resSel.appendChild(el('option', { value: r, selected: r === st.corr.result }, r));
           resSel.addEventListener('change', () => { st.corr.result = resSel.value; });
+          const causeSel = el('select', {});
+          for (const c of ['released', 'knocked', 'slipped', 'unclear']) causeSel.appendChild(el('option', { value: c, selected: c === st.corr.cause }, c));
+          causeSel.addEventListener('change', () => { st.corr.cause = causeSel.value; });
           const t0 = el('input', { class: 'label-t', value: fmt(st.corr.t_start), size: 6, oninput: (e) => { st.corr.t_start = parseFloat(e.target.value); } });
           const t1 = el('input', { class: 'label-t', value: fmt(st.corr.t_end), size: 6, oninput: (e) => { st.corr.t_end = parseFloat(e.target.value); } });
           const b0 = el('button', { class: 'transport-btn', title: 'start = playhead', onclick: (e) => { e.stopPropagation(); st.corr.t_start = now(); t0.value = fmt(st.corr.t_start); } }, 'start=now');
@@ -4320,6 +4328,7 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
           const corr = el('div', { class: 'label-row review-corr', onclick: (e) => e.stopPropagation() });
           if (!st.ok.label) corr.append(labSel, objIn);
           if (!st.ok.result) corr.append(resSel);
+          if (!st.ok.cause) corr.append(causeSel);
           if (!st.ok.bounds) corr.append(b0, t0, b1, t1);
           row.appendChild(corr);
         }
@@ -4335,10 +4344,12 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
     saveReview = async (i) => {
       const st = state[i]; if (!st) return;
       const a = st.a;
-      const allOk = st.ok.label && st.ok.result && st.ok.bounds;
+      const withCause = hasCause(a);
+      const allOk = st.ok.label && st.ok.result && st.ok.bounds && (!withCause || st.ok.cause);
+      const verdict = { label: st.ok.label, result: st.ok.result, bounds: st.ok.bounds, ...(withCause ? { cause: st.ok.cause } : {}) };
       const payload = {
-        kind: 'review', seg_index: i, t_start: a.start_s, t_end: a.end_s, label: a.label, object: a.object || '', result: a.result,
-        verdict: { ...st.ok }, corrected: allOk ? null : { ...st.corr }, note: st.note, annotator: who.value,
+        kind: 'review', seg_index: i, t_start: a.start_s, t_end: a.end_s, label: a.label, object: a.object || '', result: a.result, cause: a.cause || null,
+        verdict, corrected: allOk ? null : { ...st.corr }, note: st.note, annotator: who.value,
       };
       if (!allOk && !st.ok.bounds && !(Number.isFinite(st.corr.t_start) && Number.isFinite(st.corr.t_end) && st.corr.t_end >= st.corr.t_start)) { status.textContent = 'corrected bounds invalid'; return; }
       try {
@@ -4396,6 +4407,7 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
     else if (rk && e.key === '1') { rk.toggle('label'); }
     else if (rk && e.key === '2') { rk.toggle('result'); }
     else if (rk && e.key === '3') { rk.toggle('bounds'); }
+    else if (rk && e.key === '4') { rk.toggle('cause'); }
     else if (rk && e.key === 'Enter') { e.preventDefault(); rk.save(); }
   };
   document.addEventListener('keydown', handler);

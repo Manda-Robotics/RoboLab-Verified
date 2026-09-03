@@ -669,11 +669,14 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
                 raise HTTPException(status_code=400, detail="seg_index is required for a review")
             v = payload.get("verdict") or {}
             row["verdict"] = {k: bool(v.get(k, True)) for k in ("label", "result", "bounds")}
+            if "cause" in v:                      # only places carry a cause; older rows have three keys
+                row["verdict"]["cause"] = bool(v.get("cause"))
             c = payload.get("corrected") or None
             row["corrected"] = None if c is None else {
                 "label": (c.get("label") or "").strip() or None,
                 "object": (c.get("object") or "").strip() or None,
                 "result": (c.get("result") or "").strip() or None,
+                "cause": (c.get("cause") or "").strip() or None,
                 "t_start": round(float(c["t_start"]), 3) if c.get("t_start") not in (None, "") else None,
                 "t_end": round(float(c["t_end"]), 3) if c.get("t_end") not in (None, "") else None,
             }
