@@ -723,6 +723,7 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
             if dest_end and _in_destination(rec, ch, o, dest_end, T - 1):
                 seg = _make_segment("place", o, pick_end + 1, T - 1, "unknown", ch, lab, obj, targets, dests, dt, dest=dest_end)
                 seg["attributes"].append("still held at the end of the episode, inside the destination")
+                seg["cause"] = None                    # the object never left the hand: no release to explain
             else:
                 seg = _make_segment("carry", o, pick_end + 1, T - 1, "unknown", ch, lab, obj, targets, dests, dt,
                                     note="still held at the end of the episode")

@@ -67,7 +67,7 @@ def test_every_place_carries_a_cause_and_derive_matches_annotate():
     a = P.annotate(td, 0, 0, use_replay=False)
     for at in a.doc["attempts"]:
         if at["label"] == "place":
-            assert at["cause"] in ("released", "knocked", "slipped", "unclear")
+            assert at["cause"] in ("released", "knocked", "slipped", "unclear", None)  # None: still held at the cap
         else:
             assert "cause" not in at
     assert "n_places_by_cause" in a.doc["summary"]
