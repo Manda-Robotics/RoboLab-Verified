@@ -28,6 +28,23 @@ def obs(n_arm: int, n_finger: int, *, left=None, right=None, finger=0.03, num_en
 
 FRANKA = dict(n_arm=7, n_finger=1)      # [7, 1, 7, 1]
 ALOHA = dict(n_arm=6, n_finger=2)       # [6, 2, 6, 2]
+YAM_TRAVEL = 0.04695                    # [6, 2, 6, 2], fingers in metres from one openness obs
+
+
+def test_yam_fingers_come_from_the_grip_signal_not_the_openness_obs():
+    """The YAM reports one openness value per gripper (1 = open); its two finger joints are
+    commanded in metres. With finger_travel_m set, the grip signal maps to both slots and the
+    openness observation is never written into the action as if it were metres."""
+    c = ScriptedBimanualClient(finger_travel_m=YAM_TRAVEL, control_hz=30.0)
+    o = obs(n_arm=6, n_finger=1, finger=1.0)          # a single openness value, fully open
+    a = c.infer(o, "", env_id=0)["action"]
+    assert a.shape == (16,)
+    for base in (6, 14):
+        assert a[base] == a[base + 1]
+        assert -YAM_TRAVEL - 1e-6 <= a[base] <= 0.0, "finger targets must stay inside the joint range"
+    seen = np.array([float(c.infer(o, "", env_id=0)["action"][6]) for _ in range(400)])
+    assert abs(seen.min() + YAM_TRAVEL) < 1e-5 and abs(seen.max()) < 1e-6, \
+        "both closed (0) and open (-travel) must occur over a cycle"
 
 
 @pytest.mark.parametrize("rig", [FRANKA, ALOHA], ids=["dual_franka", "aloha"])

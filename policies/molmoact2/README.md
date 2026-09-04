@@ -49,6 +49,7 @@ assumes.
 | task | success |
 |---|---|
 | YamPutEverythingInBoxTask, 67 s cap | 5 / 8 (Ai2's ManiSkill harness, same checkpoint: 4 / 8) |
+| RoboLab-120, 76 of 120 tasks × 4 episodes (2026-09-03 sweep, priority order, stopped when the pod budget ran out) | 5 / 304; BananasInBinOneMore 3/4, BananasInBinThreeTotal 2/4, every other task 0/4. Modes over the 304 episodes, from the event logs: never engages 81, touches the target without closing 93, wrong object 61, grasps and carries but never places 64 |
 | BananaInBowlTask | 0 / 4: reaches the banana and hovers, never commands a grasp |
 | BBQSauceInBinTask | 0 / 4: coherent grasp and lift of the wrong object |
 | FoodPacking2CansTask | 0 / 4: grasps the cans, then commands release; 40–120 drops per episode |

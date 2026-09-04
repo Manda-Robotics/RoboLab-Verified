@@ -23,7 +23,7 @@ The changes by area follow; [`docs/verified/changes.md`](docs/verified/changes.m
 - **Event log**: a grasp requires a carry. A pick is logged as `OBJECT_GRIPPED → OBJECT_CARRIED → OBJECT_GRABBED_SUCCESS`. Releases and drops are distinguished by the commanded gripper state. Wrong objects delivered into the goal are flagged. An object moving with an open hand marks the episode as a physics artifact. On the same tasks, π0.5's event count per episode fell from 45.5 to 31.0, and each remaining event corresponds to one physical transition.
 - **Sensing and recording**: both finger pads carry a contact sensor (upstream read one). The HDF5 records per-pad contact force and object-to-destination contact, so flag rules can be re-evaluated on existing recordings.
 - **Physics**: friction is a run parameter (`--friction`), read back from PhysX and written to every run directory. The default is upstream's. In a 32-episode-per-condition sweep, the success rate was insensitive to a 4× change in μ; the behaviour metrics were not ([`docs/physics.md`](docs/physics.md)).
-- **Embodiments and backends**: a bimanual YAM rig (two I2RT arms, the side-by-side station most bimanual data is collected on) with a client for Ai2's released MolmoAct 2 bimanual checkpoint, a dual-Franka rig, a bimanual ViperX (ALOHA) rig, and a connector for running a pointing-capable VLM as a policy.
+- **Embodiments and backends**: a bimanual YAM rig (two I2RT arms, the side-by-side station most bimanual data is collected on) with a client for Ai2's released MolmoAct 2 bimanual checkpoint ([`docs/bimanual_yam.md`](docs/bimanual_yam.md)), a dual-Franka rig, a bimanual ViperX (ALOHA) config (its asset is not shipped), and a connector for running a pointing-capable VLM as a policy.
 - **Tooling**: offline audits of task definitions and scenes that run without a simulator, and a verifier that evaluates each flag change as PASS / FAIL / N/A over recorded runs.
 
 Status: the offline suite (222 tests) runs in CI. Each change is marked RUNTIME, OFFLINE or NONE according to how it was verified. About 25 of the 120 tasks have been run against the patched code, most with π0.5 only. [`docs/verified/verification.md`](docs/verified/verification.md) lists the verification status of each change. Numbers reported from this fork should include the tag.
@@ -103,6 +103,9 @@ python examples/run_gripper_toggle.py --task BananaInBowlTask --headless
 
 # Drive the dual-Franka rig with the scripted client
 python policies/bimanual/run.py --task BimanualLiftToteTask --num-envs 2 --headless
+
+# Move the bimanual YAM rig with the scripted client (no checkpoint needed)
+python policies/bimanual/run.py --robot yam --task YamPutEverythingInBoxTask --headless
 
 # Drive the bimanual YAM rig with MolmoAct 2 (serve the checkpoint first, see policies/molmoact2/README.md)
 python policies/molmoact2/run.py --task YamPutEverythingInBoxTask --task-dirs bimanual --num-envs 4 --headless

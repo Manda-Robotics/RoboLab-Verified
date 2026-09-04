@@ -7,7 +7,7 @@ Three rigs are adopted. They are not equally usable, and the difference is about
 |---|---|---|
 | **bimanual YAM** | `bimanual_yam.py` | **verified with a released policy**: Ai2's MolmoAct 2 bimanual checkpoint, 5/8 on the parity task (Ai2's own simulator: 4/8); 0/4 on each of three benchmark tasks outside its training distribution. The rig to reach for: it is what the labs collect bimanual data on. |
 | **dual-Franka** | `bimanual_franka.py` | **verified 6/6 clean**, max 0.18 rad/step. The default choice. |
-| **bimanual ViperX (ALOHA)** | `aloha.py` | rig verified (arms build, wrist cams track, per-arm metrics record). **No working policy**: the released pi05 checkpoint scores **0/6** — coherent reach, twitchy, no grasp. Out of distribution for this embodiment; fine-tuning is the only path we found. |
+| **bimanual ViperX (ALOHA)** | `aloha.py` | **config only in this repository**: the ALOHA 2 asset (`assets/robots/aloha2/`) and its MJCF import scripts were not shipped, so this rig does not load from a clean clone. Rig verified in the development fork (arms build, wrist cams track, per-arm metrics record). **No working policy**: the released pi05 checkpoint scores **0/6** — coherent reach, twitchy, no grasp. Out of distribution for this embodiment; fine-tuning is the only path we found. |
 
 **Reporting rule.** An ALOHA score is a statement about the checkpoint, not about the
 rig or about RoboLab. Do not place ALOHA numbers beside Franka numbers without saying

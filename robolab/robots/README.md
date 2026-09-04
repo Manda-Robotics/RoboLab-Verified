@@ -127,7 +127,8 @@ gains are Ai2's. Driven by Ai2's released MolmoAct 2 bimanual checkpoint through
   (`assets/robots/yam_i2rt_v1/`, MIT) by `python assets/robots/_utils/build_bimanual_yam.py`
   (needs only `usd-core` and `numpy`; no Isaac importer)
 - **Registrations:** `robolab/registrations/bimanual_yam/`
-- **Smoke test:** `python examples/run_bimanual_yam_jointpos.py --headless`
+- **Guide:** [`docs/bimanual_yam.md`](../../docs/bimanual_yam.md)
+- **Smoke test:** `python examples/run_bimanual_yam_jointpos.py --headless`; scripted run through the harness: `python policies/bimanual/run.py --robot yam --task YamPutEverythingInBoxTask --headless`
 - **Parity task:** `YamPutEverythingInBoxTask` (`--task-dirs bimanual`), Ai2's box-packing layout
 
 ## Dual Franka (2× Franka + Robotiq 2F-85)
@@ -148,7 +149,9 @@ checkpoint drives two arms; `policies/bimanual/run.py` runs the scripted client.
 
 ## Bimanual ViperX (ALOHA)
 
-`tags: bimanual · fixed-base or mobile · parallel-jaw · 2× wrist-cam · no working policy`
+`tags: bimanual · fixed-base or mobile · parallel-jaw · 2× wrist-cam · no working policy · asset not shipped`
+
+> The ALOHA 2 asset (`assets/robots/aloha2/`) and the MJCF import scripts are not in this repository yet; the config is here so the observation and action layouts are documented, but the rig does not load from a clean clone.
 
 Two ViperX 300 arms in the opposing (`aloha.py`), station and mobile (`bimanual_station.py`)
 configurations, 14-dim action. The rig runs — arms build, wrist cameras track, per-arm metrics

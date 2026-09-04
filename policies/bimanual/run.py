@@ -11,7 +11,11 @@ what makes the rigs verifiable at runtime at all.
     # dual Franka — the default, and the rig to reach for
     python policies/bimanual/run.py --task BimanualLiftToteTask --num-envs 2 --headless
 
-    # ALOHA / ViperX — present, deliberately not the default (see --robot aloha)
+    # bimanual YAM — the rig with a released policy (policies/molmoact2/); this is the
+    # no-checkpoint way to see it move
+    python policies/bimanual/run.py --robot yam --task YamPutEverythingInBoxTask --headless
+
+    # ALOHA / ViperX — config only in this repo (asset not shipped)
     python policies/bimanual/run.py --robot aloha --task AlohaTransferCubeTask --headless
 
 There is no `--policy` beyond `scripted`: no released checkpoint drives two arms.
@@ -25,9 +29,12 @@ import traceback
 from isaaclab.app import AppLauncher
 
 parser = argparse.ArgumentParser(description="Run a bimanual rig with the scripted client.")
-parser.add_argument("--robot", choices=["bimanual_franka", "aloha"], default="bimanual_franka",
-                    help="Which bimanual rig. Default dual Franka: it is verified 6/6 clean. "
-                         "ALOHA is present but no policy has been made to work on it.")
+parser.add_argument("--robot", choices=["bimanual_franka", "yam", "aloha"], default="bimanual_franka",
+                    help="Which bimanual rig. Dual Franka (default, scripted lift 6/6), the bimanual "
+                         "YAM (the rig with a released policy, see policies/molmoact2/), or ALOHA "
+                         "(config only in this repo; its asset is not shipped).")
+parser.add_argument("--top-cam", "--top_cam", choices=["ai2_desk", "i2rt_gantry"], default="ai2_desk",
+                    help="YAM only: overhead camera placement (Ai2 desk kit or I2RT gantry station).")
 parser.add_argument("--action-space", "--action_space", choices=["jointpos", "rel_ik"],
                     default="jointpos", help="16-dim absolute joint targets, or 14-dim relative IK.")
 parser.add_argument("--aloha-variant", "--aloha_variant", default="opposing",
@@ -94,7 +101,12 @@ def bimanual_task_dirs():
 
 def register() -> None:
     task_dirs = bimanual_task_dirs()
-    if args_cli.robot == "aloha":
+    if args_cli.robot == "yam":
+        from robolab.registrations.bimanual_yam.auto_env_registrations import auto_register_bimanual_yam_envs
+        if args_cli.action_space != "jointpos":
+            raise SystemExit("the bimanual YAM has a joint-position action space only")
+        auto_register_bimanual_yam_envs(task_dirs=task_dirs, task=args_cli.task, top_cam=args_cli.top_cam)
+    elif args_cli.robot == "aloha":
         from robolab.registrations.aloha.auto_env_registrations import auto_register_aloha_envs
         print("\033[93m[RoboLab] ALOHA/ViperX: rig verified, no policy verified on it. "
               "See robolab/robots/aloha.py.\033[0m")
@@ -109,8 +121,14 @@ def register() -> None:
 
 
 def make_client(args: argparse.Namespace) -> ScriptedBimanualClient:
+    finger_travel = None
+    if args.robot == "yam":
+        from robolab.robots.bimanual_yam import FINGER_TRAVEL_M
+        finger_travel = FINGER_TRAVEL_M
     return ScriptedBimanualClient(action_space=args.action_space,
-                                  amplitude_rad=args.amplitude_rad)
+                                  amplitude_rad=args.amplitude_rad,
+                                  control_hz=30.0 if args.robot == "yam" else 15.0,
+                                  finger_travel_m=finger_travel)
 
 
 def main() -> None:

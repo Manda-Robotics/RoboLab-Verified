@@ -45,13 +45,18 @@ class ScriptedBimanualClient(InferenceClient):
     open_loop_horizon = 1
 
     def __init__(self, action_space: str = "jointpos", amplitude_rad: float = 0.12,
-                 period_s: float = 6.0, control_hz: float = 15.0) -> None:
+                 period_s: float = 6.0, control_hz: float = 15.0,
+                 finger_travel_m: float | None = None) -> None:
         super().__init__()
         if action_space not in ("jointpos", "rel_ik"):
             raise ValueError(f"action_space must be 'jointpos' or 'rel_ik', got {action_space!r}")
         self.action_space = action_space
         self.amplitude_rad = float(amplitude_rad)
         self.period_steps = max(1.0, float(period_s) * float(control_hz))
+        # Rigs whose finger joints are commanded in metres from a single openness
+        # observation (bimanual YAM: 0 closed .. -finger_travel_m open) get the grip
+        # signal mapped onto both finger slots; None keeps the Franka/ALOHA behaviour.
+        self.finger_travel_m = finger_travel_m
         self._t: dict[int, int] = {}
 
     def begin_episode(self, episode_idx: int) -> None:
@@ -123,6 +128,10 @@ class ScriptedBimanualClient(InferenceClient):
             if n_fing == 1:
                 # One binary 0..1 gripper channel (dual Franka).
                 action[base] = grip
+            elif self.finger_travel_m is not None:
+                # Two finger joints in metres driven from one grip signal (bimanual YAM):
+                # grip 1 = closed -> 0 m, grip 0 = open -> -travel.
+                action[base:base + n_fing] = -self.finger_travel_m * (1.0 - grip)
             else:
                 # Finger joints commanded in metres (ALOHA). A 0/1 here would be a
                 # metre of travel, so hold them where they are and let the arms move.
