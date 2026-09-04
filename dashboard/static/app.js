@@ -4352,6 +4352,13 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
         verdict, corrected: allOk ? null : { ...st.corr }, note: st.note, annotator: who.value,
       };
       if (!allOk && !st.ok.bounds && !(Number.isFinite(st.corr.t_start) && Number.isFinite(st.corr.t_end) && st.corr.t_end >= st.corr.t_start)) { status.textContent = 'corrected bounds invalid'; return; }
+      // A ✗ whose correction still equals the machine's value would save as a no-op (the fields are
+      // prefilled with the machine's answer); refuse it so the reviewer picks the value they mean.
+      const same = (x, y) => String(x ?? '') === String(y ?? '');
+      if (!st.ok.label && same(st.corr.label, a.label) && same(st.corr.object, a.object || '')) { status.textContent = 'label marked wrong but unchanged: pick the label (or "none") you mean'; return; }
+      if (!st.ok.result && same(st.corr.result, a.result)) { status.textContent = 'result marked wrong but unchanged: pick pass / fail / unknown'; return; }
+      if (withCause && !st.ok.cause && same(st.corr.cause, a.cause)) { status.textContent = 'cause marked wrong but unchanged: pick released / knocked / slipped / unclear'; return; }
+      if (!st.ok.bounds && Math.abs(st.corr.t_start - a.start_s) < 1e-6 && Math.abs(st.corr.t_end - a.end_s) < 1e-6) { status.textContent = 'bounds marked wrong but unchanged: set start or end (start=now / end=now)'; return; }
       try {
         const resp = await fetch(`${base}/phase_labels`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         if (!resp.ok) throw new Error(`${resp.status} ${await resp.text()}`);
