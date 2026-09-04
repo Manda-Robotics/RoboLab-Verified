@@ -6,16 +6,20 @@ MolmoAct 2 research kit, I2RT's teleoperation stations), and the one rig in this
 with a released policy that drives it: Ai2's `MolmoAct2-BimanualYAM` checkpoint.
 
 Everything below runs from a fresh clone. Isaac Sim 5.1 and Isaac Lab are needed for the
-simulator steps (see the top-level [README](../README.md#installation)); the checks under
-"Without Isaac" need only Python.
+simulator steps (Linux with an NVIDIA GPU; see the top-level [README](../README.md#installation)).
+The checks under "Without Isaac" run on any machine with three packages.
 
 ## Without Isaac: the asset and the client contract
 
 ```bash
-git lfs pull                                         # the USD and STL files are LFS objects
-python -m pytest offline_tests/test_bimanual_yam_asset.py offline_tests/test_molmoact2_yam_client.py
-python assets/robots/_utils/build_bimanual_yam.py    # rebuilds the USD from I2RT's URDF (usd-core + numpy)
+git lfs pull                                         # the USD and STL files are LFS objects (a clone with git-lfs installed already did this)
+pip install pytest numpy usd-core                    # all the no-Isaac checks need
+python -m pytest offline_tests/test_bimanual_yam_asset.py offline_tests/test_molmoact2_yam_client.py   # 17 tests
+python assets/robots/_utils/build_bimanual_yam.py    # rebuilds the USD from I2RT's URDF, a few seconds
 ```
+
+Tried from a fresh clone on 2026-09-03: clone 93 s, LFS 5 s, 17 tests and the rebuild in
+under a minute.
 
 The asset tests compare every link's position and orientation in the USD with the URDF's
 forward kinematics, pin the finger travel and the wrist-camera frame, and check the collision
@@ -86,9 +90,18 @@ The rig speaks one contract, and the MolmoAct 2 client is a complete example of 
 
 `open_loop_horizon` sets how many actions of a chunk play before the next request. Control runs
 at 30 Hz. A relative-IK action space is not offered for this rig; joint position is what the
-released checkpoints emit. Register the env with
-`robolab.registrations.bimanual_yam.auto_env_registrations.auto_register_bimanual_yam_envs`
-(see `policies/molmoact2/run.py` for the twelve lines of runner boilerplate).
+released checkpoints emit.
+
+The quickest start is to copy [`policies/yam_template/`](../policies/yam_template/): a client
+written against the table above (its stand-in model wobbles the elbows and cycles the grippers)
+and the runner that registers the env and hands it to the harness. Replace `_query_server`
+with your model, keep `_postprocess_chunk`, run:
+
+```bash
+python policies/yam_template/run.py --task YamPutEverythingInBoxTask --task-dirs bimanual --num-envs 2 --headless
+```
+
+`offline_tests/test_yam_template_client.py` checks the template against the contract without Isaac.
 
 ## The rig itself
 
