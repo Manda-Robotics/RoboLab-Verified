@@ -19,6 +19,10 @@ import traceback
 import cv2  # noqa: F401  must be imported before isaaclab
 from isaaclab.app import AppLauncher
 
+# Line-buffer stdout: redirected to a file, block buffering plus Isaac's process exit lost the
+# whole summary (the fresh-clone trial saw an empty log with exit 0).
+sys.stdout.reconfigure(line_buffering=True)
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--num-steps", type=int, default=240)
 parser.add_argument("--task", type=str, default="YamPutEverythingInBoxTask")

@@ -13,13 +13,16 @@ The checks under "Without Isaac" run on any machine with three packages.
 
 ```bash
 git lfs pull                                         # the USD and STL files are LFS objects (a clone with git-lfs installed already did this)
-pip install pytest numpy usd-core                    # all the no-Isaac checks need
+uv pip install pytest numpy usd-core                 # all the no-Isaac checks need (plain pip is refused inside the uv venv)
 python -m pytest offline_tests/test_bimanual_yam_asset.py offline_tests/test_molmoact2_yam_client.py   # 17 tests
 python assets/robots/_utils/build_bimanual_yam.py    # rebuilds the USD from I2RT's URDF, a few seconds
 ```
 
-Tried from a fresh clone on 2026-09-03: clone 93 s, LFS 5 s, 17 tests and the rebuild in
-under a minute.
+Tried from fresh clones on 2026-09-03/04, following this page and nothing else: clone about
+90 s, LFS pull 5 to 60 s, the tests and the rebuild under a minute. On a fresh L40 pod the
+README install took 97 s, the smoke test 3 minutes including Isaac's first boot, each 2-episode
+run about 3.5 minutes, and the MolmoAct 2 path about 6 minutes from clone to a scored episode
+once the 22 GB checkpoint is on disk (2 episodes on the parity task: 1 success).
 
 The asset tests compare every link's position and orientation in the USD with the URDF's
 forward kinematics, pin the finger travel and the wrist-camera frame, and check the collision
@@ -45,8 +48,10 @@ recorders, event tracker and dashboard all see a YAM run.
 MolmoAct 2 is served from Ai2's repository (about 16 GB of VRAM in bf16, CUDA 12.8):
 
 ```bash
-git clone https://github.com/allenai/molmoact2 && cd molmoact2 && uv sync
-uv run hf download allenai/MolmoAct2-BimanualYAM
+# from a shell WITHOUT the RoboLab venv active (uv run would pick that interpreter); the LFS skip
+# avoids Ai2's test-image LFS objects, which failed to download on a fresh machine
+GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/allenai/molmoact2 && cd molmoact2 && uv sync
+uv run hf download allenai/MolmoAct2-BimanualYAM     # 22 GB
 uv run python examples/yam/host_server_yam.py --host 0.0.0.0 --port 8202 --dtype bfloat16
 ```
 

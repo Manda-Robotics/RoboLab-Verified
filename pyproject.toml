@@ -68,7 +68,7 @@ isaac51 = [
     "isaacsim[all,extscache]==5.1.0",
 ]
 analysis = ["sbi"]
-test = ["pytest"]
+test = ["pytest", "usd-core"]   # usd-core: the offline asset checks (pxr) run with --extra test
 all = ["sbi", "pytest"]
 
 [project.scripts]

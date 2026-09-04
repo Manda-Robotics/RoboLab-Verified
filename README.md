@@ -49,7 +49,8 @@ Requires [uv](https://docs.astral.sh/uv/getting-started/installation/), [Git LFS
 sudo apt install ffmpeg git-lfs
 # On a bare Linux image (a cloud GPU box without a desktop) Isaac Sim also needs the
 # GL/Vulkan runtime; without libegl1/libvulkan1 it crashes at RTX renderer init:
-# sudo apt install libegl1 libgl1 libglvnd0 libopengl0 libglx0 libgles2 libglu1-mesa libxt6 libvulkan1 vulkan-tools
+# sudo apt install libegl1 libgl1 libglvnd0 libopengl0 libglx0 libgles2 libglu1-mesa libxt6 libvulkan1 vulkan-tools git-lfs
+git lfs version               # must print a version: without git-lfs the two lfs commands below print an error and every USD stays a 132-byte pointer
 git lfs install
 git clone https://github.com/Manda-Robotics/RoboLab-Verified.git robolab
 cd robolab
