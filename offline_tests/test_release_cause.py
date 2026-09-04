@@ -15,9 +15,13 @@ from robolab.eval import phases as P  # noqa: E402
 DT = 1 / 15
 
 
-def _rec(pairs=None, forces=None, T=60):
+def _rec(pairs=None, forces=None, T=60, fall_from=None):
     r = types.SimpleNamespace()
     r.T = T
+    v = np.zeros((T, 3))
+    if fall_from is not None:                       # picks up speed after leaving the hand
+        v[fall_from:, 2] = -0.9
+    r.obj_vel = {"can": v}
     r.pair_contact = {k: np.array(v, dtype=np.uint8) for k, v in (pairs or {}).items()}
     r.body_forces = {k: np.array(v, dtype=np.float32) for k, v in (forces or {}).items()}
     return r
@@ -30,13 +34,31 @@ def _col(T, on):
     return c
 
 
-def test_commanded_open_is_released_whatever_was_touched():
-    rec = _rec({"can__bin": _col(60, [(28, 40)])})
+def test_commanded_open_onto_a_support_is_released():
+    rec = _rec({"can__table": _col(60, [(31, 60)])})          # lands the row after leaving
+    assert P._release_cause(rec, "can", 30, True, DT) == ("released", None)
+
+
+def test_commanded_open_after_hitting_the_wall_and_falling_is_knocked():
+    """rc5 FoodPacking2Cans env 2: can on the bin wall while gripped, open commanded, can falls."""
+    rec = _rec({"can__bin": _col(60, [(26, 32)]), "can__table": _col(60, [(36, 60)])})
+    cause, culprits = P._release_cause(rec, "can", 30, True, DT)
+    assert cause == "knocked" and culprits == ["bin"]
+
+
+def test_a_short_drop_onto_the_bin_floor_is_still_released():
+    """rc4 BlackItemsInBin: smartphone let go over the bin, lands on the keyboard inside it."""
+    rec = _rec({"can__keyboard": _col(60, [(33, 60)])})
+    assert P._release_cause(rec, "can", 30, True, DT) == ("released", None)
+
+
+def test_set_down_on_the_bin_floor_after_touching_it_is_released():
+    rec = _rec({"can__bin": _col(60, [(28, 60)])})       # touched the bin just before, stays on it
     assert P._release_cause(rec, "can", 30, True, DT) == ("released", None)
 
 
 def test_new_contact_just_before_leaving_a_closed_hand_is_knocked():
-    rec = _rec({"can__bin": _col(60, [(28, 40)]), "can__table": _col(60, [])})
+    rec = _rec({"can__bin": _col(60, [(28, 30)]), "can__table": _col(60, [(40, 60)])})
     cause, culprits = P._release_cause(rec, "can", 30, False, DT)
     assert cause == "knocked" and culprits == ["bin"]
 
@@ -45,15 +67,16 @@ def test_contact_that_was_already_continuous_is_not_a_knock():
     """A dragged object touches the table throughout: the table did not knock it out."""
     rec = _rec({"can__table": _col(60, [(0, 60)])})
     assert P._release_cause(rec, "can", 30, False, DT) == ("slipped", None)
+    assert P._release_cause(rec, "can", 30, True, DT) == ("released", None)   # and let go on it: released
 
 
 def test_no_contact_at_all_is_slipped():
-    rec = _rec({"can__bin": _col(60, []), "other__bin": _col(60, [(20, 40)])})
+    rec = _rec({"can__bin": _col(60, []), "can__table": _col(60, [(40, 60)]), "other__bin": _col(60, [(20, 40)])})
     assert P._release_cause(rec, "can", 30, False, DT) == ("slipped", None)
 
 
 def test_hand_body_hitting_something_else_counts_with_a_hand_prefix():
-    rec = _rec(pairs={"can__bin": _col(60, [])}, forces={"left_outer_knuckle__bin": _col(60, [(29, 31)])})
+    rec = _rec(pairs={"can__bin": _col(60, []), "can__table": _col(60, [(40, 60)])}, forces={"left_outer_knuckle__bin": _col(60, [(29, 31)])})
     cause, culprits = P._release_cause(rec, "can", 30, False, DT)
     assert cause == "knocked" and culprits == ["hand:bin"]
 

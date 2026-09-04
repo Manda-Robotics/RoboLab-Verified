@@ -655,6 +655,7 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
             "object": (payload.get("object") or "").strip() or None,
             "result": (payload.get("result") or "").strip() or None,
             "note": (payload.get("note") or "").strip() or None,
+            "cause": (payload.get("cause") or "").strip() or None,     # the machine's cause on a review row (§9.13)
             "annotator": (payload.get("annotator") or "").strip() or None,
             "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
         }

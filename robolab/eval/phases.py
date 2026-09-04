@@ -90,12 +90,13 @@ KNIFE_EDGE_MARGIN = 0.25         #       an ncs decision closer than this (relat
 NCS_BREAKER_SHARE = 0.4          #       ... if at least this share of it is retreat / idle / hover / table / repositioning
 PICK_MIN_HOLD_S = 0.25           # s     carried this long = pick complete (the reviewer counts 'off the ground' even when dropped at once)
 BREAK_RUN_S = 0.5                # s     a retreat/idle run this long, or an approach to another object, ends the approach that belongs to a pick
+FALL_ROWS = 3                    # rows  a body the object hit while held and has left again this many rows after the hand opened knocked it out; one it stays on was where it was set down
 KNOCK_WIN_S = 0.4                # s     a contact that begins this close before the object leaves a closed hand knocked it out (release cause)
 CONTACT_PROXY_M = 0.02           # m     TCP to object box, when no contact/ group is recorded
 THRESHOLDS = {k: globals()[k] for k in (
     "TCP_OFFSET", "V_MOVE", "V_LIFT", "LIFT_M", "HELD_LIFT_M", "NEAR_M", "APPROACH_M", "CLOSING_RATE", "DISP_WIN_S", "DISP_M",
     "REST_M", "SLIP_V", "SMOOTH_W", "MIN_RUN", "RELEASE_S", "GAP_NCS_S", "NCS_BREAKER_SHARE", "PICK_MIN_HOLD_S",
-    "CONTACT_PROXY_M", "BREAK_RUN_S", "KNOCK_WIN_S", "JAM_S", "RETREAT_TOLERANCE_S", "LANDING_VZ", "LANDING_HOLD_S", "DROP_ENDS_AT_LANDING", "RETREAT_BREAKS_APPROACH", "SETTLE_WARMUP_S", "GRASP_HOLD_S", "GRASP_ATTEMPT_BURST_S",
+    "CONTACT_PROXY_M", "BREAK_RUN_S", "KNOCK_WIN_S", "FALL_ROWS", "JAM_S", "RETREAT_TOLERANCE_S", "LANDING_VZ", "LANDING_HOLD_S", "DROP_ENDS_AT_LANDING", "RETREAT_BREAKS_APPROACH", "SETTLE_WARMUP_S", "GRASP_HOLD_S", "GRASP_ATTEMPT_BURST_S",
     "SUCCESS_REST_S", "SUCCESS_MAX_SPEED")}
 
 PHASES = {
@@ -520,19 +521,24 @@ def _in_destination(rec: Recording, ch: Channels, o: str, d: str, t: int) -> boo
 def _release_cause(rec: Recording, o: str, leave: int, deliberate: bool, dt: float):
     """Why the object left the hand; one of the three axes of a place (label, result, cause).
 
-    ``released``: the gripper was commanded open. Otherwise it was still commanded closed and
-    the object left anyway: ``knocked`` when the object (or a hand body, on recordings with the
-    P106 sensors) came into *new* contact with another body in the ``KNOCK_WIN_S`` before it
-    left (a bin wall rammed, another object hit; a contact that was already continuous, such
-    as the table under a dragged object, is not a knock), ``slipped`` when nothing was touched,
-    ``unclear`` when the recording has no contact pairs to tell. Returns (cause, culprits)."""
-    if deliberate:
-        return "released", None
+    ``released``: commanded open, and whatever the object touched just before it is where it
+    stays (set down, or a short drop into the destination). ``knocked``: the object (or a hand
+    body, P106 sensors) came into *new* contact with another body in the ``KNOCK_WIN_S`` before
+    it left, and either the hand was still commanded closed or the object has left that body
+    again ``FALL_ROWS`` later (a bin wall rammed, can let go or forced out, can on the table; a
+    contact that was already continuous, such as the table under a dragged object, is not a
+    knock). ``slipped``: still commanded closed, nothing touched, left anyway. ``unclear``: no
+    contact pairs recorded.
+    The two reviewer corrections that shaped this (rc5 FoodPacking2Cans env 2, 7.0 s and
+    18.0 s): can against the bin wall for 0.3 to 0.8 s while gripped, open commanded, can
+    falls to the table. Returns (cause, culprits)."""
     if not rec.pair_contact and not rec.body_forces:
-        return "unclear", None
+        return ("released" if deliberate else "unclear"), None
     k = max(1, int(round(KNOCK_WIN_S / dt)))
     a, b = max(0, leave - k), min(rec.T, leave + 1)
     culprits = []
+    left_again = []                                     # culprits the object is no longer on after the release
+    chk = min(rec.T - 1, leave + FALL_ROWS)
     for key, col in rec.pair_contact.items():
         parts = key.split("__")
         if o not in parts or len(parts) != 2:
@@ -542,6 +548,8 @@ def _release_cause(rec: Recording, o: str, leave: int, deliberate: bool, dt: flo
         before = np.asarray(col[max(0, a - k):a]) > 0
         if win.any() and not (before.size and before.all() and win.all()):
             culprits.append(other)
+            if not col[chk]:
+                left_again.append(other)
     for key, col in rec.body_forces.items():
         parts = key.split("__")
         if len(parts) != 2 or parts[1] == o:
@@ -550,8 +558,14 @@ def _release_cause(rec: Recording, o: str, leave: int, deliberate: bool, dt: flo
         before = np.asarray(col[max(0, a - k):a]) > 0
         if win.any() and not (before.size and before.all() and win.all()):
             culprits.append(f"hand:{parts[1]}")
+    if deliberate:
+        # a commanded open is a place unless the object had just hit something and does not
+        # stay on it (can against the bin wall, jaws open, can falls to the table: knocked); a
+        # short drop onto the bin floor or another object inside it is still a place (the
+        # reviewer's verdicts on rc5 env 3 and rc4 BlackItemsInBin)
+        return ("knocked", sorted(set(left_again))) if left_again else ("released", None)
     if culprits:
-        return "knocked", sorted(set(culprits))
+        return "knocked", sorted(set(culprits))        # forced out of a closed hand by what it hit
     return "slipped", None
 
 
@@ -798,6 +812,8 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
             seg["attributes"].append({"knocked": "knocked out by " + ", ".join(culprits or []),
                                       "slipped": "slipped out of the closed hand",
                                       "unclear": "cause unclear (no contact pairs recorded)"}[cause])
+        elif cause == "knocked":
+            seg["attributes"].append("let go after hitting " + ", ".join(culprits or []))
         if interrupted:
             seg["attributes"].append("re-engaged before coming to rest")
         elif not settled:
