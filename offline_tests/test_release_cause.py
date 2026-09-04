@@ -125,3 +125,10 @@ def test_in_box_uses_the_oriented_footprint_not_the_axis_aligned_one():
     assert not P._in_box(corners, np.array([0.19, 0.19, 0.05]))        # AABB corner region, outside the bin
     assert P._in_box(corners, np.array([0.0, 0.0, 0.14]))              # 4 cm above the top: on it
     assert not P._in_box(corners, np.array([0.0, 0.0, 0.2]))           # 10 cm above: carried over it
+
+
+def test_in_box_on_a_flat_wide_box_whose_face_diagonal_is_shorter_than_its_long_edge():
+    """d6 BananasInCrate: crate 0.30 x 0.21 x 0.15, banana resting inside read outside."""
+    local = np.array([[x, y, z] for x in (-0.15, 0.15) for y in (-0.105, 0.105) for z in (0.0, 0.147)])
+    assert P._in_box(local, np.array([0.12, 0.08, 0.09]))              # inside, near a corner
+    assert not P._in_box(local, np.array([0.18, 0.0, 0.05]))           # past the long side

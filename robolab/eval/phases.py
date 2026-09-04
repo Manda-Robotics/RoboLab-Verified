@@ -498,8 +498,19 @@ def _in_box(corners: np.ndarray, p: np.ndarray, above: float = 0.05, below: floa
     (The axis-aligned extent of a rotated bin covers table the bin does not: rc7_upstream
     BlackItemsInBin env 0 passed three places that rest 23 to 32 cm from a 50 × 49 cm AABB.)"""
     c0 = corners[0]
-    nb = sorted(range(1, 8), key=lambda i: float(np.linalg.norm(corners[i] - c0)))[:3]
-    edges = [corners[i] - c0 for i in nb]
+    # the box's three edges at corner 0: the shortest vector to another corner is always an
+    # edge; the next two are the shortest vectors orthogonal to those already taken (for a
+    # flat box a face diagonal is shorter than the longest edge, so distance alone picks wrong:
+    # d6 BananasInCrate, crate 0.30 x 0.21 x 0.15, diagonal 0.246)
+    vecs = sorted((corners[i] - c0 for i in range(1, 8)), key=lambda v: float(np.linalg.norm(v)))
+    edges: list[np.ndarray] = []
+    for v in vecs:
+        if len(edges) == 3:
+            break
+        if all(abs(float(np.dot(v, e))) <= 0.05 * float(np.linalg.norm(v) * np.linalg.norm(e)) for e in edges):
+            edges.append(v)
+    if len(edges) < 3:
+        return False
     edges.sort(key=lambda e: abs(e[2]))                 # the most vertical edge last
     for e in edges[:2]:
         u = float(np.dot(p - c0, e) / max(1e-9, np.dot(e, e)))
