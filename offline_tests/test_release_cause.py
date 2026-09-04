@@ -42,7 +42,7 @@ def test_commanded_open_onto_a_support_is_released():
 def test_commanded_open_after_hitting_the_wall_and_falling_is_knocked():
     """rc5 FoodPacking2Cans env 2: can on the bin wall while gripped, open commanded, can falls."""
     rec = _rec({"can__bin": _col(60, [(26, 32)]), "can__table": _col(60, [(36, 60)])})
-    cause, culprits = P._release_cause(rec, "can", 30, True, DT)
+    cause, culprits = P._release_cause(rec, "can", 30, True, DT, rest_at=45)
     assert cause == "knocked" and culprits == ["bin"]
 
 
@@ -50,6 +50,12 @@ def test_a_short_drop_onto_the_bin_floor_is_still_released():
     """rc4 BlackItemsInBin: smartphone let go over the bin, lands on the keyboard inside it."""
     rec = _rec({"can__keyboard": _col(60, [(33, 60)])})
     assert P._release_cause(rec, "can", 30, True, DT) == ("released", None)
+
+
+def test_a_rim_bounce_that_settles_inside_the_bin_is_released():
+    """rc5 FoodPacking2Cans env 3, 50.7 s: let go 18 cm up, bounces on the rim, rests inside."""
+    rec = _rec({"can__bin": _col(60, [(28, 33), (34, 60)])})
+    assert P._release_cause(rec, "can", 30, True, DT, rest_at=50) == ("released", None)
 
 
 def test_set_down_on_the_bin_floor_after_touching_it_is_released():
