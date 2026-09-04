@@ -531,13 +531,19 @@ def _in_destination(rec: Recording, ch: Channels, o: str, d: str, t: int) -> boo
     by more than 5 cm. ``None`` when nothing can be said."""
     if d == "table":
         # out-of-container tasks: at its destination once the centroid is outside the footprint
-        # of every origin container (the roles mark those as destination-role objects)
+        # of every origin container (the roles mark those as destination-role objects) and, where
+        # the recording can tell, actually on the table: a banana balanced on the bin's rim at
+        # 11 cm is outside the oriented footprint but not out of the bin (rc3 BananasOutOfBin
+        # env 0, 53 s; the ladder did not fire there either)
         for x in rec.bbox_corners:
             if x in (o, "table") or ch.roles.get(x) != "destination":
                 continue
             if _in_box(rec.bbox_corners[x][t], rec.obj_pos[o][t], above=0.05, below=1.0):
                 return False
-        return True
+        on_table = rec.pair_contact.get(f"{o}__table")
+        if on_table is None:
+            on_table = rec.pair_contact.get(f"table__{o}")
+        return True if on_table is None else bool(on_table[t])
     col = rec.pair_contact.get(f"{o}__{d}")
     if col is not None and col[t]:
         return True
