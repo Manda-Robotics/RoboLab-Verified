@@ -41,7 +41,7 @@ See the [Ecosystem](docs/ecosystem.md) page for projects built on RoboLab.
 
 ## Getting Started
 
-Requires [uv](https://docs.astral.sh/uv/getting-started/installation/), [Git LFS](https://git-lfs.com) and a system `ffmpeg` (used for video recording). All `.usd`/`.usda` assets are LFS objects; without Git LFS, each scene file is a 130-byte pointer stub. The Isaac Sim / Isaac Lab stack is selected at install time with one of two mutually exclusive extras: `isaac51` (Isaac Sim 5.1 / Isaac Lab 2.3.2.post1, recommended; every result in this fork was produced on it) or `isaac50` (Isaac Sim 5.0 / Isaac Lab 2.2.0). Isaac Sim 5.0 segfaults at startup on NVIDIA drivers ≥ 580; use `isaac51` on current drivers. See [Requirements](#requirements) for hardware.
+Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and a system `ffmpeg` (used for video recording). The Isaac Sim/Isaac Lab stack is selected with a mutually-exclusive extra. `isaac60` is the default documented path; `isaac50` and `isaac51` remain available for existing experiments. See [Isaac Sim 6 support](docs/isaac_sim_6.md) and [Requirements](#requirements).
 
 ### Installation
 
@@ -53,20 +53,18 @@ sudo apt install ffmpeg git-lfs
 git lfs install
 git clone https://github.com/Manda-Robotics/RoboLab-Verified.git robolab
 cd robolab
-git lfs pull                     # fetch the USD assets (~6 GB); with git-lfs installed the clone above already did this (GIT_LFS_SKIP_SMUDGE=1 git clone defers it)
-uv venv --python 3.11
+uv venv --python 3.12
 source .venv/bin/activate
-uv sync --extra isaac51 --extra test   # Isaac Sim 5.1 / Isaac Lab 2.3.2.post1 (recommended)
-# uv sync --extra isaac50 --extra test # Isaac Sim 5.0 / Isaac Lab 2.2.0 (drivers < 580 only)
+uv sync --extra isaac60          # Isaac Sim 6.0.1 / Isaac Lab 3.0 beta
+# uv sync --extra isaac50        # Isaac Sim 5.0 / Isaac Lab 2.2.0 (Python 3.11)
+# uv sync --extra isaac51        # Isaac Sim 5.1 / Isaac Lab 2.3.2.post1 (Python 3.11)
 ```
 
-`--extra test` installs `pytest`, which the verification suite below requires.
-
-The two stacks cannot coexist in one environment. To keep both available, install each into its own venv via `UV_PROJECT_ENVIRONMENT`:
+The stacks cannot coexist in one environment. To keep multiple versions available, install each into its own venv:
 
 ```bash
-UV_PROJECT_ENVIRONMENT=.venv    uv sync --extra isaac50
-UV_PROJECT_ENVIRONMENT=.venv-51 uv sync --extra isaac51
+UV_PROJECT_ENVIRONMENT=.venv-60 uv sync --python 3.12 --extra isaac60
+UV_PROJECT_ENVIRONMENT=.venv-51 uv sync --python 3.11 --extra isaac51
 ```
 
 Verify the installation:
@@ -212,12 +210,12 @@ Full documentation is at [docs/README.md](docs/README.md), covering:
 
 | Dependency | Version |
 |---|---|
-| Isaac Sim | 5.1 (recommended) or 5.0 |
-| Isaac Lab | 2.3.2.post1 (recommended) or 2.2.0 |
-| Python | 3.11 |
+| Isaac Sim | 6.0.1 (default), 5.0, or 5.1 |
+| Isaac Lab | 3.0 beta 2 patch 1, 2.2.0, or 2.3.2.post1 |
+| Python | 3.12 for Isaac Sim 6; 3.11 for Isaac Sim 5 |
 | Linux | Ubuntu 22.04+ |
 
-> **Note on simulator versions**: Isaac Sim 5.0 and 5.1 ship different PhysX builds, so contact-rich dynamics (grasping, object settling) are not invariant across the two stacks. Results are best compared against runs on the same stack. Every recorded run in this fork's documentation is Isaac Sim 5.1. Isaac Sim 6.0 renders the Robotiq gripper incompletely in some scenes ([findings](docs/verified/findings.md#known-defects-not-changed)) and is not supported.
+> **Note on simulator versions**: the stacks ship different PhysX builds, so contact-rich dynamics (grasping, object settling) are not invariant across versions. Benchmark results are best compared on the same stack. RoboLab converts recorded quaternion layouts across versions, but numerical replay fidelity still requires the original simulator stack.
 
 - **Disk space**: ~8 GB (assets account for ~7 GB)
 - **GPU**: NVIDIA RTX GPU required. Recommend 48 GB+ VRAM. See [Isaac Lab's hardware requirements](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html#system-requirements) and the per-task [`num_envs` guide](docs/env_vram_size_guide.md).

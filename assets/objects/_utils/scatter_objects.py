@@ -14,12 +14,13 @@ Usage:
     python scatter_objects.py [--datasets handal hope hot3d ycb vomp] [--output-dir OUTPUT_DIR] [--grid-spacing 0.15]
 """
 
-import os
+import argparse
 import json
 import math
-import argparse
-import numpy as np
+import os
 from pathlib import Path
+
+import numpy as np
 
 
 def main():
@@ -46,15 +47,17 @@ def main():
     from isaacsim import SimulationApp
     app = SimulationApp({'headless': True})
 
-    # Now import the rest
-    from pxr import UsdGeom, Gf
-    from isaacsim.sensors.camera import Camera
-    from isaacsim.core.api import World
-    from isaacsim.core.api.objects.ground_plane import GroundPlane
-    from omni.isaac.core.utils.viewports import set_camera_view
-    import omni.isaac.core.utils.prims as prim_utils
-    import omni.usd
+    # Now import the rest. Use the Isaac Sim 6 / Isaac Lab 3 APIs rather than
+    # the deprecated isaacsim.core.* and isaacsim.sensors.camera extensions.
+    import isaaclab.sim as sim_utils
+    from isaaclab.sim import SimulationCfg, SimulationContext
+    from isaacsim.core.experimental.utils import app as app_utils
+    from isaacsim.core.rendering_manager import ViewportManager
+
+    app_utils.enable_extension("isaacsim.sensors.experimental.rtx")
+    from isaacsim.sensors.experimental.rtx import CameraSensor, RtxCamera
     from PIL import Image
+    from pxr import Gf, UsdGeom
 
     # Setup paths
     script_dir = Path(__file__).parent
@@ -103,8 +106,8 @@ def main():
 
     # Create a new stage
     print("\nCreating new USD stage...")
-    omni.usd.get_context().new_stage()
-    stage = omni.usd.get_context().get_stage()
+    sim_utils.create_new_stage()
+    stage = sim_utils.get_current_stage()
 
     # Set up world and default prim
     world_prim = stage.DefinePrim("/World", "Xform")
@@ -283,11 +286,12 @@ def main():
 
     # Add ground plane
     print("\nAdding ground plane...")
-    GroundPlane(prim_path="/World/GroundPlane", z_position=0.0, size=50)
+    ground_cfg = sim_utils.GroundPlaneCfg(size=(50.0, 50.0))
+    ground_cfg.func("/World/GroundPlane", ground_cfg, translation=(0.0, 0.0, 0.0))
 
     # Add lighting
     print("Adding lighting...")
-    prim_utils.create_prim(
+    sim_utils.create_prim(
         "/World/DistantLight",
         "DistantLight",
         attributes={
@@ -300,7 +304,7 @@ def main():
         }
     )
 
-    prim_utils.create_prim(
+    sim_utils.create_prim(
         "/World/DomeLight",
         "DomeLight",
         attributes={
@@ -331,7 +335,7 @@ def main():
 
     # Initialize world
     print("\nInitializing world...")
-    world = World(physics_dt=0.0167, rendering_dt=1/60)
+    world = SimulationContext(SimulationCfg(dt=0.0167, render_interval=1))
     world.reset()
 
     # Setup camera - position to see all objects from the front
@@ -346,14 +350,18 @@ def main():
     print(f"Camera target: {camera_target}")
 
     resolution = tuple(args.resolution)
-    camera = Camera(prim_path="/OmniverseKit_Persp", resolution=resolution, frequency=20)
-
-    set_camera_view(
-        eye=np.array(camera_position),
-        target=np.array(camera_target),
-        camera_prim_path="/OmniverseKit_Persp"
+    rtx_camera = RtxCamera("/OmniverseKit_Persp", tick_rate=20.0)
+    camera = CameraSensor(
+        rtx_camera,
+        resolution=(resolution[1], resolution[0]),
+        annotators=["rgb"],
     )
-    camera.initialize()
+
+    ViewportManager.set_camera_view(
+        "/OmniverseKit_Persp",
+        eye=list(camera_position),
+        target=list(camera_target),
+    )
 
     # Set camera intrinsics for good framing
     camera_prim = stage.GetPrimAtPath("/OmniverseKit_Persp")
@@ -370,10 +378,13 @@ def main():
         world.step(render=True)
         if i % 10 == 0:
             print(f"  Rendering frame {i}/{args.skip_frames}...")
-        if i == args.skip_frames:
-            # Capture the frame
-            rgba_image = camera.get_rgba()
-            rgb_image = rgba_image[:, :, :3]
+        if i >= args.skip_frames:
+            # Capture the frame from the Isaac Sim 6 RTX sensor API.
+            rgb_data, _ = camera.get_data("rgb")
+            if rgb_data is None:
+                i += 1
+                continue
+            rgb_image = rgb_data.numpy()
 
             # Save image
             pil_image = Image.fromarray(rgb_image.astype(np.uint8))
@@ -403,7 +414,7 @@ def main():
     print(f"✓ Placement info saved to: {info_path}")
 
     # Cleanup
-    omni.usd.get_context().close_stage()
+    SimulationContext.clear_instance()
     app.close()
 
     print("\nDone!")

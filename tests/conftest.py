@@ -66,28 +66,17 @@ _EXIT_STATUS = 0
 
 
 def pytest_sessionfinish(session, exitstatus):
-    """Remember pytest's verdict; the app is closed in ``pytest_unconfigure`` below."""
-    global _EXIT_STATUS
-    _EXIT_STATUS = int(getattr(exitstatus, "value", exitstatus))
-
-
-def pytest_unconfigure(config):
-    """Close Isaac Sim without losing pytest's exit status.
-
-    Closing the app inside ``pytest_sessionfinish`` made every run — failures
-    included — exit 0: Kit's shutdown ends the process on its own terms and
-    pytest never gets to return its status, so CI could not see red.
-    ``pytest_unconfigure`` runs after the terminal summary. On a green run we
-    close the app normally; on a red run we skip Kit's shutdown entirely and
-    exit with pytest's status ourselves (the process is ending either way).
-    """
-    import sys
-
-    sys.stdout.flush()
-    sys.stderr.flush()
-    if _EXIT_STATUS != 0:
-        os._exit(_EXIT_STATUS)
+    """Close Isaac Sim without letting its ``SystemExit(0)`` mask failures."""
+    if exitstatus:
+        # SimulationApp.close() terminates the process with status 0 in some
+        # packaged Isaac Sim builds.  Let pytest return the failure status;
+        # process teardown will release the app resources.
+        return
     try:
         simulation_app.close()
+    except SystemExit:
+        # SimulationApp.close() may terminate with status 0.  Suppress that so
+        # pytest can report and return its real session exit status instead.
+        pass
     except Exception:
         pass

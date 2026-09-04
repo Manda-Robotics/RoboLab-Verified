@@ -6,7 +6,7 @@ name = "robolab"
 version = "0.3.1+verified.1"
 description = "RoboLab Verified: NVIDIA RoboLab v0.3.1 with a verified evaluation harness"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.13"
 license = {text = "Apache-2.0"}
 authors = [{name = "Xuning Yang"}]
 maintainers = [{name = "Manda Robotics"}]
@@ -14,10 +14,11 @@ maintainers = [{name = "Manda Robotics"}]
 dependencies = [
     # Core
     # IsaacLab + IsaacSim are NOT pinned here: they are mutually-exclusive,
-    # version-specific stacks selected via the `isaac50` / `isaac51` extras
+    # version-specific stacks selected via the `isaac50` / `isaac51` / `isaac60` extras
     # below (see [tool.uv].conflicts). Install with e.g.
-    #   uv sync --extra isaac50   # IsaacLab 2.2.0 / IsaacSim 5.0.0  (default)
+    #   uv sync --extra isaac50   # IsaacLab 2.2.0 / IsaacSim 5.0.0
     #   uv sync --extra isaac51   # IsaacLab 2.3.2.post1 / IsaacSim 5.1.0
+    #   uv sync --extra isaac60   # IsaacLab 3.0 beta / IsaacSim 6.0.1 (Python 3.12)
     "torch",
     "numpy",
     "gymnasium",
@@ -67,6 +68,12 @@ isaac51 = [
     "isaaclab==2.3.2.post1",
     "isaacsim[all,extscache]==5.1.0",
 ]
+isaac60 = [
+    # Isaac Lab 3's published wheel bundles isaaclab_physx, isaaclab_tasks,
+    # isaaclab_visualizers, and the other Lab extensions. Its `isaacsim` extra
+    # selects the matching Isaac Sim 6.0.1 package stack.
+    "isaaclab[isaacsim]==3.0.0b2.post1; python_version >= '3.12'",
+]
 analysis = ["sbi"]
 test = ["pytest"]
 all = ["sbi", "pytest"]
@@ -89,16 +96,12 @@ dashboard = ["templates/*.html", "static/*"]
 [tool.uv]
 prerelease = "allow"
 index-strategy = "unsafe-best-match"
-# The two IsaacLab/IsaacSim stacks cannot be co-installed in one environment.
-# Declaring them conflicting lets a single lockfile cover both; pick one per
-# environment with `uv sync --extra isaac50` or `--extra isaac51`.
-conflicts = [[{ extra = "isaac50" }, { extra = "isaac51" }]]
-# isaacsim (both the 5.0 and 5.1 kernels) pins websockets==12.0 — stale
-# metadata in practice: kit only uses websockets for livestream/omni.services,
-# which headless eval never touches, and the benchmark runs routinely on
-# isaac50 with websockets 16. Override the pin so the lock resolves a modern
-# websockets for the policy clients instead of being dragged down to 12.0.
-override-dependencies = ["websockets>=14.0"]
+# The IsaacLab/IsaacSim stacks cannot be co-installed in one environment.
+conflicts = [
+    [{ extra = "isaac50" }, { extra = "isaac51" }],
+    [{ extra = "isaac50" }, { extra = "isaac60" }],
+    [{ extra = "isaac51" }, { extra = "isaac60" }],
+]
 # warp-lang 1.13.0.dev20260418 on pypi.nvidia.com only published the macOS
 # wheel — no Linux build — so any resolver pass that picked it would break
 # `uv sync` on Linux. Exclude that specific version.
@@ -138,4 +141,4 @@ select = ["I"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["robolab", "policies"]
-known-third-party = ["isaaclab", "isaaclab_assets", "isaaclab_mimic", "isaaclab_rl", "isaaclab_tasks"]
+known-third-party = ["isaaclab", "isaaclab_assets", "isaaclab_mimic", "isaaclab_physx", "isaaclab_rl", "isaaclab_tasks", "isaaclab_visualizers"]

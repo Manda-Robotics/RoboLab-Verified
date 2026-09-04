@@ -5,7 +5,7 @@
 ROBOLAB_DIR=$( cd $( dirname ${BASH_SOURCE[0]} )/.. && pwd )
 
 IMAGE_NAME="${ROBOLAB_REGISTRY:-robolab}"
-IMAGE_TAG="${1:-$(git rev-parse --short HEAD)}"
+IMAGE_TAG="${1:-$(git rev-parse --short HEAD)-isaac60}"
 
 xhost +local:root
 docker run \
@@ -16,6 +16,7 @@ docker run \
   --rm \
   --runtime nvidia \
   -v $ROBOLAB_DIR/.cache/ov:/root/.cache/ov \
+  -v $ROBOLAB_DIR/.cache/ov:/home/isaaclab/.cache/ov \
   -v $ROBOLAB_DIR/.cache/kit:/isaac-sim/kit/cache \
   -v $ROBOLAB_DIR:/workspace/robolab \
   -w /workspace/robolab \
