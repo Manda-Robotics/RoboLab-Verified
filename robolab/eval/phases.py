@@ -491,19 +491,40 @@ def _support_contact(rec: Recording, o: str) -> np.ndarray | None:
     return out
 
 
+def _in_box(corners: np.ndarray, p: np.ndarray, above: float = 0.05, below: float = 0.02) -> bool:
+    """Point ``p`` inside the *oriented* box given by its 8 recorded corners, with ``above``
+    slack over the top face and ``below`` under the bottom. The three corners nearest corner 0
+    are its neighbours along the box's own axes, so local coordinates come from those edges.
+    (The axis-aligned extent of a rotated bin covers table the bin does not: rc7_upstream
+    BlackItemsInBin env 0 passed three places that rest 23 to 32 cm from a 50 × 49 cm AABB.)"""
+    c0 = corners[0]
+    nb = sorted(range(1, 8), key=lambda i: float(np.linalg.norm(corners[i] - c0)))[:3]
+    edges = [corners[i] - c0 for i in nb]
+    edges.sort(key=lambda e: abs(e[2]))                 # the most vertical edge last
+    for e in edges[:2]:
+        u = float(np.dot(p - c0, e) / max(1e-9, np.dot(e, e)))
+        if not 0.0 <= u <= 1.0:
+            return False
+    ez = edges[2]
+    h = float(np.linalg.norm(ez))
+    if h < 1e-6:
+        return True
+    z = float(np.dot(p - c0, ez) / h)                    # metres along the vertical edge
+    zmin, zmax = min(0.0, h), max(0.0, h)
+    return zmin - below <= z <= zmax + above
+
+
 def _in_destination(rec: Recording, ch: Channels, o: str, d: str, t: int) -> bool | None:
     """Object ``o`` inside / on destination ``d`` at row ``t``: the recorded pair-contact column
-    if present, else the centroid inside the destination's box footprint and not above its
-    top by more than 5 cm. ``None`` when nothing can be said."""
+    if present, else the centroid inside the destination's oriented box and not above its top
+    by more than 5 cm. ``None`` when nothing can be said."""
     if d == "table":
         # out-of-container tasks: at its destination once the centroid is outside the footprint
         # of every origin container (the roles mark those as destination-role objects)
         for x in rec.bbox_corners:
             if x in (o, "table") or ch.roles.get(x) != "destination":
                 continue
-            lo, hi = rec.bbox_corners[x][t].min(axis=0), rec.bbox_corners[x][t].max(axis=0)
-            p = rec.obj_pos[o][t]
-            if lo[0] <= p[0] <= hi[0] and lo[1] <= p[1] <= hi[1] and p[2] <= hi[2] + 0.05:
+            if _in_box(rec.bbox_corners[x][t], rec.obj_pos[o][t], above=0.05, below=1.0):
                 return False
         return True
     col = rec.pair_contact.get(f"{o}__{d}")
@@ -512,10 +533,7 @@ def _in_destination(rec: Recording, ch: Channels, o: str, d: str, t: int) -> boo
     corners = rec.bbox_corners.get(d)
     if corners is None:
         return None
-    lo, hi = corners[t].min(axis=0), corners[t].max(axis=0)
-    p = rec.obj_pos[o][t]
-    inside_xy = lo[0] <= p[0] <= hi[0] and lo[1] <= p[1] <= hi[1]
-    return bool(inside_xy and p[2] <= hi[2] + 0.05 and p[2] >= lo[2] - 0.02)
+    return _in_box(corners[t], rec.obj_pos[o][t])
 
 
 def _release_cause(rec: Recording, o: str, leave: int, deliberate: bool, dt: float, rest_at: int | None = None):
@@ -524,8 +542,8 @@ def _release_cause(rec: Recording, o: str, leave: int, deliberate: bool, dt: flo
     ``released``: commanded open, and whatever the object touched just before is where it comes
     to rest (set down, or a drop into the destination, rim bounces included). ``knocked``: the object (or a hand
     body, P106 sensors) came into *new* contact with another body in the ``KNOCK_WIN_S`` before
-    it left, and either the hand was still commanded closed or the object is not on that body
-    at rest (``rest_at``; ``FALL_ROWS`` after leaving when no rest row is known) (a bin wall rammed, can let go or forced out, can on the table; a
+    it left and is not resting on that body at ``rest_at`` (``FALL_ROWS`` after leaving when no
+    rest row is known), whether or not the open was then commanded (a bin wall rammed, can let go or forced out, can on the table; a
     contact that was already continuous, such as the table under a dragged object, is not a
     knock). ``slipped``: still commanded closed, nothing touched, left anyway. ``unclear``: no
     contact pairs recorded.
@@ -557,16 +575,16 @@ def _release_cause(rec: Recording, o: str, leave: int, deliberate: bool, dt: flo
         win = np.asarray(col[a:b]) > 0
         before = np.asarray(col[max(0, a - k):a]) > 0
         if win.any() and not (before.size and before.all() and win.all()):
-            culprits.append(f"hand:{parts[1]}")
+            culprits.append(f"hand:{parts[1]}"); left_again.append(f"hand:{parts[1]}")   # a hand body is never what the object rests on
     if deliberate:
         # a commanded open is a place unless the object had just hit something and does not
         # end up on it (can against the bin wall, jaws open, can at rest on the table: knocked);
         # a drop into the bin that bounces on the rim and settles inside is still a place (the
         # reviewer's verdicts on rc5 env 3 and rc4 BlackItemsInBin), so the test is at rest
         return ("knocked", sorted(set(left_again))) if left_again else ("released", None)
-    if culprits:
-        return "knocked", sorted(set(culprits))        # forced out of a closed hand by what it hit
-    return "slipped", None
+    if left_again:
+        return "knocked", sorted(set(left_again))      # forced out of a closed hand by what it hit, and not resting on it
+    return "slipped", None                             # left a closed hand onto what it was being lowered to (rc7 FoodPacking2Cans env 1, 45.9 s: the box slides out onto the table)
 
 
 def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str], dests: set[str],

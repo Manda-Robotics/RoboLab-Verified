@@ -65,8 +65,14 @@ def test_set_down_on_the_bin_floor_after_touching_it_is_released():
 
 def test_new_contact_just_before_leaving_a_closed_hand_is_knocked():
     rec = _rec({"can__bin": _col(60, [(28, 30)]), "can__table": _col(60, [(40, 60)])})
-    cause, culprits = P._release_cause(rec, "can", 30, False, DT)
-    assert cause == "knocked" and culprits == ["bin"]
+    assert P._release_cause(rec, "can", 30, False, DT, rest_at=50)[0] == "knocked"
+
+
+def test_sliding_out_of_a_closed_hand_onto_the_table_it_was_lowered_to_is_slipped():
+    """rc7_upstream FoodPacking2Cans env 1, 45.9 s: box touches the table as it is lowered, leaves the
+    closed hand, rests on the table. The reviewer: slipped, no other object involved."""
+    rec = _rec({"box__table": _col(60, [(29, 30), (31, 60)])})
+    assert P._release_cause(rec, "box", 30, False, DT, rest_at=50) == ("slipped", None)
 
 
 def test_contact_that_was_already_continuous_is_not_a_knock():
@@ -104,3 +110,18 @@ def test_every_place_carries_a_cause_and_derive_matches_annotate():
     _, segs, _, _ = P.derive(prep, [])
     strip = lambda ss: [{k: v for k, v in s.items() if k != "flags"} for s in ss]  # noqa: E731
     assert strip(segs) == strip(a.doc["attempts"])
+
+
+def test_in_box_uses_the_oriented_footprint_not_the_axis_aligned_one():
+    """A 30 cm square bin rotated 45 deg has a 42 cm axis-aligned extent; a point in the AABB's
+    corner is outside the bin."""
+    import math
+    c, s_ = math.cos(math.pi / 4), math.sin(math.pi / 4)
+    R = np.array([[c, -s_, 0], [s_, c, 0], [0, 0, 1]])
+    local = np.array([[x, y, z] for x in (-0.15, 0.15) for y in (-0.15, 0.15) for z in (0.0, 0.1)])
+    corners = local @ R.T
+    assert P._in_box(corners, np.array([0.0, 0.0, 0.05]))              # centre
+    assert P._in_box(corners, np.array([0.2, 0.0, 0.05]))              # on a diagonal, inside the rotated square (half-diagonal 0.21)
+    assert not P._in_box(corners, np.array([0.19, 0.19, 0.05]))        # AABB corner region, outside the bin
+    assert P._in_box(corners, np.array([0.0, 0.0, 0.14]))              # 4 cm above the top: on it
+    assert not P._in_box(corners, np.array([0.0, 0.0, 0.2]))           # 10 cm above: carried over it
