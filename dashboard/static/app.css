@@ -913,10 +913,12 @@ table thead th { padding: 0.5rem 0.75rem; font-weight: 500; }
 }
 .phase-lane-l1 { height: 17px; }
 .phase-lane-labels { height: 15px; background: var(--bg-0); }
-.phase-lane-loupe { height: 22px; cursor: default; }
-.phase-lane-loupe .phase-seg.phase { font-size: 11px; line-height: 19px; padding: 0 4px; }
-.loupe-centre { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #fff; transform: translateX(-50%); z-index: 3; pointer-events: none; }
-.loupe-tick { position: absolute; top: 0; height: 5px; width: 1px; background: rgba(255,255,255,0.45); z-index: 2; pointer-events: none; }
+.transport-strip { position: relative; }
+.nav-window { position: absolute; top: 0; bottom: 0; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.85); border-radius: 3px; background: rgba(255,255,255,0.10); cursor: grab; z-index: 4; }
+.nav-window.full { pointer-events: none; border-color: transparent; background: transparent; }
+.nav-window:active { cursor: grabbing; }
+.nav-handle { position: absolute; top: 0; bottom: 0; width: 7px; cursor: ew-resize; }
+.nav-handle.left { left: -3px; } .nav-handle.right { right: -3px; }
 .phase-seg {
   position: absolute; top: 1px; bottom: 1px; box-sizing: border-box;
   border-radius: 2px; border-right: 1px solid rgba(0, 0, 0, 0.45);
