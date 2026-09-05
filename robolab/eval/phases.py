@@ -860,12 +860,15 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
         if last_move > 0:
             segs.append(_make_segment("no_completed_subtask", None, 0, last_move, "fail", ch, lab, obj, targets, dests, dt))
     else:
-        # a long stretch after the last attempt in which nothing happens (idle, pressing the
-        # table, retreating) is a failure stretch, not the references' retreat tail
+        # the tail after the last attempt: anything the episode still does for GAP_NCS_S or
+        # longer completed no subtask, whatever it was (fumbling at objects it never holds,
+        # pressing the table, wandering), so it is labelled as such; the breaker-share test
+        # that used to gate this left 72 s of grasp attempts unlabelled (rc7_1.0
+        # BlackItemsInBin env 0) and the reviewer asked three times for the missing tail.
+        # A shorter tail after a final place is the episode simply ending and stays empty.
         tail_start = segs[-1]["end"]
         gap = T - tail_start
-        share = (sum(1 for k in range(tail_start, T) if lab[k] in BREAKERS or jammed(k)) / gap) if gap else 0.0
-        if gap * dt >= GAP_NCS_S and share >= NCS_BREAKER_SHARE and segs[-1]["label"] != "carry":
+        if gap * dt >= GAP_NCS_S and segs[-1]["label"] != "carry":
             segs.append(_make_segment("no_completed_subtask", None, tail_start, T - 1, "fail", ch, lab, obj, targets, dests, dt))
     _flag_against_log(segs, ch, log_events, dt, kind)
     for seg in segs:                       # attributes added after the segment was built
