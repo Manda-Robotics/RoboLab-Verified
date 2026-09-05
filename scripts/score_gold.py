@@ -78,7 +78,7 @@ def review_segments(rows):
         REVIEW_STATS["n"] += 1
         for k in ("label", "result", "bounds"):
             REVIEW_STATS[k + "_ok"] += bool(v.get(k, True))
-        if "cause" in v:                          # the fourth axis, places only (§9.13)
+        if "cause" in v and (r.get("result") or "fail") == "fail":   # the fourth axis: failed places only (§9.13, P121)
             REVIEW_STATS["cause_n"] += 1
             REVIEW_STATS["cause_ok"] += bool(v["cause"])
         lab = r.get("label") if v.get("label", True) else c.get("label")
@@ -345,7 +345,7 @@ def main(argv=None) -> int:
         print(f"review verdicts (annotator 1): {n} machine segments reviewed; label right {REVIEW_STATS['label_ok'] / n:.3f}, "
               f"result right {REVIEW_STATS['result_ok'] / n:.3f}, bounds within tolerance {REVIEW_STATS['bounds_ok'] / n:.3f}, "
               f"segments removed {REVIEW_STATS['removed']}"
-              + (f"; cause right {REVIEW_STATS['cause_ok'] / REVIEW_STATS['cause_n']:.3f} on {REVIEW_STATS['cause_n']} places" if REVIEW_STATS["cause_n"] else ""))
+              + (f"; cause right {REVIEW_STATS['cause_ok'] / REVIEW_STATS['cause_n']:.3f} on {REVIEW_STATS['cause_n']} failed places" if REVIEW_STATS["cause_n"] else ""))
     REVIEW_STATS.clear()
     g2 = {ep: segments_of(rows) for ep, rows in a2.items()}
 

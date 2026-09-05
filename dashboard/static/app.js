@@ -4287,10 +4287,12 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
   if (attempts.length) {
     const rv = el('div', { class: 'review-list' });
     panel.appendChild(el('div', { class: 'text-xs', style: { color: 'var(--text-2)', marginTop: '6px' } },
-      'Review the machine: j / k select a segment (seeks to its start) · 1 label · 2 result · 3 bounds (✓ = within 0.5 s) · 4 cause (places: released / knocked / slipped) · Enter save · a ✗ opens the correction fields; label "none" = this segment should not exist.'));
+      'Review the machine: j / k select a segment (seeks to its start) · 1 label · 2 result · 3 bounds (✓ = within 0.5 s) · 4 cause (failed places only: released / knocked / slipped) · Enter save · a ✗ opens the correction fields; label "none" = this segment should not exist.'));
     panel.appendChild(rv);
     const latestReview = (i) => { const rs = marks.filter((m) => m.kind === 'review' && m.seg_index === i); return rs.length ? rs[rs.length - 1] : null; };
-    const hasCause = (a) => a.label === 'place' && !!a.cause;
+    // A cause verdict is asked only where the place failed: on a success the cause is the mechanism of
+    // nothing (the reviewer: "a successful knock ... again a success"), on a failure it is the finding.
+    const hasCause = (a) => a.label === 'place' && !!a.cause && a.result === 'fail';
     const state = attempts.map((a, i) => ({ i, a, ok: { label: true, result: true, bounds: true, cause: true },
       corr: { label: a.label, object: a.object || '', result: a.result, cause: a.cause || '', t_start: a.start_s, t_end: a.end_s }, note: '' }));
     const select = (i, seek = true) => {
