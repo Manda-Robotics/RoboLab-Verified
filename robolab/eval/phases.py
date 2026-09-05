@@ -955,19 +955,37 @@ def _describe(label, o, result, attrs, inside, dt, dest, note, ch, a, b) -> str:
     return text
 
 
+LOG_GRAB_NAMES = {"OBJECT_CARRIED",                       # the fork's tracker (P31 coupling)
+                  "OBJECT_GRABBED_SUCCESS", "WRONG_OBJECT_GRABBED_FAILURE"}   # upstream's grasp condition
+LOG_FAIL_NAMES = {"GRASP_ATTEMPT_FAILED", "OBJECT_GRABBED_FAILURE"}
+LOG_NON_CREDIT_SUCCESS = {"OBJECT_GRABBED_SUCCESS"}
+
+
+def log_event_object(e: dict) -> str | None:
+    """The object an event names: ``object=<o>`` (upstream ladder lines) or ``'<o>'`` (both)."""
+    info = e.get("info", "") or ""
+    m = re.search(r"object=([A-Za-z0-9_]+)", info) or re.search(r"'([^']+)'", info)
+    return m.group(1) if m else None
+
+
 def _flag_against_log(segs: list[dict], ch: Channels, log_events: list[dict], dt: float, kind: str) -> None:
-    """Every L2 segment that disagrees with the run's own event log gets a flag naming it."""
-    def obj_of(e):
-        m = re.search(r"'([^']+)'", e.get("info", ""))
-        return m.group(1) if m else None
-    carries = [(int(e["step"]), obj_of(e)) for e in log_events if e.get("name") == "OBJECT_CARRIED"]
-    fails = [(int(e["step"]), obj_of(e)) for e in log_events if e.get("name") == "GRASP_ATTEMPT_FAILED"]
+    """Every L2 segment that disagrees with the run's own event log gets a flag naming it.
+
+    Two vocabularies are read (P123): the fork's tracker (``OBJECT_CARRIED`` /
+    ``GRASP_ATTEMPT_FAILED`` / ``SUBTASK_COMPLETED``) and upstream's grasp condition
+    (``OBJECT_GRABBED_SUCCESS`` / ``WRONG_OBJECT_GRABBED_FAILURE`` / ``OBJECT_GRABBED_FAILURE`` and
+    the ladder's other ``*_SUCCESS`` lines). The flag text names the fact, not the event name, so
+    it reads the same over either log."""
+    carries = [(int(e["step"]), log_event_object(e)) for e in log_events if e.get("name") in LOG_GRAB_NAMES]
+    fails = [(int(e["step"]), log_event_object(e)) for e in log_events if e.get("name") in LOG_FAIL_NAMES]
     def credits(e, o):
         info = e.get("info", "")
         if e.get("name") == "SUBTASK_COMPLETED":
             return True
-        if not e.get("name", "").endswith("_SUCCESS") or "grabbed" in info.lower():
+        if not e.get("name", "").endswith("_SUCCESS") or e.get("name") in LOG_NON_CREDIT_SUCCESS or "grabbed" in info.lower():
             return False
+        if info.startswith("Completed subtask"):
+            return True                      # upstream's ladder line carries the subtask, not the object
         return (f"object={o}" in info) or (f"'{o}'" in info) or (f"for {o}" in info)
     completed_by = {s["object"]: [int(e["step"]) for e in log_events if credits(e, s["object"])] for s in segs if s["object"]}
     tol = int(round(1.0 / dt))
@@ -977,17 +995,17 @@ def _flag_against_log(segs: list[dict], ch: Channels, log_events: list[dict], dt
             has_carry = any(o == co and a - tol <= st <= b + tol for st, co in carries)
             has_fail = any(o == fo and a - tol <= st <= b + tol for st, fo in fails)
             if s["result"] == "pass" and not has_carry:
-                s["flags"].append("no OBJECT_CARRIED in log")
+                s["flags"].append("no grab in log")
             if s["result"] == "fail" and not has_fail and not has_carry:
-                s["flags"].append("no GRASP_ATTEMPT_FAILED in log")
+                s["flags"].append("no failed attempt in log")
             if s["result"] == "fail" and has_carry:
-                s["flags"].append("log has OBJECT_CARRIED; carry shorter than PICK_MIN_HOLD_S")
+                s["flags"].append("log has a grab; carry shorter than PICK_MIN_HOLD_S")
         if s["label"] == "place" and s["result"] in ("pass", "fail") and kind == "place":
             done = any(a - tol <= st <= b + 3 * tol for st in completed_by.get(o, []))
             if s["result"] == "pass" and not done:
-                s["flags"].append("place pass, no SUBTASK_COMPLETED in log")
+                s["flags"].append("place pass, no completion in log")
             if s["result"] == "fail" and done:
-                s["flags"].append("place fail, log credits SUBTASK_COMPLETED")
+                s["flags"].append("place fail, log credits a completion")
     if log_events and not ch.replay_ok:
         for s in segs:
             s["flags"].append("in-hand from geometry only (no torch)")

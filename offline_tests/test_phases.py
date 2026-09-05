@@ -178,3 +178,48 @@ def test_write_roundtrip(tmp_path):
     assert back["schema_version"] == P.SCHEMA_VERSION
     assert back["phases"] == d["phases"]
     assert os.path.basename(path) == "phases_0_env0.json"
+
+
+def test_log_flags_read_upstream_vocabulary():
+    """P123: upstream's grasp-condition names count as grabs / failed attempts / completions."""
+    from types import SimpleNamespace
+    ch = SimpleNamespace(replay_ok=True)
+    dt = 1 / 15
+
+    def segs():
+        return [
+            {"label": "pick", "object": "mug", "start": 10, "end": 40, "result": "pass", "flags": []},
+            {"label": "pick", "object": "can", "start": 60, "end": 80, "result": "fail", "flags": []},
+            {"label": "place", "object": "mug", "start": 41, "end": 55, "result": "pass", "flags": []},
+        ]
+
+    upstream = [
+        {"step": 30, "name": "OBJECT_GRABBED_SUCCESS", "info": "success: object_grabbed(object=mug). advanced 1 step(s)"},
+        {"step": 70, "name": "OBJECT_GRABBED_FAILURE", "info": "failed: object_grabbed(object=can). regressing"},
+        {"step": 50, "name": "OBJECT_IN_CONTAINER_SUCCESS", "info": "success: object_in_container(object=mug, container=bin)"},
+    ]
+    s = segs()
+    P._flag_against_log(s, ch, upstream, dt, "place")
+    assert all(not x["flags"] for x in s), [x["flags"] for x in s]
+
+    # the fork's own names still work, and a quoted object is parsed
+    fork = [
+        {"step": 30, "name": "OBJECT_CARRIED", "info": "carried 'mug'"},
+        {"step": 70, "name": "GRASP_ATTEMPT_FAILED", "info": "attempt on 'can' failed"},
+        {"step": 50, "name": "SUBTASK_COMPLETED", "info": "Completed subtask 'x' 1/1"},
+    ]
+    s = segs()
+    P._flag_against_log(s, ch, fork, dt, "place")
+    assert all(not x["flags"] for x in s), [x["flags"] for x in s]
+
+    # a silent log flags the fact, not an event name
+    s = segs()
+    P._flag_against_log(s, ch, [], dt, "place")
+    assert s[0]["flags"] == ["no grab in log"]
+    assert s[1]["flags"] == ["no failed attempt in log"]
+    assert s[2]["flags"] == ["place pass, no completion in log"]
+
+    # upstream's 'Completed subtask' line credits without naming the object
+    s = segs()
+    P._flag_against_log(s, ch, upstream[:2] + [{"step": 50, "name": "STACKED_SUCCESS", "info": "Completed subtask 'stack' 1/1"}], dt, "place")
+    assert not s[2]["flags"]

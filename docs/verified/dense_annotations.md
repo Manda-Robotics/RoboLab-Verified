@@ -572,7 +572,7 @@ mode without it is 0.1 s).
 | H4 | run over 106 episodes (trial, rc7 upstream, rc3), each threshold halved and doubled; table in §9.6 | the physical thresholds are not doing work (`LIFT_M`, `V_LIFT`, `SLIP_V`, `RELEASE_S`, `DISP_M`: 0 to 5 % of episodes change their L2 set). The judgement calls are: the `no_completed_subtask` rule (`NCS_BREAKER_SHARE` 28 to 43 %, `GAP_NCS_S` 20 to 27 %), the approach-break run (18 to 30 %), the TCP "moving" speed (19 to 31 %), the closing-rate sign (12 to 25 %), `PICK_MIN_HOLD_S` (10 to 16 %). Those are what the gold set must pin, and the first narrated episode already voted on the first: the excursions between three failed attempts belong to the attempts, not to a separate segment |
 | H5 | **93.5 %** of logged tracker lines at the same detection step ±2; 89.6 % at the same onset ±1 | below the 98 % pass line. The shortfall is one cause: `hand_position` is `base_link` in the replay and the left inner finger live, so an object that shifts while the jaws close keeps a small `rel_dev` live and a larger one here (fewer carries, more failed attempts in the replay: 40 replay-only attempts against 34 log-only carries and 21 log-only drops). Fix is R1 (record the finger body), not a rule change |
 | H5b | `held_disagree` flag on 501 of ~1,800 L2 segments (7.6 per episode) | expected in drags and one-pad carries; the flag is doing its job. Not yet audited against video |
-| H7 | not run | needs the five `cli_*` corpora annotated in proxy mode (0.1 s each) |
+| H7 | **0 of 8 ledger tasks in the top 10** by contradictions per episode (§9.15) | the hypothesis as written fails, and the reason is the finding: the ledger's task-specific defects are *abstentions* (the recording ends at the success frame with the object still moving: 71 % of all 1,165 successes, bowl stacking 22 of 25), while the corpus-wide *contradiction* is upstream's grasp attribution in clutter (7,681 log grabs on objects the annotator never saw touched, 2,880 of them while it had a different object in the jaws). |
 
 Two findings for the ledger came out of H2 and H3 rather than from the track itself:
 
@@ -1148,6 +1148,85 @@ and slipped need contact pairs). The annotator has been validated against human 
 so the *ordering* of the policies on each row is the claim, not the third digit. The
 per-episode `phases_*.json` now sit next to every `cli_*` log and the dashboard reads them.
 
+### 9.15 H7 (2026-09-04 night): the annotation against upstream's own log, 6,000 episodes
+
+`scripts/h7_log_disagreement.py` over the five annotated `cli_*_robolab120` corpora (120 tasks,
+5 policies, proxy contact). Report: `analysis/h7_log_disagreement.md`; one line per episode in
+`analysis/h7_episodes.jsonl`.
+
+**First, the flags on disk were vacuous.** These logs are upstream's (`OBJECT_GRABBED_SUCCESS`,
+`TARGET_OBJECT_DROPPED`, the ladder's `*_SUCCESS` lines), and `_flag_against_log` only knew the
+fork tracker's names, so every passing pick in the corpus carried `no OBJECT_CARRIED in log`:
+30,721 flags that said nothing. P123 makes the function read both vocabularies and names the fact
+instead of the event (`no grab in log`); `scripts/reflag_phases.py` rewrote the 6,000 files in
+place. The H7 script does its own matching and never used the stored flags.
+
+**Method.** Upstream's grab events are de-flickered first (events on one object closer than 2 s
+are one *grab run*: 72,200 events become 33,834 runs, 2.1 per run, P97 seen from here). Then, per
+episode, contradictions (both sides commit) are kept apart from abstentions (one side does not):
+
+| kind | count | episodes | share |
+|---|---|---|---|
+| C1 machine `place … fail`, log credits the object | 61 | 60 | 1.0 % |
+| C2 machine `place … pass`, log scores a failure and never credits | 1,564 | 925 | 15.4 % |
+| C3 machine `pick … pass`, log never grabbed that object within 1 s | 3,547 | 1,751 | 29.2 % |
+| C4 log grab run, machine saw no contact with that object at all | 7,681 | 2,644 | 44.1 % |
+| A1 success, machine place `unknown`: recording ends before rest | 831 | 831 | 13.9 % |
+| A2 log grab run the machine saw as contact or a failed pick only | 12,976 | 3,505 | 58.4 % |
+| any contradiction | | 3,652 | 60.9 % |
+
+**The hypothesis fails: 0 of the 8 ledger tasks (P89, P90, P96, P97) are in the top 10** by
+contradictions per episode. The top 10 are the clutter tasks: FruitsOnPlate (13.2 per episode),
+ToolsPickingAllHammers (11.6), FruitsOnPlate3, CleanUpToys, ToolOrganization,
+ClearOrganicObjects, HammersInLeftBin, ElectronicsInBin, CubesAndBlocksInBin,
+ToolOrganizationBoth. GreenSpoonsInPot is 11th; the two bowl-stacking tasks are 117th and 119th
+of 120. The rate is the same for every policy (58 to 64 % of episodes), so it is the log, not the
+policies.
+
+**What the contradictions are.** C4 split by what the annotator saw during the run:
+
+| C4 class | runs | where |
+|---|---|---|
+| misattributed: the hand held or touched *another* object | 2,880 | ToolsPickingAllHammers 475, ToolOrganization 185, HammersInLeftBin 175 |
+| blind, run shorter than 0.5 s (median C4 run 0.07 s) | 2,820 | FruitsOnPlate 249, ClearOrganicObjects 162, FruitsOnPlate3 155 |
+| blind, run 0.5 s or longer | 1,720 | FruitsOnPlate 213, FruitsOnPlate3 204, ClearOrganicObjects 147 |
+| a container "grabbed" | 261 | PutTwoMugsOnShelf 60, BananasInCrate 28 |
+
+So upstream's grasp condition credits a *neighbour* of the object in the jaws (a wood hammer
+"grabbed" for 0.9 s while the annotator has the blue hammer in `pinch_no_lift`), fires for a few
+steps on nothing, and in 1,720 runs holds for half a second or more on an object the 2 cm proxy
+never saw within reach. C3 is the mirror: 3,547 machine picks the log never scored, 672 of them
+while the log credited a neighbour, 2,621 with the log silent (1,147 on the target, 1,474 on a
+distractor). Further, 475 grab events name a *subtask* instead of an object
+(`object=bananas_out_of_bin` 50, `pick_drill` 47, `grab_a_fruit` 30, `grab_a_bagel` 25): the
+P90 / P65 unresolved-reference class, now counted.
+
+**What the abstentions are, and why they are the ledger's items.** Every one of the 1,165
+successes is truncated at the success frame (none runs to the step cap), and in 831 of them
+(71 %) the placed object is still moving when the recording stops, so the annotator's place is
+`unknown`. On 12 tasks that is 100 % of successes (RubiksCube 39/39, OneBottleInSquarePail 32/32,
+FruitsOnion 24/24). On bowl stacking it is 14 of 16 and 8 of 9: P89's "20 of 27 scored while the
+bowl is still moving", reproduced from the annotation side without looking at the ledger. P96's
+tilted pot is the same class (GreenSpoonsInPot: 2 successes, both A1). The metric that ranks the
+ledger tasks is therefore not the contradiction rate but the share of successes ending unsettled,
+and on that ranking they sit with 30 other tasks, because the defect is upstream's termination
+rule, not a task.
+
+**What this changes.**
+1. The ledger's A2 item (P30, a success scored on a moving object) is not a stacking-family problem; it is every task. A
+   stationarity gate plus a post-roll at termination is the fix, and until then the annotator's
+   `unknown` on 71 % of successes is the honest label: the recording cannot show the outcome.
+2. The grasp-attribution class (C4 misattributed + C3 neighbour, ~3,500 events) is new to the
+   ledger and larger than anything in it. On these recordings it rests on the geometric proxy; the
+   contact-recorded run that settles it is the same pod run that proves the run path (§9.10).
+3. `_flag_against_log` now means something on upstream logs; the dashboard's flag counts on the
+   `cli_*` corpora went from 30,721 vacuous lines to 20,294 real disagreements (C2 to C4 above,
+   seen per segment).
+
+Caveat: proxy mode. C3 / C4 depend on `CONTACT_PROXY_M` (2 cm to the object box); a thin object
+(fruit on a plate) pressed by a pad it does not overlap in the box sense is the one shape where the
+proxy, not upstream, could be the blind side. The 1,720 long blind runs are where to look first.
+
 ### 9.9 Handoff
 
 - Branch `dense-annotations` in this clone, never pushed; `main` equals `origin/main`. The
@@ -1193,7 +1272,8 @@ per-episode `phases_*.json` now sit next to every `cli_*` log and the dashboard 
 2. ~~R1 on a pod~~ done (§9.11): R1, R2, R4 recorded, replay exact. Next runtime step: the
    annotator on the run path so `phases_*.json` is written next to each log by default, and the
    L2 summary fields into `episode_results.jsonl` (open decision 3).
-3. ~~Annotate the five `cli_*` corpora in proxy mode~~ done (§9.14, P117); still open: H7 and
-   the phase-E statistics against the reviewer's modes (`phase_mode_check.py` over the new
-   `phases_*.json`).
+3. ~~Annotate the five `cli_*` corpora in proxy mode~~ done (§9.14, P117); ~~H7~~ done (§9.15,
+   P123); still open: the phase-E statistics against the reviewer's modes (`phase_mode_check.py`
+   over the new `phases_*.json`), and the contact-recorded run that adjudicates the 1,720 long
+   blind grab runs of §9.15.
 4. The `GRIPPER_FULLY_CLOSED` versus pad-force discrepancy on one episode.
