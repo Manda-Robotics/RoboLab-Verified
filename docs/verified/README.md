@@ -14,6 +14,7 @@ the measurement behind it and the test that covers it.
 | [Migration](migration.md) | what a downstream tool has to know: new fields, new event codes, new files, the options that restore upstream behaviour |
 | [Verification](verification.md) | how the evidence was produced and how to reproduce it |
 | [Physics](../physics.md) | friction as a run parameter, and why the arm controller is unchanged |
+| [Towing](towing.md) | the "stuck to a finger" artifact: what it is, how often it happened (7.8 % of episodes), the per-episode flag, the solid-pad fix |
 
 ## Why
 

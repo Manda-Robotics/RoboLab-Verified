@@ -14,6 +14,7 @@ Added fields, one row per episode:
 | `success_first_hold_s`, `success_confirmed_s` | float or null | when the success predicate first held, and when it was confirmed with the targets at rest; equal when the object was already still | P30 |
 | `physics_artifact` | bool | an object moved with an open hand; the episode is marked unreliable and its grasp credit withheld | P43 |
 | `towed_objects` | list | the objects behind `physics_artifact` | P43 |
+| `tows` | dict | towing-artifact summary from the recorded state: `tow_tier` (A/B/C/null), counts by class, `towed_objects`, `tow_time_s`; a tier-A tow also sets `physics_artifact` | P124 |
 | `collateral_placed` | int | non-target objects released inside a goal container after reset | P36 |
 | `early_resets`, `pre_satisfied` | int, bool | how often the episode was silently re-reset for terminating within two steps, and whether it still did after the cap | P09 |
 | `events` | dict | counts per event name over every line of the log, ladder lines included | P80 |

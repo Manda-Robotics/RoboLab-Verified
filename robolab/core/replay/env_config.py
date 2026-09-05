@@ -95,7 +95,17 @@ def _reroot_asset_path(value: str) -> str:
     """Rewrite a recorded absolute asset path onto the current checkout's asset dir."""
     marker = f"{os.sep}assets{os.sep}"
     if value.startswith(os.sep) and marker in value:
-        return os.path.join(ASSET_DIR, value.split(marker, 1)[1])
+        rel = value.split(marker, 1)[1]
+        out = os.path.join(ASSET_DIR, rel)
+        if os.path.basename(rel).startswith("franka_robotiq_2f_85"):
+            # The robot asset follows ROBOLAB_ROBOT_USD (towing.md); a recording made with a rig
+            # variant this checkout does not ship (the Isaac 6.0 asset) replays on the default rig.
+            override = os.environ.get("ROBOLAB_ROBOT_USD")
+            if override:
+                return override
+            if not os.path.isfile(out):
+                return os.path.join(ASSET_DIR, "robots", "franka_robotiq_2f_85_flattened.usd")
+        return out
     return value
 
 

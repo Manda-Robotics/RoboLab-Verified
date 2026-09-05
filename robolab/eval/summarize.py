@@ -304,6 +304,17 @@ def summarize_run(
             except Exception as exc:  # noqa: BLE001
                 logger.warning("phases not written for env %d run %d: %s: %s", eid, run_idx, type(exc).__name__, exc)
 
+    # Towing artifact flag (P124): tows_<run>_env<env>.json next to each log; a tier-A tow marks the
+    # episode physics_artifact (the runtime TOWED_WITHOUT_GRASP rule misses most of them). Never fails the run.
+    tow_summaries: dict[int, dict] = {}
+    if robolab.constants.FLAG_TOWS:
+        from robolab.eval.tows import write_tows  # noqa: PLC0415
+        for eid in range(num_envs):
+            try:
+                tow_summaries[eid] = write_tows(scene_output_dir, eid, run_idx)["summary"]
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("tows not written for env %d run %d: %s: %s", eid, run_idx, type(exc).__name__, exc)
+
     for r in env_results:
         env_id = r["env_id"]
         traj_data = load_demo_data(hdf5_path, f"demo_{env_id}")
@@ -338,6 +349,12 @@ def summarize_run(
 
         if env_id in phase_summaries and isinstance(run_summary, dict):
             run_summary["phases"] = phase_summaries[env_id]
+        if env_id in tow_summaries and isinstance(run_summary, dict):
+            tows = tow_summaries[env_id]
+            run_summary["tows"] = tows
+            if tows.get("tow_tier") == "A":
+                run_summary["physics_artifact"] = True
+                run_summary["towed_objects"] = sorted(set(run_summary.get("towed_objects") or []) | set(tows.get("towed_objects") or []))
 
         episode_results = update_experiment_results(
             run_summary=run_summary,
