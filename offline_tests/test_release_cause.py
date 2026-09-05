@@ -42,7 +42,7 @@ def test_commanded_open_onto_a_support_is_released():
 def test_commanded_open_after_hitting_the_wall_and_falling_is_knocked():
     """rc5 FoodPacking2Cans env 2: can on the bin wall while gripped, open commanded, can falls."""
     rec = _rec({"can__bin": _col(60, [(26, 32)]), "can__table": _col(60, [(36, 60)])})
-    cause, culprits = P._release_cause(rec, "can", 30, True, DT, rest_at=45)
+    cause, culprits = P._release_cause(rec, "can", 30, True, DT, rest_at=45, result="fail")
     assert cause == "knocked" and culprits == ["bin"]
 
 
@@ -55,12 +55,18 @@ def test_a_short_drop_onto_the_bin_floor_is_still_released():
 def test_a_rim_bounce_that_settles_inside_the_bin_is_released():
     """rc5 FoodPacking2Cans env 3, 50.7 s: let go 18 cm up, bounces on the rim, rests inside."""
     rec = _rec({"can__bin": _col(60, [(28, 33), (34, 60)])})
-    assert P._release_cause(rec, "can", 30, True, DT, rest_at=50) == ("released", None)
+    assert P._release_cause(rec, "can", 30, True, DT, rest_at=50, result="pass") == ("released", None)
+
+
+def test_a_closed_hand_that_bumped_the_crate_is_knocked_even_when_the_place_passes():
+    """d6 BananasInCrate env 2, 54 s: "it did bump, but it was a success"."""
+    rec = _rec({"banana__crate": _col(60, [(28, 60)])})
+    assert P._release_cause(rec, "banana", 30, False, DT, rest_at=50, result="pass") == ("knocked", ["crate"])
 
 
 def test_set_down_on_the_bin_floor_after_touching_it_is_released():
     rec = _rec({"can__bin": _col(60, [(28, 60)])})       # touched the bin just before, stays on it
-    assert P._release_cause(rec, "can", 30, True, DT) == ("released", None)
+    assert P._release_cause(rec, "can", 30, True, DT, result="pass") == ("released", None)
 
 
 def test_new_contact_just_before_leaving_a_closed_hand_is_knocked():

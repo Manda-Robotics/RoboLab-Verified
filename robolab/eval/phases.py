@@ -90,13 +90,12 @@ KNIFE_EDGE_MARGIN = 0.25         #       an ncs decision closer than this (relat
 NCS_BREAKER_SHARE = 0.4          #       ... if at least this share of it is retreat / idle / hover / table / repositioning
 PICK_MIN_HOLD_S = 0.25           # s     carried this long = pick complete (the reviewer counts 'off the ground' even when dropped at once)
 BREAK_RUN_S = 0.5                # s     a retreat/idle run this long, or an approach to another object, ends the approach that belongs to a pick
-FALL_ROWS = 3                    # rows  without a rest row, a body the object hit while held and has left again this many rows after the hand opened knocked it out
 KNOCK_WIN_S = 0.4                # s     a contact that begins this close before the object leaves a closed hand knocked it out (release cause)
 CONTACT_PROXY_M = 0.02           # m     TCP to object box, when no contact/ group is recorded
 THRESHOLDS = {k: globals()[k] for k in (
     "TCP_OFFSET", "V_MOVE", "V_LIFT", "LIFT_M", "HELD_LIFT_M", "NEAR_M", "APPROACH_M", "CLOSING_RATE", "DISP_WIN_S", "DISP_M",
     "REST_M", "SLIP_V", "SMOOTH_W", "MIN_RUN", "RELEASE_S", "GAP_NCS_S", "NCS_BREAKER_SHARE", "PICK_MIN_HOLD_S",
-    "CONTACT_PROXY_M", "BREAK_RUN_S", "KNOCK_WIN_S", "FALL_ROWS", "JAM_S", "RETREAT_TOLERANCE_S", "LANDING_VZ", "LANDING_HOLD_S", "DROP_ENDS_AT_LANDING", "RETREAT_BREAKS_APPROACH", "SETTLE_WARMUP_S", "GRASP_HOLD_S", "GRASP_ATTEMPT_BURST_S",
+    "CONTACT_PROXY_M", "BREAK_RUN_S", "KNOCK_WIN_S", "JAM_S", "RETREAT_TOLERANCE_S", "LANDING_VZ", "LANDING_HOLD_S", "DROP_ENDS_AT_LANDING", "RETREAT_BREAKS_APPROACH", "SETTLE_WARMUP_S", "GRASP_HOLD_S", "GRASP_ATTEMPT_BURST_S",
     "SUCCESS_REST_S", "SUCCESS_MAX_SPEED")}
 
 PHASES = {
@@ -553,14 +552,15 @@ def _in_destination(rec: Recording, ch: Channels, o: str, d: str, t: int) -> boo
     return _in_box(corners[t], rec.obj_pos[o][t])
 
 
-def _release_cause(rec: Recording, o: str, leave: int, deliberate: bool, dt: float, rest_at: int | None = None):
+def _release_cause(rec: Recording, o: str, leave: int, deliberate: bool, dt: float, rest_at: int | None = None,
+                   result: str | None = None):
     """Why the object left the hand; one of the three axes of a place (label, result, cause).
 
-    ``released``: commanded open, and whatever the object touched just before is where it comes
-    to rest (set down, or a drop into the destination, rim bounces included). ``knocked``: the object (or a hand
-    body, P106 sensors) came into *new* contact with another body in the ``KNOCK_WIN_S`` before
-    it left and is not resting on that body at ``rest_at`` (``FALL_ROWS`` after leaving when no
-    rest row is known), whether or not the open was then commanded (a bin wall rammed, can let go or forced out, can on the table; a
+    ``released``: commanded open, and the place either worked or nothing was hit on the way.
+    ``knocked``: the object (or a hand body, P106 sensors) came into *new* contact with a body
+    other than the table in the ``KNOCK_WIN_S`` before it left, and either the hand was still
+    commanded closed (pass or fail: "it did bump, but it was a success" is still knocked) or the
+    open was commanded and the place failed (a bin wall rammed, can let go or forced out, can on the table; a
     contact that was already continuous, such as the table under a dragged object, is not a
     knock). ``slipped``: still commanded closed, nothing touched, left anyway. ``unclear``: no
     contact pairs recorded.
@@ -571,9 +571,7 @@ def _release_cause(rec: Recording, o: str, leave: int, deliberate: bool, dt: flo
         return ("released" if deliberate else "unclear"), None
     k = max(1, int(round(KNOCK_WIN_S / dt)))
     a, b = max(0, leave - k), min(rec.T, leave + 1)
-    culprits = []
-    left_again = []                                     # culprits the object does not end up resting on
-    chk = min(rec.T - 1, rest_at if rest_at is not None else leave + FALL_ROWS)
+    culprits = []                                       # bodies the object newly touched just before leaving, the table excepted
     for key, col in rec.pair_contact.items():
         parts = key.split("__")
         if o not in parts or len(parts) != 2:
@@ -581,10 +579,10 @@ def _release_cause(rec: Recording, o: str, leave: int, deliberate: bool, dt: flo
         other = parts[1] if parts[0] == o else parts[0]
         win = np.asarray(col[a:b]) > 0
         before = np.asarray(col[max(0, a - k):a]) > 0
+        if other == "table":
+            continue                                    # the table is what things are lowered onto, never a knocker
         if win.any() and not (before.size and before.all() and win.all()):
             culprits.append(other)
-            if not col[chk]:
-                left_again.append(other)
     for key, col in rec.body_forces.items():
         parts = key.split("__")
         if len(parts) != 2 or parts[1] == o:
@@ -592,16 +590,16 @@ def _release_cause(rec: Recording, o: str, leave: int, deliberate: bool, dt: flo
         win = np.asarray(col[a:b]) > 0
         before = np.asarray(col[max(0, a - k):a]) > 0
         if win.any() and not (before.size and before.all() and win.all()):
-            culprits.append(f"hand:{parts[1]}"); left_again.append(f"hand:{parts[1]}")   # a hand body is never what the object rests on
+            culprits.append(f"hand:{parts[1]}")
     if deliberate:
-        # a commanded open is a place unless the object had just hit something and does not
-        # end up on it (can against the bin wall, jaws open, can at rest on the table: knocked);
-        # a drop into the bin that bounces on the rim and settles inside is still a place (the
-        # reviewer's verdicts on rc5 env 3 and rc4 BlackItemsInBin), so the test is at rest
-        return ("knocked", sorted(set(left_again))) if left_again else ("released", None)
-    if left_again:
-        return "knocked", sorted(set(left_again))      # forced out of a closed hand by what it hit, and not resting on it
-    return "slipped", None                             # left a closed hand onto what it was being lowered to (rc7 FoodPacking2Cans env 1, 45.9 s: the box slides out onto the table)
+        # a commanded open is a place; it is knocked only when the object had just hit something
+        # and the place failed (can against the bin wall, jaws open, can on the table). A place
+        # that worked is released whatever it brushed on the way in: the rim bounce that settles
+        # inside (rc5 env 3, 50.7 s), the smartphone onto the keyboard inside the bin (rc4).
+        return ("knocked", sorted(set(culprits))) if culprits and result == "fail" else ("released", None)
+    if culprits:
+        return "knocked", sorted(set(culprits))        # a closed hand lost it to what it hit, pass or fail ("it did bump, but it was a success": still knocked)
+    return "slipped", None                             # left a closed hand with nothing but the table involved (rc7 FoodPacking2Cans env 1, 45.9 s: the box slides out onto the table)
 
 
 def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str], dests: set[str],
@@ -840,7 +838,7 @@ def attempts(rec: Recording, ch: Channels, phases: list[dict], targets: set[str]
                 w2 += 1
             end_row = max(leave, w2)
         seg = _make_segment("place", o, pick_end + 1, end_row, result, ch, lab, obj, targets, dests, dt, dest=dest)
-        cause, culprits = _release_cause(rec, o, leave, deliberate, dt, rest_at)
+        cause, culprits = _release_cause(rec, o, leave, deliberate, dt, rest_at, result)
         seg["cause"] = cause
         if not deliberate:
             seg["attributes"].append("dropped (gripper opened with the close command still on)")
