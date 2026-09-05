@@ -2722,14 +2722,15 @@ function buildTransport(videos) {
   // loadAndRenderPhases; each lane carries its own playhead so the rows read as
   // one timeline. Same column as the strip, so the x axis is shared exactly.
   const laneL2 = el('div', { class: 'phase-lane phase-lane-l2', title: 'Attempts: pick / place / drop / no completed subtask. Click a block to seek.' });
-  const laneL1 = el('div', { class: 'phase-lane phase-lane-l1', title: 'Phases, one per step. Click to seek.' });
+  const laneL1 = el('div', { class: 'phase-lane phase-lane-l1', title: 'Phases, one per step. Click to seek; hover to read it out in the loupe below.' });
+  const laneLoupe = el('div', { class: 'phase-lane phase-lane-loupe', title: 'Loupe: the 8 s around the playhead (or around the mouse while hovering the phase lane). Click to seek.' });
   const laneLabels = el('div', { class: 'phase-lane phase-lane-labels', title: 'Your labels (i = set start, o = set end, Enter = save)' });
   const lanePlayheads = [laneL2, laneL1, laneLabels].map((l) => {
     const p = el('div', { class: 'events-strip-playhead', style: { left: '0%' } });
     l.appendChild(p);
     return p;
   });
-  const stripCol = el('div', { class: 'transport-col' }, strip, laneL2, laneL1, laneLabels);
+  const stripCol = el('div', { class: 'transport-col' }, strip, laneL2, laneL1, laneLoupe, laneLabels);
   const speed = el('select', { class: 'transport-speed', title: 'Playback speed' });
   for (const r of [0.5, 1, 2, 3]) {
     const opt = el('option', { value: String(r) }, `${r}×`);
@@ -2817,7 +2818,7 @@ function buildTransport(videos) {
   // everything else that follows the playhead (the phase lanes, the label panel).
   const transport = {
     strip, playhead, master, linked, onTime: null,
-    lanes: { l2: laneL2, l1: laneL1, labels: laneLabels }, lanePlayheads,
+    lanes: { l2: laneL2, l1: laneL1, labels: laneLabels, loupe: laneLoupe }, lanePlayheads,
     subscribers: [], subscribe(fn) { this.subscribers.push(fn); },
   };
   const onTimeUpdate = (v) => {
@@ -4116,7 +4117,8 @@ async function loadAndRenderPhases(host, runId, task, envId, runIndex, camVideos
   const dt = data.dt || (1 / 15);
   let maxTime = Math.max((data.num_steps || 0) * dt, ep && ep.duration ? ep.duration : 0, 1);
   const lanes = tr.lanes;
-  for (const l of Object.values(lanes)) for (const n of l.querySelectorAll('.phase-seg, .phase-mark')) n.remove();
+  for (const l of Object.values(lanes)) for (const n of l.querySelectorAll('.phase-seg, .phase-mark, .loupe-centre, .loupe-tick')) n.remove();
+  for (const n of host.querySelectorAll('.loupe-readout')) n.remove();
   const nodes = [];   // {node, s0, s1} for rescale + active highlight
 
   const block = (lane, cls, s0, s1, text, title, color, onclick) => {
@@ -4192,6 +4194,53 @@ async function loadAndRenderPhases(host, runId, task, envId, runIndex, camVideos
     return r;
   });
   host.appendChild(list);
+
+  // The loupe: the L1 barcode is texture at episode scale, so this lane redraws the 8 s around
+  // the playhead at ~15x with labels, follows the mouse while the phase lane is hovered, and a
+  // readout line says what the robot is doing right now and for how long.
+  if (lanes.loupe) {
+    const loupe = lanes.loupe, HALF = 4;
+    const readout = el('div', { class: 'text-xs loupe-readout', style: { color: 'var(--text-2)', marginBottom: '4px' } });
+    host.insertBefore(readout, host.firstChild);
+    let hoverT = null, hoverUntil = 0;
+    const drawLoupe = (t) => {
+      for (const n of loupe.querySelectorAll('.phase-seg, .loupe-centre, .loupe-tick')) n.remove();
+      const lo = t - HALF, hi = t + HALF, span = 2 * HALF;
+      for (const p of data.phases || []) {
+        if (p.end_s < lo || p.start_s > hi) continue;
+        const s0 = Math.max(p.start_s, lo), s1 = Math.min(p.end_s, hi), w = (s1 - s0) / span;
+        const n = el('div', {
+          class: `phase-seg phase fam-${p.family}${t >= p.start_s && t <= p.end_s ? ' active' : ''}`,
+          style: { left: `${((s0 - lo) / span) * 100}%`, width: `${Math.max(0.3, w * 100)}%`, background: PHASE_FAMILY_COLOR[p.family] || '#6b7280' },
+          title: `${p.start_s.toFixed(2)}–${p.end_s.toFixed(2)}s · ${p.label}${p.object ? ` ${p.object} (${p.role})` : ''}`,
+          onclick: (e) => { e.stopPropagation(); seek(p.start_s); },
+        });
+        if (w > 0.045) n.textContent = p.label + (p.object && w > 0.12 ? ' ' + p.object : '');
+        loupe.appendChild(n);
+      }
+      for (let k = Math.ceil(lo); k <= Math.floor(hi); k++) loupe.appendChild(el('div', { class: 'loupe-tick', style: { left: `${((k - lo) / span) * 100}%` }, title: `${k}s` }));
+      loupe.appendChild(el('div', { class: 'loupe-centre' }));
+      const cur = (data.phases || []).find((p) => t >= p.start_s && t <= p.end_s);
+      readout.textContent = cur
+        ? `${t.toFixed(1)} s · ${cur.label}${cur.object ? ` → ${cur.object}${cur.role ? ` (${cur.role})` : ''}` : ''} · ${(t - cur.start_s).toFixed(1)} s into a ${(cur.end_s - cur.start_s).toFixed(1)} s phase`
+        : `${t.toFixed(1)} s · no phase`;
+    };
+    tr.subscribe((t) => { if (hoverT == null || performance.now() > hoverUntil) { hoverT = null; drawLoupe(t); } });
+    lanes.l1.addEventListener('pointermove', (e) => {
+      const r = lanes.l1.getBoundingClientRect();
+      hoverT = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * maxTime; hoverUntil = performance.now() + 1500;
+      drawLoupe(hoverT);
+    });
+    lanes.l1.addEventListener('pointerleave', () => { hoverT = null; });
+    loupe.addEventListener('pointerdown', (e) => {
+      if (e.target.classList.contains('phase-seg')) return;
+      const r = loupe.getBoundingClientRect(); const m = tr.master && tr.master();
+      const t0 = hoverT != null ? hoverT : (m ? m.currentTime : 0);
+      seek(t0 - HALF + ((e.clientX - r.left) / r.width) * 2 * HALF);
+    });
+    const m0 = tr.master && tr.master();
+    drawLoupe(m0 && m0.currentTime ? m0.currentTime : 0);
+  }
 
   // playhead highlight for blocks and rows
   let active = -1;
