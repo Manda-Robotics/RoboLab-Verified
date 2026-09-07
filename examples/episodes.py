@@ -143,7 +143,7 @@ def run_prerecorded_episode(env, episode, save_videos=True, headless=False):
 
 
 def run_prerecorded_episode_hdf5(env, hdf5_path: str, episode=0, save_videos=True, headless=False,
-                                 validate_states=False, state_tolerance=0.01):
+                                 validate_states=False, state_tolerance=0.01, max_steps: int | None = None):
 
     obs, _ = env.reset()
 
@@ -174,7 +174,7 @@ def run_prerecorded_episode_hdf5(env, hdf5_path: str, episode=0, save_videos=Tru
         except ValueError as err:
             print(f"WARNING: cannot validate states ({err}); continuing without validation.")
 
-    max_steps = len(actions)
+    max_steps = len(actions) if max_steps is None else min(max_steps, len(actions))
 
     if save_videos:
         video_writers = []

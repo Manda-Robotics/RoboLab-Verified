@@ -61,6 +61,11 @@ parser.add_argument("--env-config", choices=["recorded", "current"], default="re
                     help="Which env config to replay with: 'recorded' overlays the env_cfg.json saved next to the "
                          "recording (faithful playback, default); 'current' rebuilds it from the current repo's "
                          "task definitions.")
+parser.add_argument("--max-steps", type=int, default=None,
+                    help="Replay at most this many recorded steps (a reproducer needs only the stretch up to the event).")
+parser.add_argument("--no-video", action="store_true", help="Do not write the per-env mp4 (the HDF5 and logs are still written).")
+parser.add_argument("--output-dir", default=None,
+                    help="Where to write the playback outputs (default: output/playback_<recording folder>_<task>).")
 parser.add_argument("--validate-states", action="store_true",
                     help="Debug tool: compare the sim state against the recorded per-step states and report drift.")
 # append AppLauncher cli args
@@ -69,7 +74,7 @@ AppLauncher.add_app_launcher_args(parser)
 # parse the arguments
 args_cli, _= parser.parse_known_args()
 args_cli.enable_cameras = True
-args_cli.save_videos = True
+args_cli.save_videos = not args_cli.no_video
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
@@ -125,7 +130,7 @@ def resolve_replay_env_cfg(task_env: str, hdf5_path: str):
 def main():
     """Main function."""
     task = args_cli.task
-    output_dir = os.path.join(PACKAGE_DIR, "output", "playback_"+os.path.basename(args_cli.recorded_data_folder) + "_" + task)
+    output_dir = args_cli.output_dir or os.path.join(PACKAGE_DIR, "output", "playback_"+os.path.basename(args_cli.recorded_data_folder) + "_" + task)
     os.makedirs(output_dir, exist_ok=True)
 
 
@@ -166,7 +171,8 @@ def main():
                 episode=i,
                 save_videos=args_cli.save_videos,
                 headless=args_cli.headless,
-                validate_states=args_cli.validate_states)
+                validate_states=args_cli.validate_states,
+                max_steps=args_cli.max_steps)
 
             # Write v2 per-env event logs
             per_env_events = get_all_env_events(env) or []
