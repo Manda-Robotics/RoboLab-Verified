@@ -34,7 +34,12 @@ def _uses_xyzw_quaternions() -> bool:
         # without distribution metadata. ProxyArray was introduced with the
         # XYZW migration, and checking its path does not import Isaac Lab before
         # AppLauncher starts Kit.
-        spec = find_spec("isaaclab")
+        try:
+            spec = find_spec("isaaclab")
+        except ValueError:
+            # A stand-in module named ``isaaclab`` with no ``__spec__`` (the offline tests
+            # register one so detector code imports without Isaac Sim): not the 3.x stack.
+            return False
         locations = spec.submodule_search_locations if spec is not None else None
         return bool(
             locations
