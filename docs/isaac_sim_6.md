@@ -93,7 +93,7 @@ replay of the same recording on both (`examples/run_recorded.py --env-config cur
 | check | Isaac Sim 5.1 | Isaac Sim 6.0 |
 |---|---|---|
 | offline suite (no simulator) | passed | passed |
-| `run_empty --friction 0.5`: request applied to 3 objects and both pads | yes, PhysX readback 0.5/0.5 | yes; the readback needed two fixes for the Isaac Lab 3 backend (facade `isinstance`, warp arrays) and is not yet re-verified on a GPU |
+| `run_empty --friction 0.5`: request applied to 3 objects and both pads | yes, PhysX readback 0.5/0.5 | yes, PhysX readback 0.5/0.5 on every object shape (256 per object) and both pads (64 each), identical to 5.1; the readback needed two fixes for the Isaac Lab 3 backend (facade `isinstance`, warp arrays) |
 | replay reproduces the recorded contact event at the recorded time (all 4 envs) | yes | yes |
 | recorded quaternions stay WXYZ (end-effector and object poses) | yes | yes |
 | Robotiq 2F-85 in the wrist camera | whole | whole, no detached fragments |
