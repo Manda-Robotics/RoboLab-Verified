@@ -307,20 +307,27 @@ def read_applied(env, requested: dict | None = None) -> dict:
     Returns ``{"objects": {name: [[static, dynamic, restitution] per shape]},
     "gripper": {body: [...]}, "requested": <provenance>}``. Works under ``upstream`` too.
     """
-    from isaaclab.assets import Articulation, RigidObject
-
     requested = requested if requested is not None else getattr(env.cfg, "friction", None) or {}
     out = {"objects": {}, "gripper": {}, "requested": requested}
+    # Duck-typed on purpose: Isaac Lab 3 instantiates assets through a backend factory, so the
+    # runtime objects are isaaclab_physx classes, not instances of the isaaclab.assets facades
+    # (an isinstance check returned an empty readback on the 6.0 stack).
     for name, asset in env.scene.rigid_objects.items():
-        if isinstance(asset, RigidObject):
-            out["objects"][name] = _shape_rows(asset.root_physx_view.get_material_properties()[0])
+        view = getattr(asset, "root_physx_view", None)
+        if view is not None and hasattr(view, "get_material_properties"):
+            out["objects"][name] = _shape_rows(view.get_material_properties()[0])
     robot = env.scene.articulations.get("robot")
     bodies = requested.get("gripper_bodies") or []
-    if isinstance(robot, Articulation) and bodies:
-        mats = robot.root_physx_view.get_material_properties()[0]
-        shapes_per_link = [robot._physics_sim_view.create_rigid_body_view(p).max_shapes
-                           for p in robot.root_physx_view.link_paths[0]]
-        for body in bodies:
+    view = getattr(robot, "root_physx_view", None)
+    if view is not None and bodies:
+        mats = view.get_material_properties()[0]
+        try:
+            shapes_per_link = [robot._physics_sim_view.create_rigid_body_view(p).max_shapes
+                               for p in view.link_paths[0]]
+        except Exception as exc:  # noqa: BLE001  (Isaac Lab 3: no per-link shape view yet)
+            out["gripper"] = {b: f"NO PER-LINK SHAPE VIEW ({type(exc).__name__})" for b in bodies}
+            shapes_per_link = None
+        for body in (bodies if shapes_per_link is not None else []):
             if body not in robot.body_names:
                 out["gripper"][body] = "NOT A BODY"
                 continue
