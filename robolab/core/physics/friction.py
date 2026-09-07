@@ -287,7 +287,10 @@ def install(env_cfg, scene_path: str, pad_bodies: list[str] | None,
 # --------------------------------------------------------------------------- #
 
 def _shape_rows(mats) -> list[list[float]]:
-    return [[round(float(v), 4) for v in row] for row in mats]
+    # Isaac Lab 3 returns a warp array (no item indexing); 2.x a torch tensor. as_torch handles both.
+    from robolab.core.utils.isaaclab_compat import as_torch  # noqa: PLC0415
+    rows = as_torch(mats).detach().cpu().tolist() if not isinstance(mats, list) else mats
+    return [[round(float(v), 4) for v in row] for row in rows]
 
 
 def summarise_rows(rows) -> dict:

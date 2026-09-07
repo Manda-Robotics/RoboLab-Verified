@@ -82,3 +82,23 @@ Isaac Lab 3.0 is still a beta line. NVIDIA's 3.0 beta release notes list a
 known Robotiq 2F-85 issue, so the DROID and Kinova grippers need particular
 attention in smoke testing. Keep Isaac Sim 5.1 available for result comparison
 until the task suite passes on your hardware.
+
+## Validation in RoboLab Verified
+
+Checked on an A40 with both stacks installed side by side (`.venv-51`: Python 3.11,
+`--extra isaac51`; `.venv-60`: Python 3.12, `--extra isaac60`) from one tree, with an open-loop
+replay of the same recording on both (`examples/run_recorded.py --env-config current --num_envs 4
+--max-steps 450`, GR00T `GrabAFruitTask` env 1):
+
+| check | Isaac Sim 5.1 | Isaac Sim 6.0 |
+|---|---|---|
+| offline suite (no simulator) | passed | passed |
+| `run_empty --friction 0.5`: request applied to 3 objects and both pads | yes, PhysX readback 0.5/0.5 | yes; the readback needed two fixes for the Isaac Lab 3 backend (facade `isinstance`, warp arrays) and is not yet re-verified on a GPU |
+| replay reproduces the recorded contact event at the recorded time (all 4 envs) | yes | yes |
+| recorded quaternions stay WXYZ (end-effector and object poses) | yes | yes |
+| Robotiq 2F-85 in the wrist camera | whole | whole, no detached fragments |
+| replay speed, 4 envs with video | ~1.3 s/step | ~0.8 s/step |
+
+`run_recorded.py` accepts `--max-steps`, `--no-video` and `--output-dir` so a reproducer can replay
+only the stretch up to an event. Exact trajectory reproduction still holds only on the stack that
+made the recording; a published number states its stack.
