@@ -11,8 +11,8 @@ Goal: clone, set up on RunPod, run ~5–10 π0.5 episodes across several tasks, 
 
 ## 2. Compute (RunPod)
 
-- Account balance at start: **$2.96**. This caps the session at ~4 h on an L40 ($0.69/h). Chose to resume an existing exited pod `robolab-verified6` (L40 48 GB, 120 GB persistent volume at `/workspace`) rather than build a new one, to save install time/cost.
-- Resumed pod `sefuvhc3urmoah` via the GraphQL API (`podResume`). SSH up ~1 min later. Driver 570.124.04, L40 46 GB.
+- Resumed an existing exited pod (L40 48 GB, 120 GB persistent volume at `/workspace`) rather than build a new one, to save install time and cost.
+- Resumed via the GraphQL API (`podResume`). SSH up ~1 min later. Driver 570.124.04, L40 46 GB.
 - **Container disk is ephemeral**: after the restart, `git-lfs`, the GL/Vulkan libs and `~/.cache/openpi` (the 11.6 GB π0.5 checkpoint) were gone; only `/workspace` survived. Had to re-`apt install libegl1 libgl1 libglvnd0 libopengl0 libglx0 libgles2 libglu1-mesa libxt6 libvulkan1 vulkan-tools git-lfs`. The README's `sudo apt install ffmpeg git-lfs` is not enough on a bare RunPod image — without `libegl1`/`libvulkan1` Isaac Sim crashes at RTX init (the docker image has them; a bare-metal/pip install does not).
 - Fresh clone of the public repo on the pod (`GIT_LFS_SKIP_SMUDGE=1 git clone` + `git lfs pull`): ~3 min, 9.5 GB on disk.
 - Started the OpenPI π0.5 server from the sibling `openpi` checkout with `OPENPI_DATA_HOME=/workspace/.cache/openpi` so the checkpoint persists on the volume. `scripts/serve_pi05.sh` is a thin wrapper around `uv run scripts/serve_policy.py policy:checkpoint --policy.config=pi05_droid_jointpos --policy.dir=gs://openpi-assets-simeval/pi05_droid_jointpos`; checkpoint download is 11.6 GB (~4 min).
@@ -40,8 +40,8 @@ Workaround used: create the venv, `uv pip install` the dependency list from *out
 
 ## 5. Incident: pod terminated mid-run (RunPod, not RoboLab)
 
-About 4 min into the first π0.5 task (`t1_BananaInBowl`), SSH started refusing and the API returned `pod: null` for `sefuvhc3urmoah`: the pod and its 120 GB volume were **terminated**, not stopped. Nothing in my chain terminates pods (the old `rc7_friction_sweep.sh` on the volume only *stops*, and it was not running). Cause unknown (host reclaim or low-balance policy?). Lost: the fresh install and the partial run output. Lesson recorded: rsync `output/` to local after every task.
-EU-NL-1 (where the surviving network volume `robolab-verified-vol` lives) only had H100/RTX PRO 6000 in stock (≥ $2.09/h), so I deployed a fresh **A40 48 GB secure pod** (`9u5pegjdhwghb4`, $0.44/h, 100 GB container disk, no volume) and redid the setup with a single script (`setup.sh`, ~15 min: apt → parallel clone+LFS / OpenPI sync+checkpoint → `uv sync --extra isaac51 --extra test`).
+About 4 min into the first π0.5 task (`t1_BananaInBowl`), SSH started refusing and the API returned `pod: null` for the pod: it and its 120 GB volume were **terminated**, not stopped. Nothing in my chain terminates pods (the old `rc7_friction_sweep.sh` on the volume only *stops*, and it was not running). Cause unknown (host reclaim?). Lost: the fresh install and the partial run output. Lesson recorded: rsync `output/` to local after every task.
+The region holding the surviving network volume only had H100/RTX PRO 6000 in stock (≥ $2.09/h), so I deployed a fresh **A40 48 GB secure pod** ($0.44/h, 100 GB container disk, no volume) and redid the setup with a single script (`setup.sh`, ~15 min: apt → parallel clone+LFS / OpenPI sync+checkpoint → `uv sync --extra isaac51 --extra test`).
 
 ### Dashboard (local, no results)
 - `robolab-dashboard --host 127.0.0.1 --port 8081` serves fine from the default dependency set. `/api/tasks/summary` → 120 tasks / 47 scenes / difficulty & attribute histograms; `/api/scenes/_stats` → 61 scenes, 79 unique objects; `/api/tasks/<name>/subtasks` gives the ladder (`pick_and_place`, conditions `object_grabbed`, `object_in_container`).
@@ -169,5 +169,5 @@ docs/analysis.md lists `python analysis/read_results.py <run> --by-instruction-t
 
 ## 11. Cost / time
 
-- RunPod: resumed L40 pod ($0.69/h) for ~55 min before it vanished; fresh A40 pod ($0.44/h) for ~75 min. Balance $2.96 → **$2.12**. Two other exited pods (`robolab-verified4`, `robolab-gemini`) disappeared from the account during the session as well; I only ever called `podResume` on `sefuvhc3urmoah`, `podFindAndDeployOnDemand` for `9u5pegjdhwghb4` and `podTerminate` on `9u5pegjdhwghb4`. Worth checking whether RunPod purges pods on a low balance.
+- RunPod: resumed L40 pod ($0.69/h) for ~55 min before it vanished; fresh A40 pod ($0.44/h) for ~75 min. Two other exited pods disappeared from the account during the session as well, with no terminate call issued against them.
 - Wall clock: ~2 h 40 min from clone to this write-up.

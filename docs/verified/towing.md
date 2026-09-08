@@ -50,6 +50,13 @@ the banana stays on the table. One episode, open-loop; the solid pad is not the 
 normal run set confirms grasping is unchanged (the contact face is the same, the box is 19 mm deep
 instead of 6).
 
+**Isaac Sim 6.** Both assets above are the Isaac Sim 5.x rig. On the `isaac60` stack the default
+asset is `franka_robotiq_2f_85_isaac60.usd`, a derivative of the flattened file that de-instances
+the Robotiq visual prototypes and keeps the same pad collider, so the artifact is expected there
+too. No solid-pad variant of the 6.0 asset has been built or replayed yet; `ROBOLAB_ROBOT_USD`
+still accepts the 5.x solid-pad file, but the two stacks resolve contacts differently
+(`docs/isaac_sim_6.md`), so the 4-of-4 versus 0-of-4 replay result is a 5.x measurement.
+
 ## 2. How common it was
 
 All six `cli_*_robolab120` corpora (120 tasks, 10 envs each, 7 186 episodes), scored offline with
