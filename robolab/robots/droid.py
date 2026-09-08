@@ -74,8 +74,8 @@ class DroidCfg:
             # the articulation/collision structure intact and de-instances only the
             # eight Robotiq visual prototype roots.
             # ROBOLAB_ROBOT_USD swaps the rig asset (docs/verified/towing.md: the solid-pad variant
-            # franka_robotiq_2f_85_solidpad.usd is the tested fix for the towing artifact; it was
-            # built from the 5.x flattened asset and has no Isaac 6 counterpart yet).
+            # franka_robotiq_2f_85_solidpad.usd is the tested fix for the towing artifact on the 5.x
+            # rig, franka_robotiq_2f_85_isaac60_solidpad.usd the same fix for this rig; default unchanged).
             usd_path=os.environ.get("ROBOLAB_ROBOT_USD") or os.path.join(ROBOTS_DIR, "franka_robotiq_2f_85_isaac60.usd"),
             activate_contact_sensors=True,
             rigid_props=sim_utils.RigidBodyPropertiesCfg(
