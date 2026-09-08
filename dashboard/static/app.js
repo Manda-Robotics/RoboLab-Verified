@@ -4025,6 +4025,7 @@ async function selectSceneDetail(filename) {
 // Persist user's preferred width and collapsed state across reloads.
 const SIDEBAR_WIDTH_KEY = 'robolab.sidebar.width';
 const SIDEBAR_COLLAPSED_KEY = 'robolab.sidebar.collapsed';
+const LABELS_OPEN_KEY = 'robolab.labelsOpen';   // label panel shown (review tool; closed by default)
 const SIDEBAR_MIN_W = 200;
 const SIDEBAR_MAX_W = 600;
 const SIDEBAR_DEFAULT_W = 288;
@@ -4288,8 +4289,29 @@ async function loadAndRenderPhases(host, runId, task, envId, runIndex, camVideos
 async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, camVideos, data) {
   const lane = tr.lanes.labels;
   const panel = el('div', { class: 'label-panel' });
-  host.appendChild(el('div', { class: 'lang-label mb-1' }, 'Labels'));
+  // The panel is a review tool, not part of reading an episode: closed by default, the
+  // choice remembered per browser. Closed = panel hidden, its keys inert, and the labels
+  // lane hidden unless the episode already carries marks.
+  let open = false;
+  try { open = localStorage.getItem(LABELS_OPEN_KEY) === '1'; } catch (_) { /* private mode */ }
+  const caret = el('span', { class: 'labels-caret' }, '');
+  const header = el('div', { class: 'lang-label mb-1 labels-toggle', role: 'button', tabindex: 0,
+    title: 'Labelling and review tool (click to show or hide)' }, caret, 'Labels');
+  host.appendChild(header);
   host.appendChild(panel);
+  const applyOpen = () => {
+    panel.hidden = !open;
+    caret.textContent = open ? '\u25be ' : '\u25b8 ';
+    header.classList.toggle('open', open);
+    draw();                                   // defined below; applyOpen runs only after it
+  };
+  const toggleOpen = () => {
+    open = !open;
+    try { localStorage.setItem(LABELS_OPEN_KEY, open ? '1' : '0'); } catch (_) { /* ignore */ }
+    applyOpen();
+  };
+  header.addEventListener('click', toggleOpen);
+  header.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleOpen(); } });
   const status = el('span', { class: 'text-xs', style: { color: 'var(--text-2)' } }, '');
   const now = () => { const m = tr.master(); return m ? m.currentTime : 0; };
   const fmt = (t) => (Number.isFinite(t) ? t.toFixed(2) : '');
@@ -4319,6 +4341,7 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
   let marks = [];
   tr.onView(() => draw());
   const draw = () => {
+    lane.hidden = !open && marks.length === 0;
     for (const n of lane.querySelectorAll('.phase-mark')) n.remove();
     listEl.innerHTML = '';
     const m = tr.master();
@@ -4477,7 +4500,7 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
 
   if (window.__labelKeyHandler) document.removeEventListener('keydown', window.__labelKeyHandler);
   const handler = (e) => {
-    if (!document.body.contains(panel)) return;
+    if (!document.body.contains(panel) || panel.hidden) return;
     const tag = (e.target && e.target.tagName || '').toLowerCase();
     const inPanel = panel.contains(e.target);
     const rk = window.__reviewKeys;
@@ -4497,4 +4520,5 @@ async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, cam
   };
   document.addEventListener('keydown', handler);
   window.__labelKeyHandler = handler;
+  applyOpen();
 }

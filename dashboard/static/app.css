@@ -937,6 +937,9 @@ table thead th { padding: 0.5rem 0.75rem; font-weight: 500; }
 .attempt-row:hover { background: var(--bg-1); }
 .attempt-row.active { background: var(--bg-1); outline: 1px solid var(--border-strong); }
 .attempt-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.labels-toggle { cursor: pointer; user-select: none; }
+.labels-toggle:hover { color: var(--text-1); }
+.labels-caret { display: inline-block; width: 1em; }
 .label-panel { border: 1px solid var(--border); border-radius: 8px; background: var(--bg-2); padding: 6px 8px; font-size: 12px; }
 .label-panel input, .label-panel select { background: var(--bg-0); color: var(--text-1); border: 1px solid var(--border); border-radius: 4px; padding: 2px 4px; font-size: 12px; }
 .label-panel .transport-btn { font-size: 11px; padding: 0.1rem 0.4rem; }

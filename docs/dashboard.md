@@ -75,7 +75,8 @@ Under the event strip of an episode, three lanes share the strip's time axis
   the lanes and highlight with the playhead.
 - **Phases**: one block per contiguous phase (reach, approach, hover, close on, lift, transport,
   lower, release, press table, ...), coloured by family. Hover for the object and its role.
-- **Labels**: your own marks (see below).
+- **Labels**: your own marks (see below). Hidden until the Labels panel is opened, unless the
+  episode already carries marks.
 
 The lanes are served by `GET .../episodes/{env}/run/{run}/phases`. When
 `scripts/annotate_phases.py` has written `phases_<run>_env<env>.json` next to the log, that
@@ -85,7 +86,9 @@ geometry alone and the legend says so.
 
 #### Labelling an episode
 
-The **Labels** panel under the lanes writes human marks to `analysis/phase_labels.jsonl`
+The **Labels** panel under the lanes is a review tool and is closed by default: click the
+**Labels** heading to open it (the choice is remembered per browser). While it is closed its
+keys are inert. It writes human marks to `analysis/phase_labels.jsonl`
 (override with `ROBOLAB_PHASE_LABELS=<path>`), one JSON line per mark, keyed by
 `(run, task, env, run_index)`; a delete appends a tombstone rather than rewriting the file.
 Keys while the episode view is open: `i` sets the start to the playhead, `o` the end, `Enter`
