@@ -78,7 +78,8 @@ the detector below. Tier A is the flag (section 3); A or B adds shorter or shall
   PutTwoMugsOnShelf 28 %, FruitsOnPlate 27 %, CleanUpToys 27 %, the dishes-in-bin tasks 25 %.
 - Open limit 560 of the 656 tier-A segments, closed limit 64, mixed 32. Right pad 362, left 294.
 - 26 tier-A hooks begin within 3 s of reset (cordless_drill in the Tool tasks, red_mug in
-  ReorientWhiteMugs): spawn poses in contact with the open gripper, a scene defect to fix separately.
+  ReorientWhiteMugs). Checked: the object starts 16 to 27 cm from the pads and the arm travels 20 to 40 cm
+  in those first seconds; the policy dives in and hooks immediately. Not a spawn defect.
 - Beyond the tows, the same defect shows as 4 043 *drag* segments (hooked and pushed along the
   table) and 10 060 *press* segments (the arm pushing a pad 2 mm or more into a table-pinned object).
 
