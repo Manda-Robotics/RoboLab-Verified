@@ -12,7 +12,7 @@ class SphereLightCfg:
     sphere_light = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/sphere",
         spawn=sim_utils.SphereLightCfg(intensity=5000),
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, -0.6, 0.7)),
+        init_state=AssetBaseCfg.InitialStateCfg(rot=(1.0, 0.0, 0.0, 0.0), pos=(0.0, -0.6, 0.7)),
     )
 
 
@@ -22,7 +22,7 @@ class RedSphereLightCfg:
     red_sphere_light = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/sphere_red",
         spawn=sim_utils.SphereLightCfg(intensity=100000, color=(1.0, 0.0, 0.0)),
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 1.0)),
+        init_state=AssetBaseCfg.InitialStateCfg(rot=(1.0, 0.0, 0.0, 0.0), pos=(0.0, 0.0, 1.0)),
     )
 @configclass
 class BlueSphereLightCfg:
@@ -30,7 +30,7 @@ class BlueSphereLightCfg:
     blue_sphere_light = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/sphere_blue",
         spawn=sim_utils.SphereLightCfg(intensity=100000, color=(0.0, 0.0, 1.0)),
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 1.0)),
+        init_state=AssetBaseCfg.InitialStateCfg(rot=(1.0, 0.0, 0.0, 0.0), pos=(0.0, 0.0, 1.0)),
     )
 @configclass
 class GreenSphereLightCfg:
@@ -38,7 +38,7 @@ class GreenSphereLightCfg:
     green_sphere_light = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/sphere_green",
         spawn=sim_utils.SphereLightCfg(intensity=100000, color=(0.0, 1.0, 0.0)),
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 1.0)),
+        init_state=AssetBaseCfg.InitialStateCfg(rot=(1.0, 0.0, 0.0, 0.0), pos=(0.0, 0.0, 1.0)),
     )
 
 
@@ -48,7 +48,7 @@ class ExtremelyDimSphereLightCfg:
     sphere_light = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/sphere",
         spawn=sim_utils.SphereLightCfg(intensity=50),
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, -0.6, 0.7)),
+        init_state=AssetBaseCfg.InitialStateCfg(rot=(1.0, 0.0, 0.0, 0.0), pos=(0.0, -0.6, 0.7)),
     )
 
 @configclass
