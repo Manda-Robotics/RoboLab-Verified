@@ -50,12 +50,13 @@ the banana stays on the table. One episode, open-loop; the solid pad is not the 
 normal run set confirms grasping is unchanged (the contact face is the same, the box is 19 mm deep
 instead of 6).
 
-**Isaac Sim 6.** Both assets above are the Isaac Sim 5.x rig. On the `isaac60` stack the default
-asset is `franka_robotiq_2f_85_isaac60.usd`, a derivative of the flattened file that de-instances
-the Robotiq visual prototypes and keeps the same pad collider, so the artifact is expected there
-too. No solid-pad variant of the 6.0 asset has been built or replayed yet; `ROBOLAB_ROBOT_USD`
-still accepts the 5.x solid-pad file, but the two stacks resolve contacts differently
-(`docs/isaac_sim_6.md`), so the 4-of-4 versus 0-of-4 replay result is a 5.x measurement.
+**Isaac Sim 6.** On the `isaac60` stack the default rig is `franka_robotiq_2f_85_isaac60.usd`, a
+derivative of the flattened file that de-instances the Robotiq visual prototypes; its pad colliders
+and joint frames are identical to the 5.x rig, so the artifact is the same there.
+`franka_robotiq_2f_85_isaac60_solidpad.usd` is the solid-pad variant of that rig. The replay above,
+run on the 6.0 stack, reproduces the hook 4 of 4 on the default rig and 0 of 4 on the solid pad
+(register row P125 in [changes.md](changes.md)); the 5.x and 6.0 stacks resolve contacts differently
+in general (`docs/isaac_sim_6.md`), so a published number states its stack.
 
 ## 2. How common it was
 
@@ -78,7 +79,8 @@ the detector below. Tier A is the flag (section 3); A or B adds shorter or shall
   PutTwoMugsOnShelf 28 %, FruitsOnPlate 27 %, CleanUpToys 27 %, the dishes-in-bin tasks 25 %.
 - Open limit 560 of the 656 tier-A segments, closed limit 64, mixed 32. Right pad 362, left 294.
 - 26 tier-A hooks begin within 3 s of reset (cordless_drill in the Tool tasks, red_mug in
-  ReorientWhiteMugs): spawn poses in contact with the open gripper, a scene defect to fix separately.
+  ReorientWhiteMugs). Checked: the object starts 16 to 27 cm from the pads and the arm travels 20 to 40 cm
+  in those first seconds; the policy dives in and hooks immediately. Not a spawn defect.
 - Beyond the tows, the same defect shows as 4 043 *drag* segments (hooked and pushed along the
   table) and 10 060 *press* segments (the arm pushing a pad 2 mm or more into a table-pinned object).
 
