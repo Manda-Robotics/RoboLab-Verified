@@ -28,6 +28,11 @@ from robolab.core.events.basic_recorders import (
     PreStepFlatPolicyObservationsRecorderCfg,
 )
 from robolab.core.events.subtask_recorder import SubtaskCompletionRecorderCfg
+from robolab.core.events.dense_recorders import (
+    PostStepConditionsRecorderCfg,
+    PostStepExtraContactRecorderCfg,
+    PostStepTrackerStateRecorderCfg,
+)
 
 
 @configclass
@@ -117,6 +122,13 @@ def create_recorder_config(
     # Conditionally add subtask tracking
     if include_subtask_tracking:
         config.record_subtask_completion = SubtaskCompletionRecorderCfg()
+
+    # Dense-annotation channels (docs/verified/dense_annotations.md §5, R2/R4). Attached
+    # after the subtask term so the tracker state they read is this step's. Each term
+    # records nothing when its source (tracker, ladder, extra sensors) is absent.
+    config.record_tracker_state = PostStepTrackerStateRecorderCfg()
+    config.record_conditions = PostStepConditionsRecorderCfg()
+    config.record_extra_contact = PostStepExtraContactRecorderCfg()
 
     return config
 

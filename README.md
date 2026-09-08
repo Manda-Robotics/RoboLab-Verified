@@ -26,7 +26,7 @@ The changes by area follow; [`docs/verified/changes.md`](docs/verified/changes.m
 - **Embodiments and backends**: a bimanual YAM rig (two I2RT arms, the side-by-side station most bimanual data is collected on) with a client for Ai2's released MolmoAct 2 bimanual checkpoint ([`docs/bimanual_yam.md`](docs/bimanual_yam.md)), a dual-Franka rig, a bimanual ViperX (ALOHA) config (its asset is not shipped), and a connector for running a pointing-capable VLM as a policy.
 - **Tooling**: offline audits of task definitions and scenes that run without a simulator, and a verifier that evaluates each flag change as PASS / FAIL / N/A over recorded runs.
 
-Status: the offline suite (222 tests) runs in CI. Each change is marked RUNTIME, OFFLINE or NONE according to how it was verified. About 25 of the 120 tasks have been run against the patched code, most with π0.5 only. [`docs/verified/verification.md`](docs/verified/verification.md) lists the verification status of each change. Numbers reported from this fork should include the tag.
+Status: the offline suite (251 tests) runs in CI. Each change is marked RUNTIME, OFFLINE or NONE according to how it was verified. About 25 of the 120 tasks have been run against the patched code, most with π0.5 only. [`docs/verified/verification.md`](docs/verified/verification.md) lists the verification status of each change. Numbers reported from this fork should include the tag.
 
 ## Key Features
 
@@ -71,7 +71,7 @@ UV_PROJECT_ENVIRONMENT=.venv-51 uv sync --python 3.11 --extra isaac51
 Verify the installation:
 
 ```bash
-python -m pytest offline_tests     # 222 tests, no simulator: the evaluation-correctness suite
+python -m pytest offline_tests     # 251 tests, no simulator: the evaluation-correctness suite
 uv run --no-sync pytest tests/     # boots Isaac Sim: isaaclab importable, all task definitions valid, one full episode runs
 ```
 

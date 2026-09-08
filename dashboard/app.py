@@ -540,6 +540,162 @@ def create_app(initial_dir: Path | None = None, scenes_dir: Path | None = None) 
 
         return {"dt": dt, "num_events": len(events), "events": events}
 
+    # ---- dense phases (docs/verified/dense_annotations.md) -------------------------
+    _phase_cache: dict = {}
+
+    @app.get("/api/runs/{run_id}/tasks/{task}/episodes/{env_id}/run/{run_index}/phases")
+    def episode_phases_route(run_id: str, task: str, env_id: int, run_index: int):
+        """L1 phases and L2 attempts for one episode.
+
+        Serves ``phases_<run>_env<env>.json`` when ``scripts/annotate_phases.py`` has written
+        it, otherwise annotates on the fly from the run directory (cached on the mtimes of the
+        recording and the log; nothing is written). Returns the file's content plus
+        ``time_s`` fields and ``source`` (``file`` | ``computed``). 404 when the episode has
+        no recording.
+        """
+        import json
+        try:
+            run_dir = loader._run_dir(run_id)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        task_dir = run_dir / task
+        pf = task_dir / f"phases_{run_index}_env{env_id}.json"
+        h5 = loader.hdf5_path(run_id, task, run_index=run_index)
+        if pf.exists():
+            try:
+                doc = json.loads(pf.read_text())
+                source = "file"
+            except (OSError, json.JSONDecodeError) as e:
+                raise HTTPException(status_code=500, detail=f"phases parse: {e}")
+        else:
+            if not h5:
+                raise HTTPException(status_code=404, detail="no recording for this episode")
+            lp = task_dir / f"log_{run_index}_env{env_id}.json"
+            key = (str(task_dir), env_id, run_index,
+                   Path(h5).stat().st_mtime, lp.stat().st_mtime if lp.exists() else 0)
+            doc = _phase_cache.get(key)
+            if doc is None:
+                try:
+                    from robolab.eval.phases import annotate
+                    doc = annotate(str(task_dir), env_id, run_index).doc
+                except KeyError:
+                    raise HTTPException(status_code=404, detail="episode not in the recording")
+                except Exception as e:  # torch missing, unexpected layout, ...
+                    raise HTTPException(status_code=500, detail=f"phases: {type(e).__name__}: {e}")
+                _phase_cache.clear() if len(_phase_cache) > 64 else None
+                _phase_cache[key] = doc
+            source = "computed"
+        dt = float(doc.get("dt") or _resolve_dt(task_dir, env_id, run_index) or 0.0)
+        out = dict(doc)
+        out["source"] = source
+        # A 1-based step k covers [(k-1)*dt, k*dt), so a segment starts one frame before
+        # start*dt: with start*dt adjacent segments render with a phantom one-frame gap and
+        # every reviewed boundary lands one frame late (scripts/score_gold.py agrees).
+        out["phases"] = [dict(p, start_s=(p["start"] - 1) * dt, end_s=p["end"] * dt) for p in doc.get("phases", [])]
+        out["attempts"] = [dict(a, start_s=(a["start"] - 1) * dt, end_s=a["end"] * dt) for a in doc.get("attempts", [])]
+        return out
+
+    # ---- gold labels for the phase track (plan phase B) ---------------------------
+    # One JSONL, repo-relative like analysis/flag_labels.jsonl. Each line is one human mark
+    # on one episode: a segment boundary or a whole segment. Never overwritten in place;
+    # deletes append a tombstone so a session can be reconstructed.
+    import os as _os
+    _labels_path = Path(_os.environ.get("ROBOLAB_PHASE_LABELS",
+                                        PKG_DIR.parent / "analysis" / "phase_labels.jsonl"))
+
+    def _read_labels() -> list[dict]:
+        import json
+        if not _labels_path.exists():
+            return []
+        rows, dead = [], set()
+        for line in _labels_path.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if r.get("deleted"):
+                dead.add(r["id"])
+            else:
+                rows.append(r)
+        return [r for r in rows if r.get("id") not in dead]
+
+    @app.get("/api/runs/{run_id}/tasks/{task}/episodes/{env_id}/run/{run_index}/phase_labels")
+    def phase_labels_get(run_id: str, task: str, env_id: int, run_index: int):
+        rows = [r for r in _read_labels()
+                if r.get("run") == run_id and r.get("task") == task and int(r.get("env", -1)) == env_id
+                and int(r.get("run_index", 0)) == run_index]
+        rows.sort(key=lambda r: (r.get("t_start", r.get("t", 0)) or 0))
+        return {"path": str(_labels_path), "labels": rows}
+
+    @app.post("/api/runs/{run_id}/tasks/{task}/episodes/{env_id}/run/{run_index}/phase_labels")
+    def phase_labels_post(run_id: str, task: str, env_id: int, run_index: int, payload: dict = Body(...)):
+        """Append one mark. ``payload``: ``{kind: "segment"|"boundary", t_start, t_end?, label?,
+        object?, result?, note?, annotator?}``; times in seconds of the recorded timebase."""
+        import json
+        import time
+        import uuid
+        kind = payload.get("kind") or "segment"
+        if kind not in ("segment", "boundary", "review"):
+            raise HTTPException(status_code=400, detail="kind must be segment, boundary or review")
+        try:
+            t_start = float(payload.get("t_start"))
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="t_start (seconds) is required")
+        t_end = payload.get("t_end")
+        row = {
+            "id": uuid.uuid4().hex[:12],
+            "run": run_id, "task": task, "env": env_id, "run_index": run_index,
+            "kind": kind,
+            "t_start": round(t_start, 3),
+            "t_end": round(float(t_end), 3) if t_end not in (None, "") else None,
+            "label": (payload.get("label") or "").strip() or None,
+            "object": (payload.get("object") or "").strip() or None,
+            "result": (payload.get("result") or "").strip() or None,
+            "note": (payload.get("note") or "").strip() or None,
+            "cause": (payload.get("cause") or "").strip() or None,     # the machine's cause on a review row (§9.13)
+            "annotator": (payload.get("annotator") or "").strip() or None,
+            "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        }
+        if kind == "review":
+            # Review mode (plan §9.4, 2026-09-02): a verdict on one machine segment. t_start/t_end,
+            # label, object, result are the machine's; `verdict` says which of the three are right;
+            # `corrected` carries the human's values where they are not (label "none" = the
+            # segment should not exist). The latest review of a seg_index wins in score_gold.py.
+            try:
+                row["seg_index"] = int(payload.get("seg_index"))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="seg_index is required for a review")
+            v = payload.get("verdict") or {}
+            row["verdict"] = {k: bool(v.get(k, True)) for k in ("label", "result", "bounds")}
+            if "cause" in v:                      # only places carry a cause; older rows have three keys
+                row["verdict"]["cause"] = bool(v.get("cause"))
+            c = payload.get("corrected") or None
+            row["corrected"] = None if c is None else {
+                "label": (c.get("label") or "").strip() or None,
+                "object": (c.get("object") or "").strip() or None,
+                "result": (c.get("result") or "").strip() or None,
+                "cause": (c.get("cause") or "").strip() or None,
+                "t_start": round(float(c["t_start"]), 3) if c.get("t_start") not in (None, "") else None,
+                "t_end": round(float(c["t_end"]), 3) if c.get("t_end") not in (None, "") else None,
+            }
+        _labels_path.parent.mkdir(parents=True, exist_ok=True)
+        with _labels_path.open("a") as fh:
+            fh.write(json.dumps(row) + "\n")
+        return row
+
+    @app.delete("/api/phase_labels/{label_id}")
+    def phase_labels_delete(label_id: str):
+        import json
+        import time
+        if not re.fullmatch(r"[0-9a-f]{12}", label_id):
+            raise HTTPException(status_code=400, detail="bad id")
+        with _labels_path.open("a") as fh:
+            fh.write(json.dumps({"id": label_id, "deleted": True, "created": time.strftime("%Y-%m-%dT%H:%M:%S")}) + "\n")
+        return {"ok": True, "id": label_id}
+
     @app.get("/api/runs/{run_id}/tasks/{task}/episodes/{env_id}/run/{run_index}/timeseries")
     def episode_timeseries_route(run_id: str, task: str, env_id: int, run_index: int):
         h5 = loader.hdf5_path(run_id, task, run_index=run_index)

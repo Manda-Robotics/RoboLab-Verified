@@ -10,11 +10,14 @@ consumes exactly what ``run_episode`` emits and writes results to the same
 ``scene_output_dir`` layout that ``run_eval.py`` and its variants share.
 """
 
+import logging
 import os
 import re
 from collections import Counter
 
 import h5py
+
+import robolab.constants
 
 from robolab.core.logging.results import (
     dump_results_to_file,
@@ -26,6 +29,9 @@ from robolab.core.logging.results import (
 from robolab.core.metrics import compute_episode_metrics, load_demo_data
 from robolab.core.task.status import EVENT_STATUS_CODES, StatusCode, get_status_name
 from robolab.core.utils.file_utils import load_file
+
+
+logger = logging.getLogger(__name__)
 
 
 def _read_final_score_from_hdf5(hdf5_path: str, env_id: int) -> float | None:
@@ -286,6 +292,29 @@ def summarize_run(
         dump_results_to_file(log_file, log_obj, append=False)
         per_env_events[eid] = _tally_events(events)
 
+    # Dense annotation by default (P107): phases_<run>_env<env>.json next to each log, from the
+    # recording just written; the L2 summary goes into the episode row. Never fails the run.
+    phase_summaries: dict[int, dict] = {}
+    if robolab.constants.ANNOTATE_PHASES:
+        from robolab.eval.phases import write_phases  # noqa: PLC0415
+        for eid in range(num_envs):
+            try:
+                events = per_env_events_list[eid] if eid < len(per_env_events_list) else []
+                phase_summaries[eid] = write_phases(scene_output_dir, eid, run_idx, log_events=events).doc["summary"]
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("phases not written for env %d run %d: %s: %s", eid, run_idx, type(exc).__name__, exc)
+
+    # Towing artifact flag (P124): tows_<run>_env<env>.json next to each log; a tier-A tow marks the
+    # episode physics_artifact (the runtime TOWED_WITHOUT_GRASP rule misses most of them). Never fails the run.
+    tow_summaries: dict[int, dict] = {}
+    if robolab.constants.FLAG_TOWS:
+        from robolab.eval.tows import write_tows  # noqa: PLC0415
+        for eid in range(num_envs):
+            try:
+                tow_summaries[eid] = write_tows(scene_output_dir, eid, run_idx)["summary"]
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("tows not written for env %d run %d: %s: %s", eid, run_idx, type(exc).__name__, exc)
+
     for r in env_results:
         env_id = r["env_id"]
         traj_data = load_demo_data(hdf5_path, f"demo_{env_id}")
@@ -317,6 +346,15 @@ def summarize_run(
             extra_fields=extra_fields,
             final_score=final_score,
         )
+
+        if env_id in phase_summaries and isinstance(run_summary, dict):
+            run_summary["phases"] = phase_summaries[env_id]
+        if env_id in tow_summaries and isinstance(run_summary, dict):
+            tows = tow_summaries[env_id]
+            run_summary["tows"] = tows
+            if tows.get("tow_tier") == "A":
+                run_summary["physics_artifact"] = True
+                run_summary["towed_objects"] = sorted(set(run_summary.get("towed_objects") or []) | set(tows.get("towed_objects") or []))
 
         episode_results = update_experiment_results(
             run_summary=run_summary,

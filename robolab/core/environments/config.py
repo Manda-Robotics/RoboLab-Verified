@@ -95,11 +95,13 @@ def generate_scene_env_cfg(task_class: Task,
         "root_z_above_ground": None,
         "ee_recorder_bodies": None,
         "friction_bodies": None,
+        "contact_extra_bodies": None,
         "__annotations__": {
             "table_fixture": "AssetBaseCfg | None",
             "root_z_above_ground": "float | None",
             "ee_recorder_bodies": "dict[str, str] | None",
             "friction_bodies": "list[str] | None",
+            "contact_extra_bodies": "dict[str, str] | None",
         },
     }
     cfg_cls = type(class_name, tuple(bases), members)
@@ -129,7 +131,8 @@ def generate_task_env_cfg(task_class: Task,
                          lazy_sensor_update: bool = True,
                          ee_recorder_bodies: dict[str, str] | None = None,
                          object_state_obs: bool = False,
-                         friction_bodies: list[str] | None = None) -> Type[RobolabDefaultEnvCfg]:
+                         friction_bodies: list[str] | None = None,
+                         contact_extra_bodies: dict[str, str] | None = None) -> Type[RobolabDefaultEnvCfg]:
     """
     Generate a complete task environment configuration class.
 
@@ -189,6 +192,7 @@ def generate_task_env_cfg(task_class: Task,
     # not close over names they also assign).
     _ee_recorder_bodies = ee_recorder_bodies
     _friction_bodies = friction_bodies
+    _contact_extra_bodies = contact_extra_bodies
 
     @configclass
     class GeneratedTaskEnvCfg(RobolabDefaultEnvCfg):
@@ -218,6 +222,8 @@ def generate_task_env_cfg(task_class: Task,
             self.scene = scene_env_cfg(num_envs=num_envs, env_spacing=env_spacing)
             self.scene.lazy_sensor_update = lazy_sensor_update
             self.contact_gripper = contact_gripper
+            # R2 (dense_annotations.md §5): extra robot bodies with per-object contact sensors.
+            self.contact_extra_bodies = _contact_extra_bodies
             self.gripper_closure_cfg = gripper_closure_cfg
             self.instruction = task_class.instruction
             self.terminations = task_class.terminations()
@@ -314,7 +320,8 @@ def auto_generate_task_env(task_file_path: str,
     task_env_cfg = generate_task_env_cfg(
         task_class, scene_env_cfg, observations_cfg, actions_cfg,
         ee_recorder_bodies=ee_recorder_bodies,
-        friction_bodies=getattr(robot_cfg, "friction_bodies", None), **env_kwargs
+        friction_bodies=getattr(robot_cfg, "friction_bodies", None),
+        contact_extra_bodies=getattr(robot_cfg, "contact_extra_bodies", None), **env_kwargs
     )
 
     return task_env_cfg

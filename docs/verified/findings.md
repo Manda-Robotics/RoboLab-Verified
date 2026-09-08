@@ -122,11 +122,11 @@ Defects that no change above removes.
 - Objects authored interpenetrating their containers roll at reset (`fruits_in_basket`,
   `fruits_out_of_basket`, others listed by `scripts/check_scene_intersections.py`). Reported
   per episode as `SCENE_SETTLING`; the scenes are as upstream authored them.
-- The "stuck to a finger" artifact. An object occasionally moves with an open hand
-  (object-to-hand distance variance 0.03 mm over 70 mm of motion). It is flagged as
-  `TOWED_WITHOUT_GRASP` and the episode marked `physics_artifact`. It survives a 4× cut in
-  friction, which rules out the material coefficient; the contact or solver stage remains.
-  Cause not established.
+- The "stuck to a finger" artifact is understood and flagged (P124, [towing.md](towing.md)): an
+  object feature pushed through the 6 mm pad collider and hooked behind it while `finger_joint`
+  sits at a hard limit. Tier-A tows in 7.8 % of the six `cli_*` corpora; `tows_*.json` per
+  episode, `physics_artifact` on the episode row. The solid-pad asset removes it in a controlled
+  replay (4/4 to 0/4) but is not the default until grasping is re-validated with it.
 - Rigid food. A bagel is a rigid mesh: a finger through the hole does not hold, so a
   strategy that works on a real bagel fails here.
 - Isaac Sim 6.0 renders the Robotiq gripper as detached fragments in some scenes (a

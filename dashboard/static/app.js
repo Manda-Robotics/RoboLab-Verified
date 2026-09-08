@@ -1807,6 +1807,30 @@ function writeHash(h) {
   // from the landing page leaves the app rather than bouncing on it.
   if (!location.hash) history.replaceState(null, '', h); else history.pushState(null, '', h);
 }
+
+// A deep link has to fetch the run index, the task's episode list and the
+// episode itself before anything paints. That is seconds on a large run, and
+// an empty pane reads as a broken link, so say what is happening first.
+function showHashLoading(parts) {
+  const pane = $('#pane');
+  if (!pane) return;
+  let what = 'the linked view';
+  if (parts[1] === 'run' && parts[2]) {
+    const task = parts[3] === 'task' ? parts[4] : null;
+    if (task && parts[5] === 'ep' && parts[6] != null) what = `episode ${parts[6]} of ${task}`;
+    else if (task) what = task;
+    else what = parts[2];
+  } else if (parts[1] === 'task' && parts[2]) {
+    what = `${parts[2]} across every run`;
+  }
+  pane.innerHTML = '';
+  pane.appendChild(el('div', { class: 'deeplink-loading' },
+    el('div', { class: 'deeplink-spinner' }),
+    el('div', { class: 'text-sm' }, `Loading ${what}…`),
+    el('div', { class: 'text-xs', style: { color: 'var(--text-2)' } },
+      'Reading the run index and episode results.')));
+}
+
 async function applyHash() {
   const h0 = location.hash || '';
   // optional ?t=<seconds>: open the episode paused at that time (review links)
@@ -1820,6 +1844,7 @@ async function applyHash() {
     if (parts[0] === 'scenes' || parts[0] === 'tasks' || parts[0] === 'home') { setRoute(parts[0]); return; }
     if (parts[0] !== 'results') { if (h) setRoute('home'); return; }
     if (state.route !== 'results') setRoute('results', false);
+    showHashLoading(parts);
     // results/run/<run>[/task/<task>[/ep/<env>/<runIndex>]]
     // P70: #/results/task/<Task> - one task across every experiment
     if (parts[1] === 'task' && parts[2]) { await selectTaskAll(parts[2]); return; }
@@ -2298,6 +2323,12 @@ async function renderEpisode(runId, task, envId, runIndex) {
     // timeline with markers; the strip itself lives here so it never leaves
     // the screen when tabs change.
     pane.appendChild(buildTransport(camVideos));
+    // Dense phase lanes under the transport, the attempt list, and the label
+    // panel (docs/verified/dense_annotations.md). Fails soft: an episode with no
+    // recording just shows a one-line note.
+    const phaseHost = el('div', { class: 'phase-host mb-5' });
+    pane.appendChild(phaseHost);
+    loadAndRenderPhases(phaseHost, runId, task, envId, runIndex, camVideos, ep);
   }
 
   // Stash cam videos so subordinate renderers (events strip, time-series plots)
@@ -2668,9 +2699,10 @@ function buildTransport(videos) {
   const master = () => linked()[0];
 
   const fmtT = (s) => {
-    if (!Number.isFinite(s)) return '0:00';
-    const m = Math.floor(s / 60), r = Math.floor(s % 60);
-    return `${m}:${String(r).padStart(2, '0')}`;
+    // tenths, so a boundary can be read aloud from the clock while labelling
+    if (!Number.isFinite(s)) return '0:00.0';
+    const m = Math.floor(s / 60), r = (s % 60).toFixed(1).padStart(4, '0');
+    return `${m}:${r}`;
   };
 
   const playBtn = el('button', { class: 'transport-btn', title: 'Play/pause linked views (space)' });
@@ -2685,6 +2717,19 @@ function buildTransport(videos) {
   strip.appendChild(el('div', { class: 'events-strip-track' }));
   const playhead = el('div', { class: 'events-strip-playhead', style: { left: '0%' } });
   strip.appendChild(playhead);
+  // Dense phase lanes under the event strip (docs/verified/dense_annotations.md):
+  // attempts (L2), phases (L1) and the reviewer's own marks. Filled by
+  // loadAndRenderPhases; each lane carries its own playhead so the rows read as
+  // one timeline. Same column as the strip, so the x axis is shared exactly.
+  const laneL2 = el('div', { class: 'phase-lane phase-lane-l2', title: 'Attempts: pick / place / drop / no completed subtask. Click a block to seek.' });
+  const laneL1 = el('div', { class: 'phase-lane phase-lane-l1', title: 'Phases, one per step. Click to seek. Wheel: zoom around the cursor (horizontal wheel pans).' });
+  const laneLabels = el('div', { class: 'phase-lane phase-lane-labels', title: 'Your labels (i = set start, o = set end, Enter = save)' });
+  const lanePlayheads = [laneL2, laneL1, laneLabels].map((l) => {
+    const p = el('div', { class: 'events-strip-playhead', style: { left: '0%' } });
+    l.appendChild(p);
+    return p;
+  });
+  const stripCol = el('div', { class: 'transport-col' }, strip, laneL2, laneL1, laneLabels);
   const speed = el('select', { class: 'transport-speed', title: 'Playback speed' });
   for (const r of [0.5, 1, 2, 3]) {
     const opt = el('option', { value: String(r) }, `${r}×`);
@@ -2740,6 +2785,54 @@ function buildTransport(videos) {
     });
   }
 
+  // Overview + detail (plan §9.15): the event strip is the navigator for the whole episode and
+  // carries the visible-range box; the lanes below show only that range. Wheel over a lane
+  // zooms around the cursor, horizontal wheel pans, the box drags and resizes, double-click on
+  // the strip resets, and the playhead drags the window along when it runs off the edge.
+  const view = { lo: 0, hi: null };                        // hi null = the whole episode
+  const viewSubscribers = [];
+  const total = () => Math.max(transport.maxTime || 0, (master() && master().duration) || 0, 1);
+  const vlo = () => view.lo, vhi = () => (view.hi == null ? total() : view.hi);
+  const xOf = (t) => ((t - vlo()) / Math.max(1e-6, vhi() - vlo())) * 100;
+  const navWin = el('div', { class: 'nav-window full', title: 'Visible range. Drag to pan, drag an edge to resize, double-click the strip to show everything.' });
+  const navL = el('div', { class: 'nav-handle left' }), navR = el('div', { class: 'nav-handle right' });
+  navWin.append(navL, navR); strip.appendChild(navWin);
+  const setView = (lo, hi) => {
+    const T = total(); lo = Math.max(0, lo); hi = Math.min(T, hi);
+    if (hi - lo < 1) { const c = (lo + hi) / 2; lo = Math.max(0, c - 0.5); hi = Math.min(T, lo + 1); }
+    if (lo <= 0.01 && hi >= T - 0.01) { view.lo = 0; view.hi = null; } else { view.lo = lo; view.hi = hi; }
+    navWin.style.left = `${(vlo() / T) * 100}%`; navWin.style.width = `${((vhi() - vlo()) / T) * 100}%`;
+    navWin.classList.toggle('full', view.hi == null);
+    const m = master(); const t = m ? m.currentTime : 0;
+    for (const p of lanePlayheads) p.style.left = `${Math.max(0, Math.min(100, xOf(t)))}%`;
+    for (const fn of viewSubscribers) { try { fn(vlo(), vhi()); } catch (_) { /* a lane must never stall the transport */ } }
+  };
+  const stripFrac = (e) => { const r = strip.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
+  let navDrag = null;
+  const navStart = (mode) => (e) => { e.stopPropagation(); navDrag = { mode, t0: stripFrac(e) * total(), lo: vlo(), hi: vhi() }; navWin.setPointerCapture(e.pointerId); };
+  navWin.addEventListener('pointerdown', navStart('pan'));
+  navL.addEventListener('pointerdown', navStart('lo'));
+  navR.addEventListener('pointerdown', navStart('hi'));
+  navWin.addEventListener('pointermove', (e) => {
+    if (!navDrag) return;
+    const d = stripFrac(e) * total() - navDrag.t0;
+    if (navDrag.mode === 'pan') { const w = navDrag.hi - navDrag.lo; const lo = Math.max(0, Math.min(total() - w, navDrag.lo + d)); setView(lo, lo + w); }
+    else if (navDrag.mode === 'lo') setView(Math.min(navDrag.lo + d, navDrag.hi - 1), navDrag.hi);
+    else setView(navDrag.lo, Math.max(navDrag.hi + d, navDrag.lo + 1));
+  });
+  const navEnd = () => { navDrag = null; };
+  navWin.addEventListener('pointerup', navEnd); navWin.addEventListener('pointercancel', navEnd);
+  strip.addEventListener('dblclick', (e) => { e.preventDefault(); setView(0, total()); });
+  const onLaneWheel = (lane) => (e) => {
+    e.preventDefault();
+    const r = lane.getBoundingClientRect(); const frac = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    const lo = vlo(), hi = vhi(), w = hi - lo;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) { const d = (e.deltaX / r.width) * w; setView(lo + d, hi + d); return; }
+    const tc = lo + frac * w, nw = Math.max(1, Math.min(total(), w * Math.exp(e.deltaY * 0.002)));   // wheel down = zoom out
+    setView(tc - frac * nw, tc + (1 - frac) * nw);
+  };
+  for (const lane of [laneL2, laneL1, laneLabels]) lane.addEventListener('wheel', onLaneWheel(lane), { passive: false });
+
   // The timeline is the scrubber: click or drag anywhere on it.
   let scrubbing = false;
   const seekToPointer = (e) => {
@@ -2757,12 +2850,42 @@ function buildTransport(videos) {
   const endScrub = () => { scrubbing = false; };
   strip.addEventListener('pointerup', endScrub);
   strip.addEventListener('pointercancel', endScrub);
+  // The phase lanes scrub too (same x extent as the strip); a block or mark keeps its own click.
+  const seekToPointerView = (e) => {
+    const m = master();
+    if (!m.duration) return;
+    const rect = strip.getBoundingClientRect();
+    const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    seekAll(linked(), vlo() + frac * (vhi() - vlo()));
+  };
+  for (const lane of [laneL2, laneL1, laneLabels]) {
+    lane.addEventListener('pointerdown', (e) => {
+      if (e.target.classList.contains('phase-seg') || e.target.classList.contains('phase-mark')) return;
+      scrubbing = true; lane.setPointerCapture(e.pointerId); seekToPointerView(e);
+    });
+    lane.addEventListener('pointermove', (e) => { if (scrubbing) seekToPointerView(e); });
+    lane.addEventListener('pointerup', endScrub);
+    lane.addEventListener('pointercancel', endScrub);
+  }
 
-  const transport = { strip, playhead, master, linked, onTime: null };
+  // `onTime` stays the single slot the events renderer owns; `subscribe` is for
+  // everything else that follows the playhead (the phase lanes, the label panel).
+  const transport = {
+    strip, playhead, master, linked, onTime: null,
+    lanes: { l2: laneL2, l1: laneL1, labels: laneLabels }, lanePlayheads,
+    maxTime: 0, view, x: xOf, lo: vlo, hi: vhi, total, setView, viewSubscribers, onView(fn) { viewSubscribers.push(fn); },
+    subscribers: [], subscribe(fn) { this.subscribers.push(fn); },
+  };
   const onTimeUpdate = (v) => {
     if (v !== master()) return;
     const m = v;
-    if (m.duration) playhead.style.left = `${Math.min(100, (m.currentTime / m.duration) * 100)}%`;
+    if (m.duration) {
+      playhead.style.left = `${Math.min(100, (m.currentTime / total()) * 100)}%`;
+      if (view.hi != null && !m.paused && (m.currentTime > vhi() || m.currentTime < vlo())) {
+        const w = vhi() - vlo(); setView(m.currentTime - 0.2 * w, m.currentTime + 0.8 * w);
+      }
+      for (const p of lanePlayheads) p.style.left = `${Math.max(0, Math.min(100, xOf(m.currentTime)))}%`;
+    }
     timeLabel.textContent = `${fmtT(m.currentTime)} / ${fmtT(m.duration)}`;
     for (const o of linked()) {
       if (o === m || o.seeking) continue;                 // user is scrubbing that tile
@@ -2774,6 +2897,7 @@ function buildTransport(videos) {
       if (m.paused !== o.paused) { if (m.paused) o.pause(); else o.play().catch(() => {}); }
     }
     if (transport.onTime) transport.onTime(m.currentTime);
+    for (const fn of transport.subscribers) { try { fn(m.currentTime); } catch (_) { /* a lane must never stall the transport */ } }
   };
   for (const v of videos) {
     v.addEventListener('timeupdate', () => onTimeUpdate(v));
@@ -2797,7 +2921,7 @@ function buildTransport(videos) {
   window.__transportKeyHandler = keyHandler;
 
   window.__transport = transport;
-  return el('div', { class: 'transport mb-5' }, playBtn, timeLabel, strip, speed);
+  return el('div', { class: 'transport mb-5' }, playBtn, timeLabel, stripCol, speed);
 }
 
 // ---- episode tabs ---------------------------------------------------------
@@ -3989,7 +4113,10 @@ async function boot() {
   // in the background and is ready by the time they click into Results.
   // A deep link (#/results/...) is remembered and applied once runs exist.
   const initialHash = location.hash;
-  setRoute('home');
+  if (initialHash && initialHash.startsWith('#/results')) {
+    setRoute('results', false);
+    showHashLoading(initialHash.split('?')[0].replace(/^#\//, '').split('/').map(decodeURIComponent));
+  } else setRoute('home');
   try {
     await renderSources();
     state.runs = await fetchJSON('/api/runs');
@@ -4006,3 +4133,368 @@ async function boot() {
 }
 
 boot();
+
+// ---------------------------------------------------------------------------
+// Dense phase lanes + gold-label panel (docs/verified/dense_annotations.md).
+// Data: GET .../phases  → {dt, num_steps, phases[{start_s,end_s,label,family,object,role}],
+//                          attempts[{start_s,end_s,label,object,result,attributes,description,flags}],
+//                          summary, warnings, source}
+//       GET/POST .../phase_labels, DELETE /api/phase_labels/{id}
+// ---------------------------------------------------------------------------
+const PHASE_FAMILY_COLOR = {
+  settle: '#4b5563', in_hand: '#34d399', grasp: '#f59e0b', table: '#f87171',
+  motion: '#60a5fa', still: '#6b7280', scene: '#a78bfa',
+};
+const ATTEMPT_RESULT_COLOR = { pass: '#34d399', fail: '#f87171', unknown: '#6b7280' };
+// A place whose object left the hand with the close command still on is shown as a drop: the file
+// keeps label "place" + attribute "dropped" (the reviewer cannot see the command; the result is the
+// outcome), the display says what happened.
+const isDrop = (a) => a.label === 'place' && (a.attributes || []).some((x) => String(x).startsWith('dropped'));
+// The file has no drop label (plan §9.13): a place whose gripper was still commanded closed carries the
+// `dropped` attribute and a `cause` (released / knocked / slipped / unclear). Render the real label so a
+// verdict on it is a verdict on what score_gold.py scores; the colour still marks a drop.
+const shownLabel = (a) => (a.label === 'no_completed_subtask' ? 'no completed subtask' : a.label);
+const causeText = (a) => (a.label === 'place' && a.cause ? ` · ${a.cause}` : '');
+const attemptColor = (a) => (isDrop(a) ? '#fb923c' : (ATTEMPT_RESULT_COLOR[a.result] || '#6b7280'));
+const LABEL_KINDS = ['pick', 'place', 'drop', 'no_completed_subtask', 'boundary'];
+
+async function loadAndRenderPhases(host, runId, task, envId, runIndex, camVideos, ep) {
+  const tr = window.__transport;
+  if (!tr || !tr.lanes) return;
+  const base = `/api/runs/${encodeURIComponent(runId)}/tasks/${encodeURIComponent(task)}/episodes/${envId}/run/${runIndex}`;
+  const note = (text) => el('div', { class: 'text-xs', style: { color: 'var(--text-2)' } }, text);
+  let data;
+  try {
+    data = await fetchJSON(`${base}/phases`);
+  } catch (e) {
+    host.appendChild(note(/404/.test(e.message) ? 'No recording for this episode: no phase track.' : `phases: ${e.message}`));
+    buildLabelPanel(host, base, runId, task, envId, runIndex, tr, camVideos, null);
+    return;
+  }
+  const dt = data.dt || (1 / 15);
+  let maxTime = Math.max((data.num_steps || 0) * dt, ep && ep.duration ? ep.duration : 0, 1);
+  const lanes = tr.lanes;
+  for (const l of Object.values(lanes)) for (const n of l.querySelectorAll('.phase-seg, .phase-mark')) n.remove();
+  for (const n of host.querySelectorAll('.now-readout')) n.remove();
+  tr.maxTime = maxTime;
+  const nodes = [];   // {node, s0, s1, text, extra, textMin, extraMin}: laid out by layout() for the visible range
+
+  const block = (lane, cls, s0, s1, text, title, color, onclick, extra = '', textMin = 2.5, extraMin = 7) => {
+    const n = el('div', { class: cls, style: { background: color }, title, onclick: (e) => { e.stopPropagation(); if (onclick) onclick(); } });
+    lane.appendChild(n);
+    nodes.push({ node: n, s0, s1, text: text || '', extra: extra || '', textMin, extraMin });
+    return n;
+  };
+  const seek = (t) => seekAll(linkedVideos(camVideos), t);
+  // Semantic zoom: a block shows its label once it is wide enough, its object once wider still.
+  const layout = () => {
+    const lo = tr.lo(), hi = tr.hi(), span = Math.max(1e-6, hi - lo);
+    for (const it of nodes) {
+      const { node, s0, s1 } = it;
+      if (s1 < lo || s0 > hi) { node.style.display = 'none'; node.textContent = ''; continue; }
+      node.style.display = '';
+      const a = Math.max(s0, lo), b = Math.min(s1, hi), w = ((b - a) / span) * 100;
+      node.style.left = `${((a - lo) / span) * 100}%`; node.style.width = `${Math.max(0.15, w)}%`;
+      node.textContent = w >= it.textMin ? it.text + (it.extra && w >= it.extraMin ? ' ' + it.extra : '') : '';
+    }
+  };
+  tr.onView(layout);
+
+  for (const a of data.attempts || []) {
+    const cls = `phase-seg attempt ${a.result}${a.label === 'no_completed_subtask' ? ' ncs' : ''}`;
+    const title = `${a.start_s.toFixed(1)}–${a.end_s.toFixed(1)}s · ${shownLabel(a)}${causeText(a)} ${a.result}\n${a.description || ''}`
+      + (a.flags && a.flags.length ? `\nflags: ${a.flags.join('; ')}` : '');
+    block(lanes.l2, cls, a.start_s, a.end_s, shownLabel(a), title, attemptColor(a), () => seek(a.start_s),
+      a.object && a.label !== 'no_completed_subtask' ? a.object : '', 2.5, 7);
+  }
+  for (const p of data.phases || []) {
+    const title = `${p.start_s.toFixed(2)}–${p.end_s.toFixed(2)}s · ${p.label}${p.object ? ` ${p.object} (${p.role})` : ''}`;
+    block(lanes.l1, `phase-seg phase fam-${p.family}`, p.start_s, p.end_s, p.label, title,
+      PHASE_FAMILY_COLOR[p.family] || '#6b7280', () => seek(p.start_s), p.object || '', 3.5, 9);
+  }
+  layout();
+  // keep the playheads (appended first) above the blocks
+  for (const l of Object.values(lanes)) { const ph = l.querySelector('.events-strip-playhead'); if (ph) l.appendChild(ph); }
+
+  // rescale if a camera video turns out longer than the recorded timebase (as the event strip does)
+  if (camVideos && camVideos[0]) {
+    const driver = camVideos[0];
+    const sync = () => {
+      if (driver.duration && Number.isFinite(driver.duration) && driver.duration > maxTime) {
+        maxTime = driver.duration; tr.maxTime = maxTime;
+        tr.setView(tr.lo(), tr.hi()); layout();
+      }
+    };
+    if (driver.readyState >= 1) sync(); else driver.addEventListener('loadedmetadata', sync, { once: true });
+  }
+
+  // legend + summary + attempt list
+  const legend = el('div', { class: 'phase-legend mb-1' });
+  for (const [fam, col] of Object.entries(PHASE_FAMILY_COLOR)) {
+    legend.appendChild(el('span', {}, el('i', { style: { background: col } }), fam.replace('_', ' ')));
+  }
+  legend.appendChild(el('span', { title: 'a place whose object left the hand with the close command still on' }, el('i', { style: { background: '#fb923c' } }), 'drop'));
+  const s = data.summary || {};
+  const fam = s.time_by_family_s || {};
+  const famText = Object.entries(fam).map(([k, v]) => `${k.replace('_', ' ')} ${v.toFixed(1)}s`).join(' · ');
+  legend.appendChild(el('span', { style: { marginLeft: 'auto' } },
+    `${data.source === 'file' ? 'phases file' : 'computed'} · ${(data.phases || []).length} phases · ${(data.attempts || []).length} attempts`
+    + (data.annotator && data.annotator.tracker_replay === false ? ' · geometry only (no tracker replay)' : '')));
+  host.appendChild(el('div', { class: 'lang-label mb-1' }, 'Dense annotation'));
+  host.appendChild(legend);
+  if (famText) host.appendChild(note(famText));
+  for (const w of data.warnings || []) host.appendChild(note(`note: ${w}`));
+
+  const list = el('div', { class: 'attempt-list mb-2' });
+  const rows = (data.attempts || []).map((a) => {
+    const r = el('div', { class: 'attempt-row', onclick: () => seek(a.start_s) },
+      el('span', { class: 'ev-time' }, `${a.start_s.toFixed(1)}–${a.end_s.toFixed(1)}s`),
+      el('span', { class: 'attempt-dot', style: { background: attemptColor(a) } }),
+      el('span', { class: 'ev-info', title: (a.flags || []).join('; ') }, a.description || a.label),
+      el('span', { class: 'ev-time' }, (a.flags && a.flags.length) ? `⚑ ${a.flags.length}` : ''));
+    list.appendChild(r);
+    return r;
+  });
+  host.appendChild(list);
+
+  // What the robot is doing right now, in words (the lanes are for shape, this is for reading).
+  const readout = el('div', { class: 'text-xs now-readout', style: { color: 'var(--text-2)', marginBottom: '4px' } });
+  host.insertBefore(readout, host.firstChild);
+  tr.subscribe((t) => {
+    const cur = (data.phases || []).find((p) => t >= p.start_s && t <= p.end_s);
+    const at = (data.attempts || []).find((a) => t >= a.start_s && t <= a.end_s);
+    readout.textContent = (cur
+      ? `${t.toFixed(1)} s · ${cur.label}${cur.object ? ` → ${cur.object}${cur.role ? ` (${cur.role})` : ''}` : ''} · ${(t - cur.start_s).toFixed(1)} s into a ${(cur.end_s - cur.start_s).toFixed(1)} s phase`
+      : `${t.toFixed(1)} s · no phase`) + (at ? `   |   ${shownLabel(at)}${at.object && at.label !== 'no_completed_subtask' ? ' ' + at.object : ''} · ${at.result}${causeText(at)}` : '');
+  });
+
+  // playhead highlight for blocks and rows
+  let active = -1;
+  tr.subscribe((t) => {
+    for (const { node, s0, s1 } of nodes) node.classList.toggle('active', t >= s0 && t <= s1);
+    const idx = (data.attempts || []).findIndex((a) => t >= a.start_s && t <= a.end_s);
+    if (idx !== active) {
+      if (active >= 0 && rows[active]) rows[active].classList.remove('active');
+      if (idx >= 0 && rows[idx]) rows[idx].classList.add('active');
+      active = idx;
+    }
+  });
+
+  buildLabelPanel(host, base, runId, task, envId, runIndex, tr, camVideos, data);
+}
+
+// The gold-label panel (plan phase B). One JSONL on the server; marks render in the
+// labels lane. Keys: i = start at playhead, o = end at playhead, Enter (in the panel) = save.
+async function buildLabelPanel(host, base, runId, task, envId, runIndex, tr, camVideos, data) {
+  const lane = tr.lanes.labels;
+  const panel = el('div', { class: 'label-panel' });
+  host.appendChild(el('div', { class: 'lang-label mb-1' }, 'Labels'));
+  host.appendChild(panel);
+  const status = el('span', { class: 'text-xs', style: { color: 'var(--text-2)' } }, '');
+  const now = () => { const m = tr.master(); return m ? m.currentTime : 0; };
+  const fmt = (t) => (Number.isFinite(t) ? t.toFixed(2) : '');
+
+  let annotator = '';
+  try { annotator = localStorage.getItem('robolab.annotator') || ''; } catch (_) { /* private mode */ }
+  const who = el('input', { class: 'label-who', placeholder: 'annotator', value: annotator, size: 10 });
+  who.addEventListener('change', () => { try { localStorage.setItem('robolab.annotator', who.value); } catch (_) { /* ignore */ } });
+
+  const tStart = el('input', { class: 'label-t', placeholder: 'start s', size: 6 });
+  const tEnd = el('input', { class: 'label-t', placeholder: 'end s', size: 6 });
+  const kind = el('select', {});
+  for (const k of LABEL_KINDS) kind.appendChild(el('option', { value: k }, k));
+  const objInput = el('input', { placeholder: 'object', size: 12, list: 'phase-objects' });
+  const dl = el('datalist', { id: 'phase-objects' });
+  for (const o of Object.keys((data && data.roles) || {})) dl.appendChild(el('option', { value: o }));
+  const result = el('select', {});
+  for (const r of ['pass', 'fail', 'unknown']) result.appendChild(el('option', { value: r }, r));
+  const noteIn = el('input', { placeholder: 'note (what you saw)', size: 28 });
+  const setStart = el('button', { class: 'transport-btn', title: 'start = playhead (i)', onclick: () => { tStart.value = fmt(now()); } }, 'start = now');
+  const setEnd = el('button', { class: 'transport-btn', title: 'end = playhead (o)', onclick: () => { tEnd.value = fmt(now()); } }, 'end = now');
+  const save = el('button', { class: 'transport-btn', title: 'save (Enter)' }, 'save');
+  panel.appendChild(el('div', { class: 'label-row' }, setStart, tStart, setEnd, tEnd, kind, objInput, dl, result, noteIn, who, save, status));
+  const listEl = el('div', { class: 'label-list' });
+  panel.appendChild(listEl);
+
+  let marks = [];
+  tr.onView(() => draw());
+  const draw = () => {
+    for (const n of lane.querySelectorAll('.phase-mark')) n.remove();
+    listEl.innerHTML = '';
+    const m = tr.master();
+    const maxTime = Math.max((data && data.num_steps ? data.num_steps * (data.dt || 1 / 15) : 0), (m && m.duration) || 0, 1);
+    for (const r of marks) {
+      if (r.kind === 'review') continue;          // verdicts render in the review list below
+      const isSeg = r.kind === 'segment' && r.t_end != null;
+      const n = el('div', {
+        class: `phase-mark${isSeg ? ' seg' : ''}`,
+        style: isSeg
+          ? { left: `${tr.x(r.t_start)}%`, width: `${Math.max(0.2, tr.x(r.t_end) - tr.x(r.t_start))}%`, display: (tr.x(r.t_end) < 0 || tr.x(r.t_start) > 100) ? 'none' : '' }
+          : { left: `${tr.x(r.t_start)}%`, display: (tr.x(r.t_start) < 0 || tr.x(r.t_start) > 100) ? 'none' : '' },
+        title: `${fmt(r.t_start)}${r.t_end != null ? '–' + fmt(r.t_end) : ''}s · ${r.label || r.kind}${r.object ? ' ' + r.object : ''}${r.result ? ' ' + r.result : ''}\n${r.note || ''}`,
+        onclick: (e) => { e.stopPropagation(); seekAll(linkedVideos(camVideos), r.t_start); },
+      });
+      lane.appendChild(n);
+      const row = el('div', { class: 'attempt-row' },
+        el('span', { class: 'ev-time', onclick: () => seekAll(linkedVideos(camVideos), r.t_start) }, `${fmt(r.t_start)}${r.t_end != null ? '–' + fmt(r.t_end) : ''}s`),
+        el('span', { class: 'ev-info' }, `${r.label || r.kind}${r.object ? ' ' + r.object : ''}${r.result ? ' · ' + r.result : ''}${r.note ? ' · ' + r.note : ''}${r.annotator ? ' (' + r.annotator + ')' : ''}`),
+        el('button', { class: 'label-del', title: 'delete this mark', onclick: async () => {
+          try { await fetch(`/api/phase_labels/${r.id}`, { method: 'DELETE' }); marks = marks.filter((x) => x.id !== r.id); draw(); }
+          catch (e) { status.textContent = `delete failed: ${e.message}`; }
+        } }, '×'));
+      listEl.appendChild(row);
+    }
+    const ph = lane.querySelector('.events-strip-playhead'); if (ph) lane.appendChild(ph);
+    listEl.appendChild(el('div', { class: 'text-xs', style: { color: 'var(--text-2)' } },
+      marks.length ? `${marks.length} mark(s) on this episode` : 'No marks yet. Scrub to a moment, press i (start) and o (end), pick a label, Enter.'));
+  };
+  try {
+    const got = await fetchJSON(`${base}/phase_labels`);
+    marks = got.labels || [];
+  } catch (e) { status.textContent = `labels: ${e.message}`; }
+  draw();
+
+  // Review mode (plan §9.4): one verdict per machine segment. j/k select, 1/2/3 toggle whether the
+  // machine's label / result / bounds are right, Enter saves; a ✗ opens the correction inputs.
+  const reviewRows = [];
+  let sel = -1;
+  let saveReview = async () => {};
+  const attempts = (data && data.attempts) || [];
+  if (attempts.length) {
+    const rv = el('div', { class: 'review-list' });
+    panel.appendChild(el('div', { class: 'text-xs', style: { color: 'var(--text-2)', marginTop: '6px' } },
+      'Review the machine: j / k select a segment (seeks to its start) · 1 label · 2 result · 3 bounds (✓ = within 0.5 s) · 4 cause (failed places only: released / knocked / slipped) · Enter save · a ✗ opens the correction fields; label "none" = this segment should not exist.'));
+    panel.appendChild(rv);
+    const latestReview = (i) => { const rs = marks.filter((m) => m.kind === 'review' && m.seg_index === i); return rs.length ? rs[rs.length - 1] : null; };
+    // A cause verdict is asked only where the place failed: on a success the cause is the mechanism of
+    // nothing (the reviewer: "a successful knock ... again a success"), on a failure it is the finding.
+    const hasCause = (a) => a.label === 'place' && !!a.cause && a.result === 'fail';
+    const state = attempts.map((a, i) => ({ i, a, ok: { label: true, result: true, bounds: true, cause: true },
+      corr: { label: a.label, object: a.object || '', result: a.result, cause: a.cause || '', t_start: a.start_s, t_end: a.end_s }, note: '' }));
+    const select = (i, seek = true) => {
+      sel = Math.max(0, Math.min(attempts.length - 1, i));
+      reviewRows.forEach((r, k) => r.classList.toggle('active', k === sel));
+      if (seek) seekAll(linkedVideos(camVideos), attempts[sel].start_s);
+    };
+    const drawReview = () => {
+      rv.innerHTML = ''; reviewRows.length = 0;
+      for (const st of state) {
+        const a = st.a, prev = latestReview(st.i);
+        const mark = (k, txt) => el('button', { class: `transport-btn verdict ${st.ok[k] ? 'ok' : 'bad'}`, title: `${txt}: click or press ${{ label: 1, result: 2, bounds: 3, cause: 4 }[k]}`,
+          onclick: (e) => { e.stopPropagation(); st.ok[k] = !st.ok[k]; select(st.i, false); drawReview(); } }, `${txt} ${st.ok[k] ? '✓' : '✗'}`);
+        const row = el('div', { class: 'attempt-row review-row', onclick: () => select(st.i) },
+          el('span', { class: 'ev-time' }, `${a.start_s.toFixed(1)}–${a.end_s.toFixed(1)}s`),
+          el('span', { class: 'ev-info' }, `${shownLabel(a)}${a.object ? ' ' + a.object : ''}${causeText(a)} · ${a.result}`),
+          mark('label', 'label'), mark('result', 'result'), mark('bounds', 'bounds'), ...(hasCause(a) ? [mark('cause', 'cause')] : []),
+          el('span', { class: 'ev-time', title: prev ? (prev.note || '') : '' },
+            prev ? `reviewed ${['label', 'result', 'bounds', ...(prev.verdict && 'cause' in prev.verdict ? ['cause'] : [])].map((k) => (prev.verdict && prev.verdict[k] === false ? '✗' : '✓')).join('')}${prev.annotator ? ' ' + prev.annotator : ''}` : ''));
+        if (!st.ok.label || !st.ok.result || !st.ok.bounds || !st.ok.cause) {
+          const labSel = el('select', {});
+          for (const k of [...LABEL_KINDS.filter((x) => x !== 'boundary' && x !== 'drop'), 'none']) labSel.appendChild(el('option', { value: k, selected: k === st.corr.label }, k));
+          labSel.addEventListener('change', () => { st.corr.label = labSel.value; });
+          const objIn = el('input', { value: st.corr.object, placeholder: 'object', size: 10, list: 'phase-objects', oninput: (e) => { st.corr.object = e.target.value; } });
+          const resSel = el('select', {});
+          for (const r of ['pass', 'fail', 'unknown']) resSel.appendChild(el('option', { value: r, selected: r === st.corr.result }, r));
+          resSel.addEventListener('change', () => { st.corr.result = resSel.value; });
+          const causeSel = el('select', {});
+          for (const c of ['released', 'knocked', 'slipped', 'unclear']) causeSel.appendChild(el('option', { value: c, selected: c === st.corr.cause }, c));
+          causeSel.addEventListener('change', () => { st.corr.cause = causeSel.value; });
+          const t0 = el('input', { class: 'label-t', value: fmt(st.corr.t_start), size: 6, oninput: (e) => { st.corr.t_start = parseFloat(e.target.value); } });
+          const t1 = el('input', { class: 'label-t', value: fmt(st.corr.t_end), size: 6, oninput: (e) => { st.corr.t_end = parseFloat(e.target.value); } });
+          const b0 = el('button', { class: 'transport-btn', title: 'start = playhead', onclick: (e) => { e.stopPropagation(); st.corr.t_start = now(); t0.value = fmt(st.corr.t_start); } }, 'start=now');
+          const b1 = el('button', { class: 'transport-btn', title: 'end = playhead', onclick: (e) => { e.stopPropagation(); st.corr.t_end = now(); t1.value = fmt(st.corr.t_end); } }, 'end=now');
+          const corr = el('div', { class: 'label-row review-corr', onclick: (e) => e.stopPropagation() });
+          if (!st.ok.label) corr.append(labSel, objIn);
+          if (!st.ok.result) corr.append(resSel);
+          if (!st.ok.cause) corr.append(causeSel);
+          if (!st.ok.bounds) corr.append(b0, t0, b1, t1);
+          row.appendChild(corr);
+        }
+        const noteIn2 = el('input', { placeholder: 'note', size: 16, value: st.note, oninput: (e) => { st.note = e.target.value; }, onclick: (e) => e.stopPropagation() });
+        row.appendChild(noteIn2);
+        row.appendChild(el('button', { class: 'transport-btn', title: 'save this verdict (Enter)', onclick: (e) => { e.stopPropagation(); saveReview(st.i); } }, 'save'));
+        rv.appendChild(row); reviewRows.push(row);
+      }
+      reviewRows.forEach((r, k) => r.classList.toggle('active', k === sel));
+      const n = state.filter((st) => latestReview(st.i)).length;
+      rv.appendChild(el('div', { class: 'text-xs', style: { color: 'var(--text-2)' } }, `${n} of ${attempts.length} machine segments reviewed`));
+    };
+    saveReview = async (i) => {
+      const st = state[i]; if (!st) return;
+      const a = st.a;
+      const withCause = hasCause(a);
+      const allOk = st.ok.label && st.ok.result && st.ok.bounds && (!withCause || st.ok.cause);
+      const verdict = { label: st.ok.label, result: st.ok.result, bounds: st.ok.bounds, ...(withCause ? { cause: st.ok.cause } : {}) };
+      const payload = {
+        kind: 'review', seg_index: i, t_start: a.start_s, t_end: a.end_s, label: a.label, object: a.object || '', result: a.result, cause: a.cause || null,
+        verdict, corrected: allOk ? null : { ...st.corr }, note: st.note, annotator: who.value,
+      };
+      if (!allOk && !st.ok.bounds && !(Number.isFinite(st.corr.t_start) && Number.isFinite(st.corr.t_end) && st.corr.t_end >= st.corr.t_start)) { status.textContent = 'corrected bounds invalid'; return; }
+      // A ✗ whose correction still equals the machine's value would save as a no-op (the fields are
+      // prefilled with the machine's answer); refuse it so the reviewer picks the value they mean.
+      const same = (x, y) => String(x ?? '') === String(y ?? '');
+      if (!st.ok.label && same(st.corr.label, a.label) && same(st.corr.object, a.object || '')) { status.textContent = 'label marked wrong but unchanged: pick the label (or "none") you mean'; return; }
+      if (!st.ok.result && same(st.corr.result, a.result)) { status.textContent = 'result marked wrong but unchanged: pick pass / fail / unknown'; return; }
+      if (withCause && !st.ok.cause && same(st.corr.cause, a.cause)) { status.textContent = 'cause marked wrong but unchanged: pick released / knocked / slipped / unclear'; return; }
+      if (!st.ok.bounds && Math.abs(st.corr.t_start - a.start_s) < 1e-6 && Math.abs(st.corr.t_end - a.end_s) < 1e-6) { status.textContent = 'bounds marked wrong but unchanged: set start or end (start=now / end=now)'; return; }
+      try {
+        const resp = await fetch(`${base}/phase_labels`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!resp.ok) throw new Error(`${resp.status} ${await resp.text()}`);
+        marks.push(await resp.json());
+        status.textContent = `review saved: segment ${i + 1}${allOk ? ' ✓✓✓' : ' with corrections'}`;
+        st.note = '';
+        if (i + 1 < attempts.length) select(i + 1); else select(i, false);
+        drawReview();
+      } catch (e) { status.textContent = `save failed: ${e.message}`; }
+    };
+    drawReview();
+    select(0, false);
+    window.__reviewKeys = { select: (d) => select(sel + d), toggle: (k) => { if (state[sel]) { state[sel].ok[k] = !state[sel].ok[k]; drawReview(); } }, save: () => saveReview(sel), rows: reviewRows };
+  } else {
+    window.__reviewKeys = null;
+  }
+
+  const doSave = async () => {
+    const k = kind.value;
+    const payload = {
+      kind: k === 'boundary' ? 'boundary' : 'segment',
+      t_start: parseFloat(tStart.value), t_end: k === 'boundary' ? null : (tEnd.value === '' ? null : parseFloat(tEnd.value)),
+      label: k === 'boundary' ? null : k, object: objInput.value, result: k === 'boundary' ? null : result.value,
+      note: noteIn.value, annotator: who.value,
+    };
+    if (!Number.isFinite(payload.t_start)) { status.textContent = 'start time missing (press i at the moment)'; return; }
+    if (payload.t_end != null && payload.t_end < payload.t_start) { status.textContent = 'end before start'; return; }
+    try {
+      const resp = await fetch(`${base}/phase_labels`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!resp.ok) throw new Error(`${resp.status} ${await resp.text()}`);
+      const row = await resp.json();
+      marks.push(row); marks.sort((a, b) => a.t_start - b.t_start); draw();
+      status.textContent = `saved ${row.id}`;
+      tStart.value = tEnd.value; tEnd.value = ''; noteIn.value = '';    // chain: next segment starts where this one ended
+    } catch (e) { status.textContent = `save failed: ${e.message}`; }
+  };
+  save.addEventListener('click', doSave);
+
+  if (window.__labelKeyHandler) document.removeEventListener('keydown', window.__labelKeyHandler);
+  const handler = (e) => {
+    if (!document.body.contains(panel)) return;
+    const tag = (e.target && e.target.tagName || '').toLowerCase();
+    const inPanel = panel.contains(e.target);
+    const rk = window.__reviewKeys;
+    const inReview = rk && rk.rows.some((r) => r.contains(e.target));
+    if (e.key === 'Enter' && inReview) { e.preventDefault(); rk.save(); return; }
+    if (e.key === 'Enter' && inPanel) { e.preventDefault(); doSave(); return; }
+    if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+    if (e.key === 'i') { tStart.value = fmt(now()); status.textContent = `start ${tStart.value}s`; }
+    else if (e.key === 'o') { tEnd.value = fmt(now()); status.textContent = `end ${tEnd.value}s`; }
+    else if (rk && e.key === 'j') { rk.select(1); }
+    else if (rk && e.key === 'k') { rk.select(-1); }
+    else if (rk && e.key === '1') { rk.toggle('label'); }
+    else if (rk && e.key === '2') { rk.toggle('result'); }
+    else if (rk && e.key === '3') { rk.toggle('bounds'); }
+    else if (rk && e.key === '4') { rk.toggle('cause'); }
+    else if (rk && e.key === 'Enter') { e.preventDefault(); rk.save(); }
+  };
+  document.addEventListener('keydown', handler);
+  window.__labelKeyHandler = handler;
+}

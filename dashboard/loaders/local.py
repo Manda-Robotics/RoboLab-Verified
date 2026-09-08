@@ -577,21 +577,38 @@ class LocalLoader:
                 if png.exists():
                     e.last_frame_path = str(png)
 
-        # Viewport: most-specific patterns first.
-        for pat in (f"*_env{e.env_id}_viewport.mp4", f"*_{e.env_id}_viewport.mp4"):
-            for p in task_dir.glob(pat):
+        # Viewport: the run-specific name first; the run-agnostic names only when a folder
+        # has no run token at all (2026-09-02: with --num-runs 2 the env-only glob attached
+        # BOTH runs' videos to every episode, so the second video under a run-0 phase lane was
+        # a different episode).
+        run_specific = list(task_dir.glob(f"*_{e.run_index}_env{e.env_id}_viewport.mp4"))
+        if run_specific:
+            for p in run_specific:
                 _add("viewport", p)
+        else:
+            for pat in (f"*_env{e.env_id}_viewport.mp4", f"*_{e.env_id}_viewport.mp4"):
+                for p in task_dir.glob(pat):
+                    if re.search(r"_\d+_env\d+_viewport\.mp4$", p.name):
+                        continue        # belongs to another run of this folder
+                    _add("viewport", p)
 
-        # Recording (non-viewport policy/cam mp4s).
-        for pat in (f"*_env{e.env_id}.mp4", f"*_{e.env_id}.mp4"):
-            for p in task_dir.glob(pat):
-                if p in seen:
-                    continue
-                # The bare-``_<N>`` glob would also catch ``..._<N>_viewport.mp4``
-                # if env_id happens to be a suffix of "viewport" — guard it.
-                if p.stem.endswith("_viewport"):
-                    continue
+        # Recording (non-viewport policy/cam mp4s), same rule.
+        run_specific = list(task_dir.glob(f"*_{e.run_index}_env{e.env_id}.mp4"))
+        if run_specific:
+            for p in run_specific:
                 _add("recording", p)
+        else:
+            for pat in (f"*_env{e.env_id}.mp4", f"*_{e.env_id}.mp4"):
+                for p in task_dir.glob(pat):
+                    if p in seen:
+                        continue
+                    # The bare-``_<N>`` glob would also catch ``..._<N>_viewport.mp4``
+                    # if env_id happens to be a suffix of "viewport" — guard it.
+                    if p.stem.endswith("_viewport"):
+                        continue
+                    if re.search(r"_\d+_env\d+\.mp4$", p.name):
+                        continue        # belongs to another run of this folder
+                    _add("recording", p)
 
         playback = task_dir / f"video_{e.run_index}_env{e.env_id}.mp4"
         if playback.exists():

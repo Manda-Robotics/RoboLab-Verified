@@ -233,7 +233,8 @@ Per episode, in addition to the upstream fields above:
 
 - `score_peak`: the live monotone subtask score; `score` is judged on the final frame (P34)
 - `success_first_hold_s`, `success_confirmed_s`: when the success predicate first held and when it was confirmed with every target at rest; equal when the object was already still (P30)
-- `physics_artifact`, `towed_objects`: an object moved with an open hand (`TOWED_WITHOUT_GRASP`); the episode is not trustworthy and its grasp credit was withheld (P43)
+- `physics_artifact`, `towed_objects`: an object moved with an open hand (`TOWED_WITHOUT_GRASP`); the episode is not trustworthy and its grasp credit was withheld (P43); since P124 also set by a tier-A tow found offline from the recorded state
+- `tows`: the towing-artifact summary of the episode (`tow_tier` A/B/C or null, `n_tow`, `n_drag`, `n_press`, `n_squeeze`, `towed_objects`, `tow_time_s`, `first_tow_s`, `max_depth_mm`); the segments are in `tows_<run>_env<env>.json` next to the log ([towing.md](verified/towing.md), P124)
 - `collateral_placed`: non-target objects released inside a goal container after reset (P36)
 - `early_resets`, `pre_satisfied`: re-resets for terminating within two steps, and whether the episode still did after the cap (P09)
 - `events`: counts per event name over every line of the episode log, ladder lines included (`OBJECT_GRABBED_SUCCESS`, `SUBTASK_COMPLETED`), in the vocabulary of [Event Tracking](event_tracking.md). Upstream counted a fixed subset, so an episode could read as two releases and no grasp.

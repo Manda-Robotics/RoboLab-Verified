@@ -192,6 +192,9 @@ P79 predicate; the coefficients below are the values PhysX held.
    stuck-to-finger behaviour reviewers labelled at 2.0. It survives a 4× friction cut,
    which rules out the material coefficient; the contact or solver stage remains. These
    are also the first runtime firings of P43.
+   The cause is now established: the object tunnels through the 6 mm pad collider and hooks
+   behind it when the finger sits at a joint limit; see [verified/towing.md](verified/towing.md)
+   (P124) for the mechanism, the prevalence in the recorded corpora and the solid-pad fix.
 
 **Decision.** The default stays `upstream`. The measurement is published with the
 benchmark. Comparisons of behaviour metrics must state the friction used;

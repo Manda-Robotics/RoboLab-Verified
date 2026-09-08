@@ -62,6 +62,40 @@ Add your experiment output directory to the left hand side bar. Each experiment 
 
 All SR / Score cells carry **95% confidence intervals** with the half-width annotation: `29.7% [24.5–35.4] ±5.4`. SR uses an exact Beta credible interval (see `robolab.core.logging.results.beta_ci_bounds`); Score uses Student-t.
 
+#### Dense annotation lanes
+
+Review mode: the label panel lists every machine segment with three verdicts (label, result, bounds within 0.5 s). `j` / `k` select and seek, `1` / `2` / `3` toggle, `Enter` saves a `kind: review` row to the labels file; a ✗ opens the correction fields (label `none` removes the segment). `scripts/score_gold.py` consumes the rows.
+
+Under the event strip of an episode, three lanes share the strip's time axis
+([dense_annotations.md](verified/dense_annotations.md)):
+
+- **Attempts**: one block per `pick` / `place` / `drop` / `no completed subtask`, coloured by
+  result (green pass, red fail, grey unknown, hatched for a stretch in which nothing completed).
+  Hover for the description and any flags; click to seek. The same segments are listed under
+  the lanes and highlight with the playhead.
+- **Phases**: one block per contiguous phase (reach, approach, hover, close on, lift, transport,
+  lower, release, press table, ...), coloured by family. Hover for the object and its role.
+- **Labels**: your own marks (see below).
+
+The lanes are served by `GET .../episodes/{env}/run/{run}/phases`. When
+`scripts/annotate_phases.py` has written `phases_<run>_env<env>.json` next to the log, that
+file is served; otherwise the episode is annotated on the fly from the recording (a few seconds
+the first time, cached afterwards, nothing written). Without `torch` the in-hand state comes from
+geometry alone and the legend says so.
+
+#### Labelling an episode
+
+The **Labels** panel under the lanes writes human marks to `analysis/phase_labels.jsonl`
+(override with `ROBOLAB_PHASE_LABELS=<path>`), one JSON line per mark, keyed by
+`(run, task, env, run_index)`; a delete appends a tombstone rather than rewriting the file.
+Keys while the episode view is open: `i` sets the start to the playhead, `o` the end, `Enter`
+inside the panel saves; `space` and the arrow keys still drive the transport. Pick the kind
+(`pick`, `place`, `drop`, `no_completed_subtask`, or a bare `boundary`), the object (the
+scene's objects are offered), the result, and a note in your own words. After a save the next
+mark's start is pre-filled with the previous end, so a whole episode can be labelled by
+scrubbing forward. `GET .../phase_labels` returns the marks of one episode;
+`DELETE /api/phase_labels/{id}` removes one.
+
 ## Hosting on the LAN
 
 The default `--host 0.0.0.0` binding makes the dashboard reachable on your machine's LAN IP. Share the URL with a colleague (e.g. `http://<your-lan-ip>:8080`) and they can browse without setting anything up locally. Tighten to `--host 127.0.0.1` if you'd rather keep it loopback-only.

@@ -169,6 +169,43 @@ OFF_TABLE_DROP_M = 0.15
 # robolab.core.physics.friction.install at env-cfg build time. See docs/physics.md.
 FRICTION = "upstream"
 RECORD_IMAGE_DATA = False
+# R2 (docs/verified/dense_annotations.md §5): contact sensors on the robot's
+# `contact_extra_bodies`. Env ROBOLAB_EXTRA_CONTACT_BODIES=0 disables them (H10 cost check).
+RECORD_EXTRA_CONTACT_BODIES = os.environ.get("ROBOLAB_EXTRA_CONTACT_BODIES", "1") != "0"
+# Dense annotation on the run path (docs/verified/dense_annotations.md, open decision 3): after each
+# episode's log is written, robolab.eval.phases.write_phases writes phases_<run>_env<env>.json next
+# to it and the L2 summary lands in episode_results.jsonl under "phases". ROBOLAB_ANNOTATE_PHASES=0 disables.
+ANNOTATE_PHASES = os.environ.get("ROBOLAB_ANNOTATE_PHASES", "1") != "0"
+
+# Towing artifact flag on the run path (docs/verified/towing.md, P124): after each episode,
+# robolab.eval.tows.write_tows recomputes the object's depth inside each finger pad's collision
+# box from the recorded state and writes tows_<run>_env<env>.json; a tier-A tow marks the episode
+# physics_artifact. ROBOLAB_FLAG_TOWS=0 disables. Needs usd-core for the object meshes.
+FLAG_TOWS = os.environ.get("ROBOLAB_FLAG_TOWS", "1") != "0"
+# A hook is one pad at least TOW_HOOK_DEPTH_MM inside the object for TOW_HOOK_MIN_S. Calibrated on
+# the reviewer's 51 tow episodes: hooked objects sit 3-9 mm inside the pad (through the 6 mm slab),
+# genuine carries <= 0.7 mm on both pads; the shallowest confirmed tow (a box corner) read 2.2 mm
+# and the shortest confirmed one lasted 0.8 s.
+TOW_HOOK_DEPTH_MM = 2.0
+TOW_HOOK_MIN_S = 0.6
+# Class by the object's motion during the hook: tow (rises), drag (moves along its support), press.
+TOW_RISE_M = 0.02
+TOW_DRAG_PATH_M = 0.02
+# A deep one-sided contact with the finger mid-range AND the far pad touching is a genuine pinch
+# rendered with interpenetration (marker, orange), not a hook.
+TOW_SQUEEZE_FAR_MM = 1.0
+# Tier A (the flag): finger at a hard limit for >= 50 % of the segment, median depth, duration, rise.
+TOW_TIER_A_DEPTH_MM = 3.0
+TOW_TIER_A_MIN_S = 2.0
+TOW_TIER_A_RISE_M = 0.03
+TOW_TIER_B_DEPTH_MM = 2.5
+TOW_TIER_B_MIN_S = 1.0
+# Evaluation cadence and object sampling: every TOW_EVAL_STEP control steps while the object is within
+# reach of a pad, TOW_OBJECT_POINTS surface samples plus the mesh vertices; objects larger than
+# TOW_MAX_OBJECT_RADIUS_M (racks, shelves) are skipped.
+TOW_EVAL_STEP = 3
+TOW_OBJECT_POINTS = 2500
+TOW_MAX_OBJECT_RADIUS_M = 0.35
 DEVICE = "cuda:0"
 
 # Difficulty scoring constants (authoritative source for compute_difficulty_score in subtask_utils.py)
