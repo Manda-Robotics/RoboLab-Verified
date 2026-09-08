@@ -3,15 +3,41 @@
   "episodes": 1200,
   "h1_violations": 0,
   "phases": 103210,
-  "attempts": 8157,
+  "attempts": 8430,
   "steps": 1572589
  },
  "flags": {
   "no GRASP_ATTEMPT_FAILED in log": 2800,
   "no OBJECT_CARRIED in log": 2052,
-  "place pass, no SUBTASK_COMPLETED in log": 304,
+  "place pass, no SUBTASK_COMPLETED in log": 269,
   "held_disagree": 3331,
-  "place fail, log credits SUBTASK_COMPLETED": 4
+  "knife_edge_ncs 0.16": 41,
+  "knife_edge_ncs 0.01": 47,
+  "knife_edge_ncs 0.11": 40,
+  "knife_edge_ncs 0.07": 55,
+  "knife_edge_ncs 0.22": 24,
+  "knife_edge_ncs 0.04": 58,
+  "knife_edge_ncs 0.05": 53,
+  "knife_edge_ncs 0.06": 18,
+  "knife_edge_ncs 0.17": 41,
+  "knife_edge_ncs 0.20": 50,
+  "knife_edge_ncs 0.21": 38,
+  "knife_edge_ncs 0.03": 47,
+  "knife_edge_ncs 0.10": 32,
+  "knife_edge_ncs 0.12": 46,
+  "knife_edge_ncs 0.13": 44,
+  "knife_edge_ncs 0.08": 40,
+  "knife_edge_ncs 0.09": 41,
+  "knife_edge_ncs 0.23": 44,
+  "knife_edge_ncs 0.18": 40,
+  "knife_edge_ncs 0.15": 39,
+  "knife_edge_ncs 0.24": 47,
+  "knife_edge_ncs 0.19": 53,
+  "knife_edge_ncs 0.00": 20,
+  "knife_edge_ncs 0.14": 26,
+  "knife_edge_ncs 0.02": 31,
+  "knife_edge_ncs 0.25": 4,
+  "place fail, log credits SUBTASK_COMPLETED": 5
  },
  "h2": {},
  "h5": {},
@@ -24,5 +50,5 @@
   "settle": 423.5199999999943,
   "scene": 1515.8800000000003
  },
- "seconds": 4460.291917085648
+ "seconds": 13567.723850011826
 }
