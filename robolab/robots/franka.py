@@ -53,6 +53,7 @@ class FrankaCfg:
             "panda_joint7": 0.741,
             "panda_finger_joint.*": 0.04,
         },
+        rot=(1.0, 0.0, 0.0, 0.0),
     ),
 
     actuators={
@@ -84,6 +85,7 @@ class FrankaCfg:
 
     frames = FrameTransformerCfg(
         prim_path="{ENV_REGEX_NS}/robot/panda_link0",
+        source_frame_offset=OffsetCfg(rot=(1.0, 0.0, 0.0, 0.0)),
         debug_vis=False,
         visualizer_cfg=frame_marker_cfg,
         target_frames=[
@@ -93,11 +95,13 @@ class FrankaCfg:
                 offset=OffsetCfg(
                     pos = [0.0, 0.0, 0.0],
                     # pos=[0.0, 0.0, 0.1034],
+                    rot=(1.0, 0.0, 0.0, 0.0),
                 ),
             ),
             FrameTransformerCfg.FrameCfg(
                 prim_path="{ENV_REGEX_NS}/robot/panda_hand",
                 name="curobo_control_frame",
+                offset=OffsetCfg(rot=(1.0, 0.0, 0.0, 0.0)),
             ),
             FrameTransformerCfg.FrameCfg(
                 prim_path="{ENV_REGEX_NS}/robot/panda_hand",
@@ -120,6 +124,7 @@ class FrankaCfg:
                 name="rightfinger",
                 offset=OffsetCfg(
                     pos=(0.0, 0.0, 0.046),
+                    rot=(1.0, 0.0, 0.0, 0.0),
                 ),
             ),
             FrameTransformerCfg.FrameCfg(
@@ -127,6 +132,7 @@ class FrankaCfg:
                 name="leftfinger",
                 offset=OffsetCfg(
                     pos=(0.0, 0.0, 0.046),
+                    rot=(1.0, 0.0, 0.0, 0.0),
                 ),
             ),
         ],
@@ -134,6 +140,7 @@ class FrankaCfg:
 
     ee_frame = FrameTransformerCfg(
         prim_path="{ENV_REGEX_NS}/robot/panda_link0",
+        source_frame_offset=OffsetCfg(rot=(1.0, 0.0, 0.0, 0.0)),
         debug_vis=False,
         visualizer_cfg=frame_marker_cfg,
         target_frames=[
@@ -142,6 +149,7 @@ class FrankaCfg:
                 name="end_effector",
                 offset=OffsetCfg(
                     pos=[0.0, 0.0, 0.1034],
+                    rot=(1.0, 0.0, 0.0, 0.0),
                 ),
             ),
         ],
