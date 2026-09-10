@@ -218,7 +218,7 @@ class RobolabDefaultEnvCfg(ManagerBasedRLEnvCfg):
             "shape_collision_distance": 0.0,
             "shape_collision_margin": 0.0,
         }
-        if physx is not None:
+        if physx is not None and type(physx).__name__ == "PhysxCfg":
             for attr_name, value in physx_settings.items():
                 if hasattr(physx, attr_name):
                     setattr(physx, attr_name, value)

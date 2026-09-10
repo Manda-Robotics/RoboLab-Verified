@@ -68,6 +68,12 @@ isaac60 = [
     "isaaclab[isaacsim]==3.0.0b2.post1; python_version >= '3.12'",
 ]
 analysis = ["sbi"]
+newton = [
+    "isaaclab[isaacsim]==3.0.0b2.post1; python_version >= '3.12'",
+    "newton[sim]==1.2.1; python_version >= '3.12'",
+    "mujoco==3.8.0; python_version >= '3.12'",
+    "mujoco-warp==3.8.0.3; python_version >= '3.12'",
+]
 test = ["pytest"]
 all = ["sbi", "pytest"]
 
@@ -94,6 +100,8 @@ conflicts = [
     [{ extra = "isaac50" }, { extra = "isaac51" }],
     [{ extra = "isaac50" }, { extra = "isaac60" }],
     [{ extra = "isaac51" }, { extra = "isaac60" }],
+    [{ extra = "isaac50" }, { extra = "newton" }],
+    [{ extra = "isaac51" }, { extra = "newton" }],
 ]
 # warp-lang 1.13.0.dev20260418 on pypi.nvidia.com only published the macOS
 # wheel — no Linux build — so any resolver pass that picked it would break

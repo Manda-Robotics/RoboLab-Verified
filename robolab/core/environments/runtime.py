@@ -238,6 +238,8 @@ def create_env(scene: str | ManagerBasedEnvCfg,
 
     # Stamp the resolved renderer for run provenance (serialized into env_cfg.json).
     env_cfg.renderer = renderer
+    if not hasattr(env_cfg, "physics_backend"):
+        env_cfg.physics_backend = "newton_mjwarp" if type(getattr(env_cfg.sim, "physics", None)).__name__ == "NewtonCfg" else "physx"
 
     from robolab.core.utils.print_utils import print_env_info
     env_name = scene if isinstance(scene, str) else env_cfg.__class__.__name__
