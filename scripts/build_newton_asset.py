@@ -47,8 +47,9 @@ def build():
         axes = mass_api.GetPrincipalAxesAttr().Get() if mass_api else None
         if axes is None or axes.GetLength() < 1e-6:
             api.CreatePrincipalAxesAttr(Gf.Quatf(1))
-        if mass and inertia is not None and min(inertia) > 0:
-            continue
+        # The source's Panda tensors are positive but implausibly small
+        # (about 1e-6 kg m^2 for kilogram-scale links). Re-estimate every
+        # body consistently, rather than treating positivity as validity.
         name = body.GetName().removeprefix("left_").removeprefix("right_")
         mass = mass or MASSES.get(name)
         if mass is None:
@@ -68,6 +69,49 @@ def build():
         api.CreateDiagonalInertiaAttr(Gf.Vec3f(*diagonal))
         api.CreatePrincipalAxesAttr(Gf.Quatf(1))
         print(body.GetPath(), "mass=", mass, "box=", size, "inertia=", diagonal)
+    # PhysX accepts the Robotiq collision APIs on parent Xforms. Newton
+    # checks the leaf geometry itself, otherwise the entire gripper imports
+    # without collision shapes. Preserve meshes/transforms and author the
+    # existing collider settings on their leaf meshes in this overlay only.
+    for prim in source.Traverse():
+        if not prim.IsA(UsdGeom.Mesh) or "/Gripper/" not in str(prim.GetPath()):
+            continue
+        parent = prim.GetParent()
+        while parent and not parent.HasAPI(UsdPhysics.RigidBodyAPI):
+            if parent.HasAPI(UsdPhysics.CollisionAPI):
+                dest = stage.OverridePrim(prim.GetPath())
+                enabled = UsdPhysics.CollisionAPI(parent).GetCollisionEnabledAttr().Get()
+                UsdPhysics.CollisionAPI.Apply(dest).CreateCollisionEnabledAttr(enabled)
+                approximation = UsdPhysics.MeshCollisionAPI(parent).GetApproximationAttr().Get()
+                UsdPhysics.MeshCollisionAPI.Apply(dest).CreateApproximationAttr(approximation or "convexHull")
+                break
+            parent = parent.GetParent()
+    # Actual MuJoCo passive damping, not zero-stiffness drive damping (which
+    # does not create an active drive for these mimic followers in this stack).
+    for name in ("left_inner_finger_joint", "left_inner_finger_knuckle_joint",
+                 "right_outer_knuckle_joint", "right_inner_finger_joint", "right_inner_finger_knuckle_joint"):
+        prim = stage.OverridePrim(f"/panda/Gripper/Robotiq_2F_85/Joints/{name}")
+        prim.CreateAttribute("mjc:damping", Sdf.ValueTypeNames.Float).Set(0.05)
+        # Newton's PhysX-mimic conversion drops coupling stiffness. Author the
+        # same relationship as a native equality with explicit solver settings.
+        # The importer suppresses its duplicate PhysX mimic when this API exists.
+        original = source.GetPrimAtPath(prim.GetPath())
+        relationships = [r for r in original.GetRelationships()
+                         if r.GetName().startswith("physxMimicJoint:") and r.GetName().endswith(":referenceJoint")]
+        if len(relationships) != 1:
+            raise ValueError(f"Expected one authored mimic relationship for {prim.GetPath()}")
+        reference = relationships[0].GetTargets()
+        prefix = relationships[0].GetName().removesuffix(":referenceJoint")
+        gearing = original.GetAttribute(prefix + ":gearing").Get()
+        offset = original.GetAttribute(prefix + ":offset").Get() or 0.0
+        if len(reference) != 1 or gearing is None:
+            raise ValueError(f"Missing authored mimic relationship for {prim.GetPath()}")
+        prim.AddAppliedSchema("MjcEqualityJointAPI")
+        prim.CreateRelationship("mjc:target").SetTargets(reference)
+        prim.CreateAttribute("mjc:coef0", Sdf.ValueTypeNames.Double).Set(-float(offset))
+        prim.CreateAttribute("mjc:coef1", Sdf.ValueTypeNames.Double).Set(-float(gearing))
+        prim.CreateAttribute("mjc:solref", Sdf.ValueTypeNames.DoubleArray).Set([0.006, 1.0])
+        prim.CreateAttribute("mjc:solimp", Sdf.ValueTypeNames.DoubleArray).Set([0.99, 0.99, 0.001, 0.5, 2.0])
     output = Sdf.Layer.CreateAnonymous()
     output.TransferContent(stage.GetRootLayer())
     output.subLayerPaths = [SOURCE.name]

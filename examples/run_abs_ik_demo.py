@@ -18,7 +18,8 @@ parser.add_argument("--pos_delta", type=float, default=0.05, help="Translation m
 parser.add_argument("--rot_deg", type=float, default=20.0, help="Rotation magnitude per test (degrees).")
 parser.add_argument("--pos_tol_mm", type=float, default=5.0, help="Position pass/fail tolerance (mm).")
 parser.add_argument("--rot_tol_deg", type=float, default=2.0, help="Rotation pass/fail tolerance (degrees).")
-AppLauncher.add_app_launcher_args(parser)
+from robolab.core.utils.app_launcher import add_app_launcher_args
+add_app_launcher_args(parser)
 args_cli, _ = parser.parse_known_args()
 args_cli.enable_cameras = True
 app_launcher = AppLauncher(args_cli)

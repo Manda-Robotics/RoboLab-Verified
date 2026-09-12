@@ -17,7 +17,8 @@ from isaaclab.app import AppLauncher
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--num-steps", type=int, default=180)
-AppLauncher.add_app_launcher_args(parser)
+from robolab.core.utils.app_launcher import add_app_launcher_args
+add_app_launcher_args(parser)
 args_cli, _ = parser.parse_known_args()
 args_cli.enable_cameras = True
 simulation_app = AppLauncher(args_cli).app

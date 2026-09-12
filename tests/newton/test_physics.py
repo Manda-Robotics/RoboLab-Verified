@@ -18,7 +18,8 @@ spec.loader.exec_module(physics)
 def config():
     return SimpleNamespace(
         sim=SimpleNamespace(physics="original", dt=1 / 120, device="cuda:0"),
-        scene=SimpleNamespace(robot=SimpleNamespace(spawn=SimpleNamespace(
+        actions=SimpleNamespace(finger_joint="original"),
+        scene=SimpleNamespace(robot=SimpleNamespace(actuators={"gripper": SimpleNamespace(stiffness=None, damping=None)}, spawn=SimpleNamespace(
             usd_path=str(ROOT / "assets/robots/franka_robotiq_2f_85_isaac60.usd")
         ))),
     )
@@ -41,10 +42,15 @@ def test_physx_does_not_import_newton_or_modify_asset():
 def test_newton_configuration_preserves_timing_and_selects_overlay(monkeypatch):
     install_module(monkeypatch, "isaaclab_newton.physics", NewtonCfg=SimpleNamespace, MJWarpSolverCfg=SimpleNamespace)
     install_module(monkeypatch, "robolab.constants", ROBOTS_DIR=str(ROOT / "assets/robots"))
+    install_module(monkeypatch, "robolab.robots.newton_gripper", RateLimitedGripperActionCfg=SimpleNamespace)
     cfg = config()
     physics.configure_physics(cfg, "newton_mjwarp")
     assert cfg.sim.dt == 1 / 120
     assert cfg.sim.physics.solver_cfg.nconmax == 2048
+    assert cfg.sim.physics.num_substeps == 4
+    assert cfg.scene.robot.actuators["gripper"].stiffness == 10
+    assert cfg.scene.robot.actuators["gripper"].damping == 2
+    assert cfg.actions.finger_joint.close_command_expr == {"finger_joint": pytest.approx(0.7853981633974483)}
     assert Path(cfg.scene.robot.spawn.usd_path).is_file()
     cfg.scene.robot.spawn.usd_path = "unsupported.usd"
     with pytest.raises(ValueError, match="DROID"):
@@ -60,12 +66,89 @@ def test_rejects_old_isaaclab_and_unknown_backend():
         physics.configure_physics(cfg, "typo")
 
 
+def test_eager_diagnostic_disables_only_graph_and_rejects_physx(monkeypatch):
+    cfg = config()
+    cfg.sim.physics = SimpleNamespace(use_cuda_graph=True, num_substeps=4)
+    args = SimpleNamespace(newton_disable_cuda_graph=True)
+    @contextmanager
+    def launcher(active_cfg, launch_args):
+        assert active_cfg.sim.physics.use_cuda_graph is False
+        assert active_cfg.sim.physics.num_substeps == 4
+        yield
+    install_module(monkeypatch, "isaaclab.app.sim_launcher", launch_simulation=launcher)
+    with physics.physics_context(cfg, "newton_mjwarp", args):
+        pass
+    with pytest.raises(ValueError, match="requires --physics"):
+        with physics.physics_context(config(), "physx", args):
+            pass
+
+
+def test_mesh_contact_options_enclose_runtime_and_validate_timestep(monkeypatch):
+    # Exercise the legacy branch even on a host with modern Lab installed.
+    monkeypatch.setitem(sys.modules, "isaaclab.app.sim_launcher", None)
+    events = []
+    cfg = config()
+    cfg.sim.physics = SimpleNamespace(num_substeps=4)
+    cfg.newton_convex_decomposition_threshold = .05
+    cfg.newton_contact_timeconst = .006
+    @contextmanager
+    def mesh_context(threshold, *, contact_timeconst):
+        assert (threshold, contact_timeconst) == (.05, .006)
+        events.append("mesh_enter")
+        yield
+        events.append("mesh_exit")
+    @contextmanager
+    def launcher(*args):
+        events.append("launch")
+        yield
+    install_module(monkeypatch, "isaaclab_tasks.utils.sim_launcher", launch_simulation=launcher)
+    install_module(monkeypatch, "robolab.core.environments.newton_meshes", mesh_decomposition_context=mesh_context)
+    with physics.physics_context(cfg, "newton_mjwarp"):
+        events.append("run")
+    assert events == ["mesh_enter", "launch", "run", "mesh_exit"]
+    for invalid in [0, -.006, .001, float("nan"), float("inf")]:
+        cfg.newton_contact_timeconst = invalid
+        with pytest.raises(ValueError, match="solver timestep"):
+            with physics.physics_context(cfg, "newton_mjwarp"):
+                pass
+    cfg.newton_contact_timeconst = .006
+    cfg.newton_convex_decomposition_threshold = None
+    with pytest.raises(ValueError, match="mesh-import"):
+        with physics.physics_context(cfg, "newton_mjwarp"):
+            pass
+
+
 def test_output_cannot_mix_backends(tmp_path):
     physics.ensure_output_backend(tmp_path, "newton_mjwarp")
     physics.ensure_output_backend(tmp_path, "newton_mjwarp")
     with pytest.raises(ValueError, match="choose a new"):
         physics.ensure_output_backend(tmp_path, "physx")
     assert json.loads((tmp_path / "physics_backend.json").read_text())["physics_backend"] == "newton_mjwarp"
+
+
+def test_modern_launcher_preserves_solver_and_does_not_patch_meshes(monkeypatch):
+    from argparse import Namespace
+    cfg = config()
+    original = cfg.sim.physics
+    args = Namespace(physics="newton_mjwarp", headless=True)
+    @contextmanager
+    def launcher(received_cfg, received_args):
+        assert received_cfg is cfg
+        assert received_args.physics is None
+        assert received_args.headless
+        assert received_args.require_kit
+        assert cfg.sim.physics is original
+        yield
+    install_module(monkeypatch, "isaaclab.app.sim_launcher", launch_simulation=launcher)
+    with physics.physics_context(cfg, "newton_mjwarp", args):
+        pass
+    assert args.physics == "newton_mjwarp"
+    for field in ("newton_convex_decomposition_threshold", "newton_contact_timeconst"):
+        setattr(cfg, field, .006)
+        with pytest.raises(ValueError, match="native authored mesh import"):
+            with physics.physics_context(cfg, "newton_mjwarp", args):
+                pass
+        delattr(cfg, field)
 
 
 def test_legacy_results_are_not_assumed_to_be_newton(tmp_path):
@@ -126,3 +209,25 @@ def test_overlay_has_valid_inertia_and_preserves_geometry():
             diagonal = sorted(api.GetDiagonalInertiaAttr().Get())
             assert diagonal[0] > 0 and diagonal[2] <= diagonal[0] + diagonal[1] + 1e-10
             assert api.GetPrincipalAxesAttr().Get().GetLength() == pytest.approx(1)
+    from pxr import UsdGeom
+    promoted = 0
+    for prim in source.Traverse():
+        if not prim.IsA(UsdGeom.Mesh) or "/Gripper/" not in str(prim.GetPath()):
+            continue
+        parent = prim.GetParent()
+        if parent.HasAPI(UsdPhysics.CollisionAPI):
+            collider = UsdPhysics.CollisionAPI(overlay.GetPrimAtPath(prim.GetPath()))
+            assert collider and collider.GetCollisionEnabledAttr().Get()
+            promoted += 1
+    assert promoted >= 11
+    for name in ("left_inner_finger_joint", "left_inner_finger_knuckle_joint",
+                 "right_outer_knuckle_joint", "right_inner_finger_joint", "right_inner_finger_knuckle_joint"):
+        prim = overlay.GetPrimAtPath(f"/panda/Gripper/Robotiq_2F_85/Joints/{name}")
+        assert prim.GetAttribute("mjc:damping").Get() == pytest.approx(0.05)
+        assert list(prim.GetAttribute("mjc:solref").Get()) == pytest.approx([0.006, 1])
+        assert list(prim.GetAttribute("mjc:solimp").Get()) == pytest.approx([.99, .99, .001, .5, 2])
+        reference = next(r for r in prim.GetRelationships()
+                         if r.GetName().startswith("physxMimicJoint:") and r.GetName().endswith(":referenceJoint"))
+        assert prim.GetRelationship("mjc:target").GetTargets() == reference.GetTargets()
+        prefix = reference.GetName().removesuffix(":referenceJoint")
+        assert prim.GetAttribute("mjc:coef1").Get() == -prim.GetAttribute(prefix + ":gearing").Get()

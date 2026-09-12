@@ -16,7 +16,8 @@ parser.add_argument("--num_steps", type=int, default=720)
 parser.add_argument("--delta", type=float, default=0.02, help="Delta per step for translation (m).")
 parser.add_argument("--rot_scale", type=float, default=2.0, help="Multiplier applied to --delta for rotation DOFs.")
 parser.add_argument("--phase_steps", type=int, default=60, help="Steps per +/- phase per DOF.")
-AppLauncher.add_app_launcher_args(parser)
+from robolab.core.utils.app_launcher import add_app_launcher_args
+add_app_launcher_args(parser)
 args_cli, _ = parser.parse_known_args()
 args_cli.enable_cameras = True
 app_launcher = AppLauncher(args_cli)

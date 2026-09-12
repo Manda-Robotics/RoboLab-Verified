@@ -64,7 +64,8 @@ parser.add_argument("--env-config", choices=["recorded", "current"], default="re
 parser.add_argument("--validate-states", action="store_true",
                     help="Debug tool: compare the sim state against the recorded per-step states and report drift.")
 # append AppLauncher cli args
-AppLauncher.add_app_launcher_args(parser)
+from robolab.core.utils.app_launcher import add_app_launcher_args
+add_app_launcher_args(parser)
 
 # parse the arguments
 args_cli, _= parser.parse_known_args()

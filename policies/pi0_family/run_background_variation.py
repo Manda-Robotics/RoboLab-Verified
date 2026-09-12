@@ -32,7 +32,8 @@ from robolab.constants import get_timestamp, DEFAULT_TASK_SUBFOLDERS # noqa
 # add argparse arguments
 parser = argparse.ArgumentParser(description="")
 parser.add_argument("--num-envs", "--num_envs", type=int, default=1, help="Number of environments to spawn.")
-AppLauncher.add_app_launcher_args(parser)
+from robolab.core.utils.app_launcher import add_app_launcher_args
+add_app_launcher_args(parser)
 parser.add_argument("--task", nargs='+', default=['BananaInBowlTableTask', 'RubiksCubeAndBananaTask'],
                        help="List of tasks to evaluate on ")
 parser.add_argument("--tag", nargs='+', default=None,

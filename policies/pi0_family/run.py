@@ -9,6 +9,7 @@ Covers pi0, pi0_fast, pi05, paligemma, and paligemma_fast — all served by
 """
 
 import argparse
+import os
 import sys
 import traceback
 
@@ -48,7 +49,8 @@ parser.add_argument("--background-seed", "--background_seed", type=int, default=
 from robolab.eval.runner import add_common_eval_args, run_evaluation  # noqa: E402
 
 add_common_eval_args(parser)
-AppLauncher.add_app_launcher_args(parser)
+from robolab.core.utils.app_launcher import add_app_launcher_args
+add_app_launcher_args(parser)
 
 args_cli, _ = parser.parse_known_args()
 args_cli.enable_cameras = True
@@ -96,5 +98,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\033[96m[RoboLab] Terminated with error: {e}\033[0m")
         traceback.print_exc()
-        simulation_app.close()
-        sys.exit(1)
+        # Kit shutdown may terminate with exit(0), masking a failed rollout.
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(1)

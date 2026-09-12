@@ -13,6 +13,9 @@ over "panda"
         prepend apiSchemas = ["PhysicsMassAPI"]
     )
     {
+        point3f physics:centerOfMass = (-0.041270662, -0.00001695156, 0.07000005)
+        float3 physics:diagonalInertia = (0.012987729, 0.016535522, 0.020330176)
+        float physics:mass = 2.8142028
         quatf physics:principalAxes = (1, 0, 0, 0)
     }
 
@@ -20,6 +23,9 @@ over "panda"
         prepend apiSchemas = ["PhysicsMassAPI"]
     )
     {
+        point3f physics:centerOfMass = (-0.0000013160706, -0.03719127, -0.0685257)
+        float3 physics:diagonalInertia = (0.018686464, 0.014380063, 0.009065929)
+        float physics:mass = 2.3599997
         quatf physics:principalAxes = (1, 0, 0, 0)
     }
 
@@ -27,6 +33,9 @@ over "panda"
         prepend apiSchemas = ["PhysicsMassAPI"]
     )
     {
+        point3f physics:centerOfMass = (-0.0000044006447, -0.06955938, 0.037191793)
+        float3 physics:diagonalInertia = (0.019027691, 0.009140913, 0.014685673)
+        float physics:mass = 2.3795187
         quatf physics:principalAxes = (1, 0, 0, 0)
     }
 
@@ -34,6 +43,9 @@ over "panda"
         prepend apiSchemas = ["PhysicsMassAPI"]
     )
     {
+        point3f physics:centerOfMass = (0.04124237, 0.028007867, -0.033027958)
+        float3 physics:diagonalInertia = (0.012922927, 0.01501975, 0.014270905)
+        float physics:mass = 2.6498823
         quatf physics:principalAxes = (1, 0, 0, 0)
     }
 
@@ -41,6 +53,9 @@ over "panda"
         prepend apiSchemas = ["PhysicsMassAPI"]
     )
     {
+        point3f physics:centerOfMass = (-0.041260213, 0.034516163, 0.028006757)
+        float3 physics:diagonalInertia = (0.013370297, 0.014512819, 0.015502664)
+        float physics:mass = 2.6948018
         quatf physics:principalAxes = (1, 0, 0, 0)
     }
 
@@ -48,6 +63,9 @@ over "panda"
         prepend apiSchemas = ["PhysicsMassAPI"]
     )
     {
+        point3f physics:centerOfMass = (-0.000008950234, 0.03747337, -0.10340064)
+        float3 physics:diagonalInertia = (0.032553725, 0.027063686, 0.011497222)
+        float physics:mass = 2.9812818
         quatf physics:principalAxes = (1, 0, 0, 0)
     }
 
@@ -55,6 +73,9 @@ over "panda"
         prepend apiSchemas = ["PhysicsMassAPI"]
     )
     {
+        point3f physics:centerOfMass = (0.042058516, 0.015231995, 0.0061319894)
+        float3 physics:diagonalInertia = (0.0026052673, 0.003989713, 0.004704849)
+        float physics:mass = 1.1285807
         quatf physics:principalAxes = (1, 0, 0, 0)
     }
 
@@ -62,6 +83,9 @@ over "panda"
         prepend apiSchemas = ["PhysicsMassAPI"]
     )
     {
+        point3f physics:centerOfMass = (0.018640304, 0.018641643, 0.07940005)
+        float3 physics:diagonalInertia = (0.00063193735, 0.00063196436, 0.0010610503)
+        float physics:mass = 0.40529126
         quatf physics:principalAxes = (1, 0, 0, 0)
     }
 
@@ -87,6 +111,17 @@ over "panda"
                 float3 physics:diagonalInertia = (0.00024220184, 0.0002706998, 0.0003005391)
                 float physics:mass = 0.22652
                 quatf physics:principalAxes = (1, 0, 0, 0)
+
+                over "Defeatured_2F_85_PAD_OPEN_basestep_01"
+                {
+                    over "Defeatured_2F_85_PAD_OPEN_basestep" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 1
+                    }
+                }
             }
 
             over "left_outer_knuckle" (
@@ -97,6 +132,17 @@ over "panda"
                 float3 physics:diagonalInertia = (0.0000016630551, 5.1465634e-7, 0.0000017905727)
                 float physics:mass = 0.008531983
                 quatf physics:principalAxes = (1, 0, 0, 0)
+
+                over "Defeatured_2F_85_PAD_OPEN_Finger1step_01"
+                {
+                    over "Defeatured_2F_85_PAD_OPEN_Finger1step" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 1
+                    }
+                }
             }
 
             over "left_outer_finger" (
@@ -107,6 +153,17 @@ over "panda"
                 float3 physics:diagonalInertia = (0.0000032081045, 0.000008186224, 0.000008605842)
                 float physics:mass = 0.02261424
                 quatf physics:principalAxes = (1, 0, 0, 0)
+
+                over "Defeatured_2F_85_PAD_OPEN_finger2step_01"
+                {
+                    over "Defeatured_2F_85_PAD_OPEN_finger2step" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 1
+                    }
+                }
             }
 
             over "left_inner_finger" (
@@ -117,6 +174,28 @@ over "panda"
                 float3 physics:diagonalInertia = (0.0000014787613, 0.0000034457291, 0.0000036608524)
                 float physics:mass = 0.010400313
                 quatf physics:principalAxes = (1, 0, 0, 0)
+
+                over "Defeatured_2F_85_PAD_OPEN_finger4step_01"
+                {
+                    over "Defeatured_2F_85_PAD_OPEN_finger4step" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                        uniform token physics:approximation = "convexDecomposition"
+                        bool physics:collisionEnabled = 1
+                    }
+                }
+
+                over "Defeatured_2F_85_PAD_OPEN_fingertipsstep_01"
+                {
+                    over "Defeatured_2F_85_PAD_OPEN_fingertipsstep" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                        uniform token physics:approximation = "convexDecomposition"
+                        bool physics:collisionEnabled = 1
+                    }
+                }
             }
 
             over "left_inner_knuckle" (
@@ -127,6 +206,17 @@ over "panda"
                 float3 physics:diagonalInertia = (0.000008765756, 0.000009778004, 0.000013007223)
                 float physics:mass = 0.027117735
                 quatf physics:principalAxes = (1, 0, 0, 0)
+
+                over "Defeatured_2F_85_PAD_OPEN_finger3step_01"
+                {
+                    over "Defeatured_2F_85_PAD_OPEN_finger3step" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 1
+                    }
+                }
             }
 
             over "right_outer_knuckle" (
@@ -137,6 +227,17 @@ over "panda"
                 float3 physics:diagonalInertia = (0.0000016630551, 5.1465634e-7, 0.0000017905727)
                 float physics:mass = 0.008531983
                 quatf physics:principalAxes = (1, 0, 0, 0)
+
+                over "Defeatured_2F_85_PAD_OPEN_Finger1step_01"
+                {
+                    over "Defeatured_2F_85_PAD_OPEN_Finger1step" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 1
+                    }
+                }
             }
 
             over "right_outer_finger" (
@@ -147,6 +248,17 @@ over "panda"
                 float3 physics:diagonalInertia = (0.0000032081045, 0.000008186224, 0.000008605842)
                 float physics:mass = 0.02261424
                 quatf physics:principalAxes = (1, 0, 0, 0)
+
+                over "Defeatured_2F_85_PAD_OPEN_finger2step_01"
+                {
+                    over "Defeatured_2F_85_PAD_OPEN_finger2step" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 1
+                    }
+                }
             }
 
             over "right_inner_finger" (
@@ -157,6 +269,28 @@ over "panda"
                 float3 physics:diagonalInertia = (0.0000014787614, 0.0000034457291, 0.0000036608526)
                 float physics:mass = 0.010400313
                 quatf physics:principalAxes = (1, 0, 0, 0)
+
+                over "Defeatured_2F_85_PAD_OPEN_finger4step_01"
+                {
+                    over "Defeatured_2F_85_PAD_OPEN_finger4step" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                        uniform token physics:approximation = "convexDecomposition"
+                        bool physics:collisionEnabled = 1
+                    }
+                }
+
+                over "Defeatured_2F_85_PAD_OPEN_fingertipsstep_01"
+                {
+                    over "Defeatured_2F_85_PAD_OPEN_fingertipsstep" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                        uniform token physics:approximation = "convexDecomposition"
+                        bool physics:collisionEnabled = 1
+                    }
+                }
             }
 
             over "right_inner_knuckle" (
@@ -167,6 +301,80 @@ over "panda"
                 float3 physics:diagonalInertia = (0.000008765756, 0.000009778004, 0.000013007223)
                 float physics:mass = 0.027117735
                 quatf physics:principalAxes = (1, 0, 0, 0)
+
+                over "Defeatured_2F_85_PAD_OPEN_finger3step_01"
+                {
+                    over "Defeatured_2F_85_PAD_OPEN_finger3step" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 1
+                    }
+                }
+            }
+
+            over "Joints"
+            {
+                over "left_inner_finger_joint" (
+                    prepend apiSchemas = ["MjcEqualityJointAPI"]
+                )
+                {
+                    custom double mjc:coef0 = -0
+                    custom double mjc:coef1 = -1
+                    custom float mjc:damping = 0.05
+                    custom double[] mjc:solimp = [0.99, 0.99, 0.001, 0.5, 2]
+                    custom double[] mjc:solref = [0.006, 1]
+                    custom rel mjc:target = </panda/Gripper/Robotiq_2F_85/Joints/finger_joint>
+                }
+
+                over "left_inner_finger_knuckle_joint" (
+                    prepend apiSchemas = ["MjcEqualityJointAPI"]
+                )
+                {
+                    custom double mjc:coef0 = -0
+                    custom double mjc:coef1 = -1
+                    custom float mjc:damping = 0.05
+                    custom double[] mjc:solimp = [0.99, 0.99, 0.001, 0.5, 2]
+                    custom double[] mjc:solref = [0.006, 1]
+                    custom rel mjc:target = </panda/Gripper/Robotiq_2F_85/Joints/finger_joint>
+                }
+
+                over "right_outer_knuckle_joint" (
+                    prepend apiSchemas = ["MjcEqualityJointAPI"]
+                )
+                {
+                    custom double mjc:coef0 = -0
+                    custom double mjc:coef1 = 1
+                    custom float mjc:damping = 0.05
+                    custom double[] mjc:solimp = [0.99, 0.99, 0.001, 0.5, 2]
+                    custom double[] mjc:solref = [0.006, 1]
+                    custom rel mjc:target = </panda/Gripper/Robotiq_2F_85/Joints/finger_joint>
+                }
+
+                over "right_inner_finger_joint" (
+                    prepend apiSchemas = ["MjcEqualityJointAPI"]
+                )
+                {
+                    custom double mjc:coef0 = -0
+                    custom double mjc:coef1 = 1
+                    custom float mjc:damping = 0.05
+                    custom double[] mjc:solimp = [0.99, 0.99, 0.001, 0.5, 2]
+                    custom double[] mjc:solref = [0.006, 1]
+                    custom rel mjc:target = </panda/Gripper/Robotiq_2F_85/Joints/finger_joint>
+                }
+
+                over "right_inner_finger_knuckle_joint" (
+                    prepend apiSchemas = ["MjcEqualityJointAPI"]
+                )
+                {
+                    custom double mjc:coef0 = -0
+                    custom double mjc:coef1 = -1
+                    custom float mjc:damping = 0.05
+                    custom double[] mjc:solimp = [0.99, 0.99, 0.001, 0.5, 2]
+                    custom double[] mjc:solref = [0.006, 1]
+                    custom rel mjc:target = </panda/Gripper/Robotiq_2F_85/Joints/finger_joint>
+                }
             }
         }
     }

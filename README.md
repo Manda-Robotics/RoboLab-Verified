@@ -29,6 +29,8 @@ See the [Ecosystem](docs/ecosystem.md) page for projects built on RoboLab.
 
 Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and a system `ffmpeg` (used for video recording). The Isaac Sim/Isaac Lab stack is selected with a mutually-exclusive extra. `isaac60` is the default documented path; `isaac50` and `isaac51` remain available for existing experiments. See [Isaac Sim 6 support](docs/isaac_sim_6.md) and [Requirements](#requirements).
 
+**Experimental Newton branch:** use the [Isaac Sim 6.1 / Isaac Lab 3 source installer](docs/newton.md#new-vast-instance), not the `isaac60` quick-start commands below. Running `uv sync --extra isaac60` in that environment would downgrade it to the older beta2 stack.
+
 ### Installation
 
 ```bash

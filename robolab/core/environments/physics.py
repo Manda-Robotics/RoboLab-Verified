@@ -11,7 +11,7 @@ def configure_physics(cfg, backend="physx"):
     if backend != "newton_mjwarp":
         raise ValueError(f"Unknown physics backend: {backend}")
     if not hasattr(cfg.sim, "physics"):
-        raise RuntimeError("Newton requires Isaac Lab 3 / Isaac Sim 6; install the isaac60 extra.")
+        raise RuntimeError("Newton requires the Isaac Lab 3 source stack; run scripts/install_newton61.py.")
     from isaaclab_newton.physics import MJWarpSolverCfg, NewtonCfg
 
     from robolab.constants import ROBOTS_DIR
@@ -27,9 +27,20 @@ def configure_physics(cfg, backend="physx"):
             njmax=4096, nconmax=2048, iterations=100,
             ls_iterations=50, integrator="implicitfast",
         ),
-        num_substeps=1,
+        num_substeps=4,
         use_cuda_graph=True,
     )
+    if getattr(cfg, "newton_gripper_stabilization", True):
+        from math import pi
+        from robolab.robots.newton_gripper import RateLimitedGripperActionCfg
+
+        gripper = robot.actuators["gripper"]
+        gripper.stiffness, gripper.damping = 10.0, 2.0
+        # Keep the policy's existing binary semantics. Only the target sent to
+        # physics is rate limited; this is recorded in the exported action cfg.
+        cfg.actions.finger_joint = RateLimitedGripperActionCfg(
+            asset_name="robot", joint_names=["finger_joint"],
+            open_command_expr={"finger_joint": 0.0}, close_command_expr={"finger_joint": pi / 4})
 
 
 def ensure_output_backend(output_dir, backend):
@@ -48,14 +59,56 @@ def ensure_output_backend(output_dir, backend):
     marker.write_text(json.dumps({"physics_backend": backend}, indent=2) + "\n")
 
 
+@contextmanager
 def physics_context(cfg, backend="physx", launcher_args=None):
     """Register the Newton runtime for the entire environment lifetime."""
+    disable_graph = getattr(launcher_args, "newton_disable_cuda_graph", False)
     if backend == "physx":
-        return nullcontext()
+        if disable_graph:
+            raise ValueError("Disabling the Newton CUDA graph requires --physics newton_mjwarp")
+        yield
+        return
+    if disable_graph:
+        cfg.sim.physics.use_cuda_graph = False
     from argparse import Namespace
-    from isaaclab_tasks.utils.sim_launcher import launch_simulation
+    try:
+        from isaaclab.app.sim_launcher import launch_simulation
+        native_mesh_import = True
+    except ModuleNotFoundError as exc:
+        if exc.name not in {"isaaclab", "isaaclab.app", "isaaclab.app.sim_launcher"}:
+            raise
+        from isaaclab_tasks.utils.sim_launcher import launch_simulation
+        native_mesh_import = False
 
-    return launch_simulation(cfg, launcher_args or Namespace(headless=True, enable_cameras=True, device=cfg.sim.device))
+    threshold = getattr(cfg, "newton_convex_decomposition_threshold", None)
+    contact_timeconst = getattr(cfg, "newton_contact_timeconst", None)
+    if native_mesh_import and (threshold is not None or contact_timeconst is not None):
+        raise ValueError(
+            "The Isaac Sim 6.1 stack uses native authored mesh import. Remove the beta2 "
+            "decomposition/contact overrides; their Newton 1.2 shim is not compatible."
+        )
+    if contact_timeconst is not None:
+        from math import isfinite
+        if (not isfinite(contact_timeconst) or contact_timeconst < 2 * cfg.sim.dt / cfg.sim.physics.num_substeps):
+            raise ValueError("Contact time constant must be finite and at least twice the solver timestep")
+        if threshold is None:
+            raise ValueError("Contact response diagnostic requires the authored mesh-import option")
+    meshes = nullcontext()
+    if threshold is not None:
+        from robolab.core.environments.newton_meshes import mesh_decomposition_context
+        meshes = mesh_decomposition_context(threshold, contact_timeconst=contact_timeconst)
+    # Modern Lab treats args.physics as a request to REPLACE the complete solver
+    # config. We already configured it (including substeps and contact limits).
+    # Copy the namespace so the policy's original arguments remain unchanged.
+    launch_args = Namespace(**vars(launcher_args)) if launcher_args is not None else Namespace(
+        headless=True, enable_cameras=True, device=cfg.sim.device)
+    launch_args.physics = None
+    # RoboLab uses Kit/USD services and calibrated Isaac RTX cameras even when
+    # physics is Newton; do not let automatic renderer selection switch to OVRTX.
+    launch_args.require_kit = True
+    with meshes:
+        with launch_simulation(cfg, launch_args):
+            yield
 
 
 @contextmanager
@@ -68,6 +121,12 @@ def managed_env(scene, *, physics="physx", launcher_args=None, **kwargs):
     from robolab.core.environments.config import parse_env_cfg
     from robolab.core.environments.runtime import create_env
 
+    mesh_threshold = getattr(launcher_args, "newton_convex_decomposition_threshold", None)
+    contact_timeconst = getattr(launcher_args, "newton_contact_timeconst", None)
+    if getattr(launcher_args, "newton_disable_cuda_graph", False) and physics != "newton_mjwarp":
+        raise ValueError("Disabling the Newton CUDA graph requires --physics newton_mjwarp")
+    if (mesh_threshold is not None or contact_timeconst is not None) and physics != "newton_mjwarp":
+        raise ValueError("Mesh/contact override requires --physics newton_mjwarp")
     if physics == "physx":
         env, cfg = create_env(scene, **kwargs)
         cfg.physics_backend = physics
@@ -81,6 +140,10 @@ def managed_env(scene, *, physics="physx", launcher_args=None, **kwargs):
         if k in {"device", "seed", "num_envs", "env_spacing", "eye", "lookat", "use_fabric"}
     }) if isinstance(scene, str) else scene
     configure_physics(cfg, physics)
+    if mesh_threshold is not None:
+        cfg.newton_convex_decomposition_threshold = mesh_threshold
+    if contact_timeconst is not None:
+        cfg.newton_contact_timeconst = contact_timeconst
     cfg.physics_backend = physics
     with physics_context(cfg, physics, launcher_args):
         env, cfg = create_env(cfg, **kwargs)

@@ -154,7 +154,9 @@ def run_episode(
     try:
         for step in tqdm(range(max_steps)):
 
-            while not timeline.is_playing():
+            # Newton's runtime steps independently of Kit's PhysX timeline.
+            # Waiting for that timeline to play stalls before the first action.
+            while getattr(env_cfg, "physics_backend", "physx") == "physx" and not timeline.is_playing():
                 kit_app.update()
 
             # Attach per-env ground-truth state so clients that want privileged
@@ -198,6 +200,10 @@ def run_episode(
             timer.start("env_step")
             obs, reward, term, trunc, info = env.step(actions)
             timer.stop("env_step")
+            if getattr(env_cfg, "physics_backend", "physx") == "newton_mjwarp":
+                from robolab.core.utils.isaaclab_compat import as_torch
+                if not torch.isfinite(as_torch(env.scene["robot"].data.joint_pos)).all():
+                    raise RuntimeError(f"Newton produced nonfinite robot joints at step {step}")
 
             # Collect per-env subtask info (list of dicts, one per env)
             per_env_infos = get_all_env_subtask_infos(env)

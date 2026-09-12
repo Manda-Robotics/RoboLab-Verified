@@ -42,12 +42,27 @@ def _unit_interval(s: str) -> float:
     return v
 
 
+def _decomposition_threshold(s: str) -> float:
+    value = float(s)
+    if not 0 < value < 1:
+        raise argparse.ArgumentTypeError("Convex decomposition tolerance must be finite and in (0, 1)")
+    return value
+
+
 def add_common_eval_args(parser: argparse.ArgumentParser) -> None:
     """Add the shared eval flags. Call this once per runner script."""
     parser.add_argument("--physics", choices=["physx", "newton_mjwarp"], default="physx",
                         help="Physics backend; Newton is experimental and requires Isaac Sim 6 + DROID.")
+    parser.add_argument("--newton-convex-decomposition-threshold", type=_decomposition_threshold, default=None,
+                        help="Opt in to authored mesh approximations and cached CoACD with this normalized tolerance (e.g. 0.05).")
+    parser.add_argument("--newton-contact-timeconst", type=_decomposition_threshold, default=None,
+                        help="Experimental default contact response time in seconds; requires the authored mesh-import option.")
+    parser.add_argument("--newton-disable-cuda-graph", action="store_true",
+                        help="Diagnostic: use eager Newton stepping with the same solver settings (slower).")
     parser.add_argument("--num-envs", "--num_envs", type=int, default=1,
                         help="Number of environments to spawn.")
+    parser.add_argument("--seed", type=int, default=None,
+                        help="Override the environment seed; omitted preserves the backend's existing default.")
     parser.add_argument("--task", nargs="+", default=None,
                         help="List of tasks to evaluate on.")
     parser.add_argument("--tag", nargs="+", default=None,
@@ -214,6 +229,7 @@ def run_evaluation(
             policy=policy,
             renderer=args.renderer,
             rendering_mode=args.rendering_type,
+            **({"seed": args.seed} if getattr(args, "seed", None) is not None else {}),
         ) as (env, env_cfg):
 
             if robolab.constants.ENABLE_SUBTASK_PROGRESS_CHECKING and getattr(env_cfg, "subtasks", None) is None:

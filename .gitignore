@@ -13,6 +13,8 @@ __pycache__
 **NOT_USED.py
 **OLD.py
 .venv
+newton61-install-*/
+.newton61-cache-*/
 debug/*
 !debug/scripts/
 !debug/scripts/**
