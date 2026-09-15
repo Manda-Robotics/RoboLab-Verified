@@ -1,0 +1,107 @@
+#usda 1.0
+(
+    "Newton robot-only gravity compensation; selected for disable_gravity=True."
+    defaultPrim = "panda"
+    subLayers = [
+        @franka_robotiq_2f_85_newton.usda@
+    ]
+)
+
+over "panda"
+{
+    over "panda_link0"
+    {
+        custom float mjc:gravcomp = 1
+    }
+
+    over "panda_link1"
+    {
+        custom float mjc:gravcomp = 1
+    }
+
+    over "panda_link2"
+    {
+        custom float mjc:gravcomp = 1
+    }
+
+    over "panda_link3"
+    {
+        custom float mjc:gravcomp = 1
+    }
+
+    over "panda_link4"
+    {
+        custom float mjc:gravcomp = 1
+    }
+
+    over "panda_link5"
+    {
+        custom float mjc:gravcomp = 1
+    }
+
+    over "panda_link6"
+    {
+        custom float mjc:gravcomp = 1
+    }
+
+    over "panda_link7"
+    {
+        custom float mjc:gravcomp = 1
+    }
+
+    over "panda_link8"
+    {
+        custom float mjc:gravcomp = 1
+    }
+
+    over "Gripper"
+    {
+        over "Robotiq_2F_85"
+        {
+            over "base_link"
+            {
+                custom float mjc:gravcomp = 1
+            }
+
+            over "left_outer_knuckle"
+            {
+                custom float mjc:gravcomp = 1
+            }
+
+            over "left_outer_finger"
+            {
+                custom float mjc:gravcomp = 1
+            }
+
+            over "left_inner_finger"
+            {
+                custom float mjc:gravcomp = 1
+            }
+
+            over "left_inner_knuckle"
+            {
+                custom float mjc:gravcomp = 1
+            }
+
+            over "right_outer_knuckle"
+            {
+                custom float mjc:gravcomp = 1
+            }
+
+            over "right_outer_finger"
+            {
+                custom float mjc:gravcomp = 1
+            }
+
+            over "right_inner_finger"
+            {
+                custom float mjc:gravcomp = 1
+            }
+
+            over "right_inner_knuckle"
+            {
+                custom float mjc:gravcomp = 1
+            }
+        }
+    }
+}

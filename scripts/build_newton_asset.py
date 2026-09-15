@@ -116,6 +116,20 @@ def build():
     output.TransferContent(stage.GetRootLayer())
     output.subLayerPaths = [SOURCE.name]
     output.Export(str(TARGET))
+    # Newton does not translate PhysX disableGravity. Keep compensation in a
+    # separate overlay so configure_physics can honor the caller's setting.
+    gravity = Usd.Stage.CreateInMemory()
+    gravity.GetRootLayer().subLayerPaths = [str(TARGET)]
+    gravity.SetDefaultPrim(gravity.GetPrimAtPath("/panda"))
+    gravity.GetRootLayer().comment = "Newton robot-only gravity compensation; selected for disable_gravity=True."
+    for body in source.Traverse():
+        if str(body.GetPath()).startswith("/panda/") and body.HasAPI(UsdPhysics.RigidBodyAPI):
+            gravity.OverridePrim(body.GetPath()).CreateAttribute(
+                "mjc:gravcomp", Sdf.ValueTypeNames.Float).Set(1.0)
+    gravity_output = Sdf.Layer.CreateAnonymous()
+    gravity_output.TransferContent(gravity.GetRootLayer())
+    gravity_output.subLayerPaths = [TARGET.name]
+    gravity_output.Export(str(TARGET.with_name("franka_robotiq_2f_85_newton_nogravity.usda")))
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@
 *.usda filter=lfs diff=lfs merge=lfs -text
 # Keep the small, reviewable Newton inertia overlay in Git itself.
 assets/robots/franka_robotiq_2f_85_newton.usda -filter diff merge text
+assets/robots/franka_robotiq_2f_85_newton_nogravity.usda -filter diff merge text
 # Data formats
 *.hdf5 filter=lfs diff=lfs merge=lfs -text
 *.npz filter=lfs diff=lfs merge=lfs -text

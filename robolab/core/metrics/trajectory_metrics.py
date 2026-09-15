@@ -8,6 +8,13 @@ Trajectory smoothness and quality metrics.
 import numpy as np
 
 
+def _trapezoid(values, **kwargs):
+    """NumPy 2.x renamed trapz; keep support for the Isaac Sim 5 NumPy stack."""
+    if hasattr(np, "trapezoid"):
+        return np.trapezoid(values, **kwargs)
+    return np.trapz(values, **kwargs)
+
+
 def compute_joint_isj_from_velocity(joint_velocity: np.ndarray, dt: float) -> float:
     """
     Compute Integrated Squared Jerk (ISJ) in joint space, summed over all joints.
@@ -31,7 +38,7 @@ def compute_joint_isj_from_velocity(joint_velocity: np.ndarray, dt: float) -> fl
     squared_jerk_sum = np.sum(jerk**2, axis=1)  # (T,)
 
     # Integrate over time using trapezoidal rule
-    isj = np.trapz(squared_jerk_sum, dx=dt)
+    isj = _trapezoid(squared_jerk_sum, dx=dt)
 
     return isj
 
@@ -56,7 +63,7 @@ def compute_joint_isj_per_joint_from_velocity(
     jerk = np.gradient(acceleration, dt, axis=0)
 
     # Integrate squared jerk for each joint
-    isj_per_joint = np.trapz(jerk**2, dx=dt, axis=0)  # (n_joints,)
+    isj_per_joint = _trapezoid(jerk**2, dx=dt, axis=0)  # (n_joints,)
 
     return isj_per_joint
 
@@ -85,7 +92,7 @@ def compute_joint_isj_from_position(joint_positions: np.ndarray, dt: float) -> f
     squared_jerk_sum = np.sum(jerk**2, axis=1)  # (T,)
 
     # Integrate over time using trapezoidal rule
-    isj = np.trapz(squared_jerk_sum, dx=dt)
+    isj = _trapezoid(squared_jerk_sum, dx=dt)
 
     return isj
 
@@ -109,7 +116,7 @@ def compute_joint_isj_per_joint_from_position(joint_positions: np.ndarray, dt: f
     jerk = np.gradient(acceleration, dt, axis=0)
 
     # Integrate squared jerk for each joint
-    isj_per_joint = np.trapz(jerk**2, dx=dt, axis=0)  # (n_joints,)
+    isj_per_joint = _trapezoid(jerk**2, dx=dt, axis=0)  # (n_joints,)
 
     return isj_per_joint
 
@@ -142,7 +149,7 @@ def compute_ee_isj_from_position(ee_position: np.ndarray, dt: float) -> float:
     squared_jerk_magnitude = np.sum(jerk**2, axis=1)  # (T,)
 
     # Integrate over time using trapezoidal rule
-    isj = np.trapz(squared_jerk_magnitude, dx=dt)
+    isj = _trapezoid(squared_jerk_magnitude, dx=dt)
 
     return isj
 
@@ -170,7 +177,7 @@ def compute_ee_isj_from_velocity(ee_velocity: np.ndarray, dt: float) -> float:
     squared_jerk_magnitude = np.sum(jerk**2, axis=1)  # (T,)
 
     # Integrate over time using trapezoidal rule
-    isj = np.trapz(squared_jerk_magnitude, dx=dt)
+    isj = _trapezoid(squared_jerk_magnitude, dx=dt)
 
     return isj
 

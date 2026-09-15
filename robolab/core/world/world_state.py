@@ -700,6 +700,15 @@ class WorldState:
             return [obj for obj in candidates if obj in in_contact_any]
 
         body = members[0]
+        if getattr(self.env.cfg, "physics_backend", "physx") == "newton_mjwarp":
+            # Newton's batch columns follow resolved model-body order, not
+            # filter_prim_paths_expr order (e.g. bowl before rubiks_cube).
+            # Candidate count alone cannot establish column identity. Reuse
+            # the already-created, object-specific sensors; their readings
+            # are cached per step and also handle multi-body assets safely.
+            return [obj for obj in candidates
+                    if self.in_contact(body, obj, force_threshold, env_id=env_id)]
+
         batch_sensor = get_batch_contact_sensor(self.env.scene, body)
 
         if batch_sensor is None:

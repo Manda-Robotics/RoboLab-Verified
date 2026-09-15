@@ -46,10 +46,14 @@ def test_newton_configuration_preserves_timing_and_selects_overlay(monkeypatch):
     cfg = config()
     physics.configure_physics(cfg, "newton_mjwarp")
     assert cfg.sim.dt == 1 / 120
-    assert cfg.sim.physics.solver_cfg.nconmax == 2048
+    assert cfg.sim.physics.solver_cfg.nconmax == 65536
+    assert cfg.sim.physics.solver_cfg.njmax == 131072
+    assert cfg.sim.physics.use_cuda_graph is False
+    assert cfg.newton_contact_settings["timeconst"] == .0045
     assert cfg.sim.physics.num_substeps == 4
     assert cfg.scene.robot.actuators["gripper"].stiffness == 10
-    assert cfg.scene.robot.actuators["gripper"].damping == 2
+    assert cfg.scene.robot.actuators["gripper"].damping == .5
+    assert cfg.actions.finger_joint.max_target_velocity == pytest.approx(3.141592653589793)
     assert cfg.actions.finger_joint.close_command_expr == {"finger_joint": pytest.approx(0.7853981633974483)}
     assert Path(cfg.scene.robot.spawn.usd_path).is_file()
     cfg.scene.robot.spawn.usd_path = "unsupported.usd"
@@ -64,6 +68,51 @@ def test_rejects_old_isaaclab_and_unknown_backend():
         physics.configure_physics(cfg, "newton_mjwarp")
     with pytest.raises(ValueError, match="Unknown"):
         physics.configure_physics(cfg, "typo")
+
+
+@pytest.mark.parametrize("overrides", [
+    {"contact_capacity": 0}, {"constraint_capacity": 1.5},
+    {"timeconst": .001}, {"impedance": (.999, .99)},
+    {"gripper_damping": -1}, {"typo": 1},
+])
+def test_invalid_contact_settings_rejected(monkeypatch, overrides):
+    install_module(monkeypatch, "isaaclab_newton.physics", NewtonCfg=SimpleNamespace, MJWarpSolverCfg=SimpleNamespace)
+    install_module(monkeypatch, "robolab.constants", ROBOTS_DIR=str(ROOT / "assets/robots"))
+    cfg = config()
+    cfg.newton_contact_settings = overrides
+    with pytest.raises(ValueError):
+        physics.configure_physics(cfg, "newton_mjwarp")
+
+
+@pytest.mark.parametrize("disabled", [True, False, None])
+def test_gravity_overlay_respects_robot_setting(monkeypatch, disabled):
+    install_module(monkeypatch, "isaaclab_newton.physics", NewtonCfg=SimpleNamespace, MJWarpSolverCfg=SimpleNamespace)
+    install_module(monkeypatch, "robolab.constants", ROBOTS_DIR=str(ROOT / "assets/robots"))
+    install_module(monkeypatch, "robolab.robots.newton_gripper", RateLimitedGripperActionCfg=SimpleNamespace)
+    cfg = config()
+    cfg.scene.robot.spawn.rigid_props = SimpleNamespace(disable_gravity=disabled)
+    physics.configure_physics(cfg, "newton_mjwarp")
+    assert ("nogravity" in cfg.scene.robot.spawn.usd_path) == bool(disabled)
+
+
+def test_gravity_overlay_only_changes_robot_gravity():
+    from pxr import Usd, UsdPhysics
+    base = Usd.Stage.Open(str(ROOT / "assets/robots/franka_robotiq_2f_85_newton.usda"))
+    compensated = Usd.Stage.Open(str(ROOT / "assets/robots/franka_robotiq_2f_85_newton_nogravity.usda"))
+    count = 0
+    assert [p.GetPath() for p in base.Traverse()] == [p.GetPath() for p in compensated.Traverse()]
+    for prim in compensated.Traverse():
+        original = base.GetPrimAtPath(prim.GetPath())
+        for attr in original.GetAttributes():
+            assert attr.Get() == prim.GetAttribute(attr.GetName()).Get()
+        for rel in original.GetRelationships():
+            assert rel.GetTargets() == prim.GetRelationship(rel.GetName()).GetTargets()
+        if str(prim.GetPath()).startswith("/panda/") and prim.HasAPI(UsdPhysics.RigidBodyAPI):
+            assert prim.GetAttribute("mjc:gravcomp").Get() == 1
+            count += 1
+        else:
+            assert not prim.GetAttribute("mjc:gravcomp")
+    assert count == 18
 
 
 def test_eager_diagnostic_disables_only_graph_and_rejects_physx(monkeypatch):

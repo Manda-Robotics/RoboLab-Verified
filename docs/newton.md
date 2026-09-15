@@ -5,10 +5,69 @@ The `newton` branch starts at main commit `82725b5`. Select Newton with
 supports DROID tasks and retains Isaac RTX cameras. PhysX remains the default.
 Other robot assets fail with an explicit unsupported-robot error.
 
-Current 6.1 status: stationary and loaded-gripper smokes pass, but the first
-pi0.5 cube grasp encounters a MuJoCo-Warp CUDA collision-kernel error. This
-branch is not ready for comparable benchmark runs; see the validation section
-at the end for the evidence and diagnostic commands.
+Current 6.1 status: the collision crash was isolated to candidate-buffer
+overflow. Guarded diagnostic runs with larger buffers complete, and a centered
+scripted bottle grasp/lift/release passes with simplified fingertip pads and
+robot gravity compensation. The tested pad/contact/capacity settings are now
+the experimental Newton preset. This branch is not ready for
+comparable benchmark runs; policy success-rate parity is unproven.
+
+On 2026-09-15, three fresh live pi0.5/MJWarp seed-0 episodes (cube into bowl,
+banana onto plate, bottle into square pail) succeeded and retained their success
+conditions for five further seconds. All 31 captured policy requests passed
+observation, image-resize and consumed-action conversion checks (maximum action
+discrepancy below 1.2e-7). These are single-episode capability checks, not matched
+success-rate estimates or proof of hardware-accurate physics.
+
+Those runs established the settings now promoted from the diagnostic harness:
+single convex hulls for fingertip
+pads, cached object hulls, contact time constant 0.0045 s, impedance endpoints
+0.99/0.999, gripper Kp=10/Kd=0.5, target slew pi rad/s, 65536 contact candidates,
+131072 constraints and CUDA graphs disabled with a fail-before-kernel capacity
+guard. The native CoACD disk cache remains a local startup optimization, not
+a different decomposition method. The recording/analysis harness and recordings
+are not distributed with RoboLab. No automatic shell-inertia fallback is applied.
+An additional cooking scene failed compilation on a tiny red-onion convex hull;
+the bottle task also had a non-target pail leave the scene. Both remain open
+compatibility/scene issues despite the successful target placements.
+
+After promotion, an ordinary `policies/pi0_family/run.py --policy pi05 --physics
+newton_mjwarp` cube episode also succeeded at step 174 (11.6 s), without the study
+harness or its disk cache. This validates the integrated launch path, not exact
+trajectory parity with the earlier run; the policy server was not reseeded.
+
+### Contact preset configuration
+
+For programmatic experiments, set `cfg.newton_contact_settings` before
+`configure_physics`/`managed_env`; omitted keys retain the preset values:
+
+```python
+cfg.newton_contact_settings = {
+    "single_hull_fingertips": True,
+    "timeconst": 0.0045,
+    "impedance": (0.99, 0.999),
+    "contact_capacity": 65536,
+    "constraint_capacity": 131072,
+    "gripper_stiffness": 10.0,
+    "gripper_damping": 0.5,
+    "gripper_target_velocity": 3.141592653589793,
+}
+```
+
+The resolved dictionary is retained on the environment config. Contact response
+is applied to CPU and GPU model geom arrays before the first MJWarp step;
+equality parameters are unchanged. Only the two Robotiq fingertip pad collision
+meshes switch from CoACD to a single convex hull; their visuals and transforms
+remain unchanged. Object assets still use native authored approximation.
+
+The scoped adapters require the pinned stack and one active simulation runtime
+per process. They restore patched methods on exit. Eager execution is intentional:
+the capacity guard synchronously checks candidate counts before each CCD launch
+and raises on overflow rather than truncating contacts or risking an illegal
+GPU memory access. Enabling CUDA graphs with this preset is rejected. This costs
+performance, and the larger buffers cost GPU memory; neither multi-environment
+scaling nor a calibrated hardware contact model is established by the three
+single-environment trials. Revalidate the private APIs before upgrading Newton.
 
 ## New VAST instance
 
@@ -54,8 +113,8 @@ On 6.1, omit the old `--newton-convex-decomposition-threshold` and
 and `--contact-timeconst`). Lab now honors authored approximations natively;
 the beta2-only monkeypatch remains available for old environments but is
 explicitly rejected on the new stack. First validate native collision behavior
-before reintroducing any solver tuning. The robot overlay and gripper action
-remain unchanged for this first version comparison.
+before changing solver tuning. The older version-comparison results below are
+historical; the current preset includes the subsequently validated contact adapters.
 
 The compatibility layer retains RoboLab's `--headless` / `--enable_cameras`
 flags even though upstream no longer registers them. It also maps RTX mode
@@ -121,7 +180,21 @@ Robotiq collision APIs are additionally authored on leaf meshes because Newton
 does not recognize the source's parent-Xform collider declarations. Meshes,
 transforms, joints and cameras stay unchanged; the PhysX asset stays unchanged.
 
-The Newton-only gripper preset uses Kp=10 N m/rad and Kd=2 N m s/rad on
+When the robot spawn configuration requests `rigid_props.disable_gravity=True`,
+the preset selects `franka_robotiq_2f_85_newton_nogravity.usda`, which layers
+`mjc:gravcomp=1` onto the 18 robot rigid bodies. Newton does not otherwise
+translate PhysX's gravity-disable setting. Scene objects retain gravity; false
+or unspecified settings select the uncompensated Newton overlay. Both overlays
+are generated by `scripts/build_newton_asset.py`. The native GPU model has been
+checked to receive robot-only compensation without a runtime override.
+
+Newton contact queries use object-specific sensors rather than assuming batched
+sensor columns follow the requested filter order. This prevents contacts with a
+bowl from being attributed to a cube (or vice versa); the PhysX batch path is
+unchanged. Trajectory jerk integration accepts both NumPy's newer `trapezoid`
+API and the older `trapz` API used by the Isaac Sim 5 stack.
+
+The Newton-only gripper preset uses Kp=10 N m/rad and Kd=0.5 N m s/rad on
 `finger_joint`, plus genuine MuJoCo passive damping (`mjc:damping=0.05`) on
 its five mimic followers. Exported MJCF confirms those passive damping values.
 The overlay now expresses the same five coupling relationships as native
@@ -129,7 +202,7 @@ MuJoCo equalities, preserving the authored gearing/offset, with
 `solref=(0.006, 1)` and `solimp=(0.99, 0.99, 0.001, 0.5, 2)`. Newton's
 PhysX-mimic conversion otherwise loses the authored coupling stiffness.
 The policy retains its original binary 0=open/1=closed commands; an action term
-slews the target at the physics-update rate, capped at pi/2 rad/s (0.5 s for the
+slews the target at the physics-update rate, capped at pi rad/s (0.25 s for the
 full 45-degree stroke). Reset resynchronizes this target to the reset joint pose.
 PhysX gains and actions are unchanged. These values are experimentally tuned,
 not a calibrated Robotiq force/speed model.

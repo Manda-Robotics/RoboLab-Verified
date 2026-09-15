@@ -19,28 +19,54 @@ def configure_physics(cfg, backend="physx"):
     robot = cfg.scene.robot
     if Path(robot.spawn.usd_path).name != "franka_robotiq_2f_85_isaac60.usd":
         raise ValueError("The experimental Newton preset currently supports the DROID robot only.")
-    robot.spawn.usd_path = str(Path(ROBOTS_DIR) / "franka_robotiq_2f_85_newton.usda")
+    disable_gravity = getattr(getattr(robot.spawn, "rigid_props", None), "disable_gravity", False)
+    overlay = ("franka_robotiq_2f_85_newton_nogravity.usda" if disable_gravity
+               else "franka_robotiq_2f_85_newton.usda")
+    robot.spawn.usd_path = str(Path(ROBOTS_DIR) / overlay)
     if not Path(robot.spawn.usd_path).is_file():
         raise FileNotFoundError(f"Newton robot overlay missing: {robot.spawn.usd_path}")
+    settings = dict(single_hull_fingertips=True, timeconst=0.0045,
+                    impedance=(0.99, 0.999), contact_capacity=65536,
+                    constraint_capacity=131072, gripper_stiffness=10.0,
+                    gripper_damping=0.5, gripper_target_velocity=3.141592653589793)
+    overrides = getattr(cfg, "newton_contact_settings", {})
+    if set(overrides) - set(settings):
+        raise ValueError("Unknown Newton contact setting")
+    settings.update(overrides)
+    from math import isfinite
+    for key in ("contact_capacity", "constraint_capacity"):
+        if isinstance(settings[key], bool) or not isinstance(settings[key], int) or settings[key] < 1:
+            raise ValueError(f"{key} must be a positive integer")
+    for key in ("timeconst", "gripper_stiffness", "gripper_target_velocity", "gripper_damping"):
+        if not isfinite(settings[key]) or settings[key] < 0 or (key != "gripper_damping" and settings[key] == 0):
+            raise ValueError(f"Invalid Newton {key}")
+    if settings["timeconst"] < 2 * cfg.sim.dt / 4:
+        raise ValueError("Newton contact time constant must be at least twice the solver timestep")
+    impedance = settings["impedance"]
+    if len(impedance) != 2 or not all(isfinite(x) for x in impedance) or not 0 < impedance[0] <= impedance[1] < 1:
+        raise ValueError("Newton impedance requires 0 < DMIN <= DMAX < 1")
+    cfg.newton_contact_settings = settings
     cfg.sim.physics = NewtonCfg(
         solver_cfg=MJWarpSolverCfg(
-            njmax=4096, nconmax=2048, iterations=100,
+            njmax=settings["constraint_capacity"], nconmax=settings["contact_capacity"], iterations=100,
             ls_iterations=50, integrator="implicitfast",
         ),
         num_substeps=4,
-        use_cuda_graph=True,
+        use_cuda_graph=False,  # The pre-kernel capacity guard requires eager execution.
     )
     if getattr(cfg, "newton_gripper_stabilization", True):
         from math import pi
         from robolab.robots.newton_gripper import RateLimitedGripperActionCfg
 
         gripper = robot.actuators["gripper"]
-        gripper.stiffness, gripper.damping = 10.0, 2.0
+        gripper.stiffness = settings["gripper_stiffness"]
+        gripper.damping = settings["gripper_damping"]
         # Keep the policy's existing binary semantics. Only the target sent to
         # physics is rate limited; this is recorded in the exported action cfg.
         cfg.actions.finger_joint = RateLimitedGripperActionCfg(
             asset_name="robot", joint_names=["finger_joint"],
-            open_command_expr={"finger_joint": 0.0}, close_command_expr={"finger_joint": pi / 4})
+            open_command_expr={"finger_joint": 0.0}, close_command_expr={"finger_joint": pi / 4},
+            max_target_velocity=settings["gripper_target_velocity"])
 
 
 def ensure_output_backend(output_dir, backend):
@@ -106,7 +132,13 @@ def physics_context(cfg, backend="physx", launcher_args=None):
     # RoboLab uses Kit/USD services and calibrated Isaac RTX cameras even when
     # physics is Newton; do not let automatic renderer selection switch to OVRTX.
     launch_args.require_kit = True
-    with meshes:
+    contacts = nullcontext()
+    if native_mesh_import and hasattr(cfg, "newton_contact_settings"):
+        if cfg.sim.physics.use_cuda_graph:
+            raise ValueError("The guarded Newton contact preset requires CUDA graphs disabled")
+        from robolab.core.environments.newton_contacts import contact_runtime
+        contacts = contact_runtime(cfg.newton_contact_settings)
+    with meshes, contacts:
         with launch_simulation(cfg, launch_args):
             yield
 
