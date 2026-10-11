@@ -7,8 +7,9 @@ Only `pyproject.toml` and `robolab/eval/runner.py` had textual conflicts.
 
 **The small-sample GPU/contact integration checks pass; the backend remains experimental.**
 See the [October 11–12 GPU report](newton-gpu-2026-10-12.md), including a
-difference in pail motion under stationary control. That comparison does not
-establish a physics defect or which backend is physically correct. The
+differences in pail motion and passive sideways-jug rocking under stationary
+control. Their causes remain unexplained; the comparisons do not establish which
+backend is physically correct. The
 RUNTIME evidence in the Verified change register was collected with PhysX and
 does not transfer to Newton. PhysX is still the default. Select Newton with
 `--physics newton_mjwarp` in a shared evaluation runner.

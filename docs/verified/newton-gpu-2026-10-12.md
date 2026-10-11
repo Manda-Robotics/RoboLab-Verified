@@ -4,8 +4,9 @@ The merged `newton-port` runs on an RTX PRO 5000 and passes the tested contact,
 recording, and evaluation contracts. The bottle task completed successfully, with
 non-target object falls also recorded. Such events do not by themselves establish
 a physics defect: a robot can physically knock an object over. A separate
-stationary control found different pail motion between Newton and PhysX; its cause
-remains unexplained. Broader benchmark validation is still outstanding.
+stationary control found different pail motion and persistent sideways-jug
+rocking under Newton; the causes remain unexplained. Broader benchmark validation
+is still outstanding.
 
 ## Build and environment
 
@@ -117,6 +118,60 @@ change has been established by this observation. The tiny red-onion hull issue,
 broad scene coverage, long-duration stability, force/inertia calibration, and
 success-rate parity remain outside this validation. No five-second post-success
 policy hold was run; ordinary Verified rest gates were used.
+
+## Follow-up: passive rocking
+
+Review of the saved recordings identified a more specific settling difference:
+`utilityjug_a02`, the bottle already lying on its side, continues rocking in
+Newton. This is distinct from `utilityjug_a01`, which falls during the policy run.
+Reanalysis used the existing evidence; the retained GPU instance remained stopped.
+
+| Stationary-arm control, `utilityjug_a02` | Newton | PhysX |
+| --- | ---: | ---: |
+| Largest horizontal separation of sampled root positions, seconds 2–8 | 24.90 mm | 0.00 mm |
+| Same measure, seconds 4–8 | 20.24 mm | 0.00 mm |
+
+The stationary logs sample every 10 steps (0.667 s). PhysX's sampled root position
+is essentially unchanged after the first sample at 0.667 s; Newton continues
+reversing direction through the eight-second run. Every saved Newton geometric
+contact sample for this jug lists only the table. Brief contacts between samples
+cannot be excluded by these logs.
+
+The separate Newton policy recording starts this jug with zero root velocity.
+Its approximate rolling-angle range about its initial longitudinal axis is
+31.5 degrees during seconds 0–4 and 23.5 degrees during seconds 4–8. Angular-speed
+RMS is 0.536 and 0.530 rad/s respectively. Recorded pad and extra-gripper-body
+forces on this jug are zero. Later scene interactions make the latter part of the
+policy episode unsuitable for an isolated passive-settling comparison.
+
+This supports persistent rocking over the observed interval, with some reduction
+in angular excursion. It does not establish perpetual motion or numerical energy
+injection. Gravity and table reactions can initiate rocking from an unstable
+initial pose even without a robot touching the object.
+
+The exported Newton model represents the jug with 169 mesh geoms, rather than an
+analytic cylinder. Jug and table geoms use the default `condim=3`, with no model
+default blocks or explicit contact pairs overriding it. MuJoCo defines this as
+normal plus sliding contact; explicit rolling-friction constraints require
+`condim=6`. Nonzero rolling-friction coefficients in the XML alone therefore do
+not establish that rolling resistance is enabled. See the
+[MuJoCo contact definition](https://mujoco.readthedocs.io/en/stable/computation/#contact).
+PhysX also has energy-based sleep behavior, which can stop low-energy motion;
+its sleep state was not recorded here. See
+[PhysX sleeping](https://nvidia-omniverse.github.io/PhysX/physx/5.4.1/docs/RigidBodyDynamics.html#sleeping).
+These are diagnostic leads, not established causes.
+
+The background pail also changes height and position before falling in the
+stationary Newton control, whereas the PhysX control settles. A shared contact or
+import cause is possible but unproven. Prioritize a passive-settling reproduction:
+inspect collision meshes, initial penetration, center of mass and contact points;
+record full poses, velocities, energy and sleep state; then compare individual
+changes to geometry, rolling resistance, contact response or timestep. Do not
+assume that adding damping is the correct repair.
+
+The reproducible local analysis is `analyze-passive-rocking.py`, with results in
+`passive-rocking-analysis.json`, alongside the original validation archive. These
+follow-up files were generated after the archive and are not contained in it.
 
 ## Fixes made during validation
 
