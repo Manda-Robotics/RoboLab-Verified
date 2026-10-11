@@ -75,7 +75,9 @@ isaac60 = [
     "isaaclab[isaacsim]==3.0.0b2.post1; python_version >= '3.12'",
 ]
 analysis = ["sbi"]
-test = ["pytest", "usd-core"]   # usd-core: the offline asset checks (pxr) run with --extra test
+# Newton uses the pinned Isaac Lab source stack and Isaac Sim 6.1; install with
+# scripts/install_newton61.py, not the isaac60 wheel extra (docs/newton.md).
+test = ["pytest", "usd-core"]   # usd-core: offline asset checks (pxr)
 all = ["sbi", "pytest"]
 
 [project.scripts]

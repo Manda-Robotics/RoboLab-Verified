@@ -57,7 +57,8 @@ parser.add_argument("--record-image-data", "--record_image_data", action="store_
 from robolab.eval.runner import add_common_eval_args, run_evaluation  # noqa: E402
 
 add_common_eval_args(parser)
-AppLauncher.add_app_launcher_args(parser)
+from robolab.core.utils.app_launcher import add_app_launcher_args
+add_app_launcher_args(parser)
 
 args_cli, _ = parser.parse_known_args()
 args_cli.enable_cameras = True

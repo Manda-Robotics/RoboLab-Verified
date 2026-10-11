@@ -390,6 +390,8 @@ def p79_friction_applied(run_dir: str) -> Result:
         return Result("P79", "friction override applied", "N/A",
                       "no friction_applied.json (recording predates P79)")
     applied = json.load(open(files[0]))
+    if applied.get("status") == "unsupported":
+        return Result("P79", "friction override applied", "N/A", applied["reason"])
     req = applied.get("requested") or {}
     if req.get("mode", "upstream") == "upstream":
         return Result("P79", "friction override applied", "N/A",

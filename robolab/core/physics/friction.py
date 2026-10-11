@@ -224,6 +224,15 @@ def event_params(material: Material) -> dict:
     }
 
 
+def require_supported_backend(backend: str, mode: str) -> None:
+    """Do not install PhysX material events into a Newton simulation."""
+    if backend == "newton_mjwarp" and mode != UPSTREAM:
+        raise ValueError(
+            "Newton currently supports only --friction upstream; Verified's friction "
+            "overrides use PhysX material APIs. Newton overrides and readback are not validated."
+        )
+
+
 def event_terms(materials: dict[str, Material], pad: Material | None,
                 pad_bodies: list[str] | None, robot_name: str = "robot") -> dict:
     """Build the Isaac Lab ``EventTermCfg`` objects. Imports Isaac Lab lazily so the rest of
@@ -312,6 +321,12 @@ def read_applied(env, requested: dict | None = None) -> dict:
     """
     requested = requested if requested is not None else getattr(env.cfg, "friction", None) or {}
     out = {"objects": {}, "gripper": {}, "requested": requested}
+    backend = getattr(env.cfg, "physics_backend", "physx")
+    if backend != "physx":
+        return {**out, "physics_backend": backend, "status": "unsupported",
+                "reason": "PhysX material readback is unavailable for this backend; "
+                          "Newton friction has not been measured by this recorder.",
+                "summary": {"objects": {}, "gripper": {}}}
     # Duck-typed on purpose: Isaac Lab 3 instantiates assets through a backend factory, so the
     # runtime objects are isaaclab_physx classes, not instances of the isaaclab.assets facades
     # (an isinstance check returned an empty readback on the 6.0 stack).
@@ -353,6 +368,8 @@ def check_applied(applied: dict, tol: float = 1e-3) -> list[str]:
     """Compare a ``friction_applied.json`` payload against its own ``requested`` block.
     Returns a list of mismatch descriptions (empty = everything landed). Pure; used by
     ``scripts/verify_patches.py``."""
+    if applied.get("status") == "unsupported":
+        return [applied["reason"]]
     req = applied.get("requested") or {}
     problems = []
     for name, mat in (req.get("objects") or {}).items():

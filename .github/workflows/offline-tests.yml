@@ -35,6 +35,10 @@ jobs:
       - name: offline test suite
         run: python -m pytest offline_tests -q
 
+      - name: Newton CPU regressions
+        # Cut off tests/conftest.py, which otherwise starts Isaac Sim.
+        run: python -m pytest --confcutdir=tests/newton tests/newton -q
+
       - name: task-definition audit
         # exits non-zero on a CONFLICT (a definition that cannot score what it says);
         # notes (landmarks a ladder never names, duplicate test classes) are printed only.

@@ -140,6 +140,24 @@ def create_contact_sensors(env_cfg):
                 getattr(scene, other_obj_name).prim_path)
             setattr(scene, contact_sensor_name, contact_sensor)
 
+def configure_newton_extra_contacts(env_cfg):
+    """Replace enabled extra-body batches with one sensor per object.
+
+    Newton resolves batch filter columns in model-body order. Splitting the
+    filters preserves object identity in Verified's dense contact recordings.
+    Called after task configuration, before the scene is constructed.
+    """
+    scene = env_cfg.scene
+    for label, body_prim_path in (getattr(env_cfg, "contact_extra_bodies", None) or {}).items():
+        batch_name = f"{label}__all_objs"
+        if getattr(scene, batch_name, None) is None:
+            continue  # Extra-body recording was not enabled for this task.
+        setattr(scene, batch_name, None)
+        for obj in env_cfg.contact_object_list or []:
+            setattr(scene, f"{label}__{obj}",
+                    create_contact_sensor_cfg(body_prim_path, getattr(scene, obj).prim_path))
+
+
 def get_contact_sensors(scene):
     """
     Get all contact sensors.

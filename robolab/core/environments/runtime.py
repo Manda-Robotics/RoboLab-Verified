@@ -22,47 +22,12 @@ import robolab.constants
 from robolab.constants import get_output_dir
 from robolab.core.environments.config import parse_env_cfg
 from robolab.core.environments.env import RobolabEnv
+from robolab.core.environments.render_settings import apply_render_settings as _apply_render_settings
 from robolab.core.events.utils import merge_events_cfg
 from robolab.core.task.task import resolve_instruction
 from robolab.core.utils.isaaclab_compat import env_cfg_to_recording_dict, prepare_env_cfg
 
 logger = logging.getLogger(__name__)
-
-# Maps the user-facing --renderer choice to the Omniverse "/rtx/rendermode"
-# carb value. "realtime" is IsaacLab's default; we leave it unset so behavior
-# is unchanged and only override the carb setting for the path tracer.
-_RENDERER_TO_RTX_MODE = {"realtime": "RaytracedLighting", "pathtracing": "PathTracing"}
-
-
-def _apply_render_settings(env_cfg: ManagerBasedEnvCfg, renderer: str, rendering_mode: str | None) -> None:
-    """Apply renderer mode and quality preset onto ``env_cfg.sim.render``.
-
-    Must be called before the simulation context is created (i.e. before
-    ``gym.make``/``RobolabEnv``), since :class:`isaaclab.sim.RenderCfg` is read
-    when the RTX renderer is configured.
-
-    Args:
-        env_cfg: The environment config whose ``sim.render`` (a ``RenderCfg``) is mutated.
-        renderer: ``"realtime"`` (RaytracedLighting, the default — applied as a no-op
-            to preserve IsaacLab behavior) or ``"pathtracing"`` (PathTracing, which
-            overrides the ``/rtx/rendermode`` carb setting).
-        rendering_mode: Realtime quality preset (``"performance"``/``"balanced"``/
-            ``"quality"``) or ``None`` to leave IsaacLab's default (``"balanced"``).
-    """
-    if renderer not in _RENDERER_TO_RTX_MODE:
-        raise ValueError(f"Unknown renderer '{renderer}'; expected one of {list(_RENDERER_TO_RTX_MODE)}.")
-
-    if rendering_mode is not None:
-        env_cfg.sim.render.rendering_mode = rendering_mode
-
-    # Record the renderer carb setting for both modes so env_cfg.json positively
-    # logs which RTX renderer the run used. For "realtime" this matches IsaacLab's
-    # default (its WAR already enforces "RaytracedLighting"), so it is behavior-
-    # preserving; "pathtracing" is a genuine override.
-    carb_settings = dict(env_cfg.sim.render.carb_settings or {})
-    carb_settings["/rtx/rendermode"] = _RENDERER_TO_RTX_MODE[renderer]
-    env_cfg.sim.render.carb_settings = carb_settings
-
 
 def check_scene_valid(env: ManagerBasedEnv) -> bool:
     """
@@ -238,6 +203,8 @@ def create_env(scene: str | ManagerBasedEnvCfg,
 
     # Stamp the resolved renderer for run provenance (serialized into env_cfg.json).
     env_cfg.renderer = renderer
+    if not hasattr(env_cfg, "physics_backend"):
+        env_cfg.physics_backend = "newton_mjwarp" if type(getattr(env_cfg.sim, "physics", None)).__name__ == "NewtonCfg" else "physx"
 
     from robolab.core.utils.print_utils import print_env_info
     env_name = scene if isinstance(scene, str) else env_cfg.__class__.__name__
@@ -251,8 +218,8 @@ def create_env(scene: str | ManagerBasedEnvCfg,
         attributes=getattr(env_cfg, '_task_attributes', None),
     )
 
-    # P79: record what PhysX holds after start-up (friction_applied.json), under
-    # `--friction upstream` too, so the baseline's coefficients are a measurement.
+    # P79: record PhysX materials after startup, including authored defaults.
+    # Other backends write explicit unsupported provenance, not a measurement.
     from robolab.core.physics.friction import write_applied
     try:
         write_applied(env, env.output_dir)

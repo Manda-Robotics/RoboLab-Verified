@@ -21,7 +21,8 @@ instead of re-deriving them:
   ``--enable-gt-state`` and never persisted it.
 * ``contact_body/<label>__<object>`` (T,) float32: contact force magnitude of a
   robot body beyond the two finger pads (knuckles, outer fingers, wrist) against
-  each object of ``contact_object_list``, from the batch sensors that
+  each object of ``contact_object_list``, from the batch sensors (object-specific
+  sensors under Newton) that
   ``create_contact_sensors`` adds for the robot's ``contact_extra_bodies`` label.
   A bin pushed 6.5 cm by the forearm has no robot contact on record without it.
 
@@ -231,7 +232,15 @@ class PostStepExtraContactRecorder(RecorderTerm):
         self._initialized = True
         extra = getattr(self._env.cfg, "contact_extra_bodies", None) or {}
         self._objects = list(getattr(self._env.cfg, "contact_object_list", None) or [])
+        self._pairwise = getattr(self._env.cfg, "physics_backend", "physx") == "newton_mjwarp"
         for label in extra:
+            if self._pairwise:
+                for obj in self._objects:
+                    name = f"{label}__{obj}"
+                    sensor = self._env.scene.sensors.get(name)
+                    if sensor is not None:
+                        self._sensors[name] = sensor
+                continue
             sensor = self._env.scene.sensors.get(f"{label}__all_objs")
             if sensor is None:
                 logger.info("extra contact recorder: no sensor for %s", label)
@@ -239,6 +248,8 @@ class PostStepExtraContactRecorder(RecorderTerm):
             self._sensors[label] = sensor
 
     def record_post_step(self):
+        from robolab.core.utils.isaaclab_compat import as_torch
+
         if not self._initialized:
             self._init()
         if not self._sensors:
@@ -247,6 +258,14 @@ class PostStepExtraContactRecorder(RecorderTerm):
         for label, sensor in self._sensors.items():
             fm = sensor.data.force_matrix_w
             if fm is None:
+                continue
+            fm = as_torch(fm)
+            if self._pairwise:
+                # Every filter body belongs to this one named object, even
+                # when that object resolves to more than one model body.
+                if fm.ndim != 4 or fm.shape[-1] != 3:
+                    raise ValueError(f"Invalid Newton contact force shape for {label}: {tuple(fm.shape)}")
+                out[label] = torch.linalg.vector_norm(fm, dim=-1).sum(dim=(1, 2)).to(torch.float32)
                 continue
             try:
                 for obj, mag in body_force_magnitudes(fm, self._objects).items():

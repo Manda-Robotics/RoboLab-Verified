@@ -3,6 +3,8 @@
 RoboLab supports Isaac Sim 6.0.1 with the Isaac Lab 3.0 beta 2 patch 1 stack.
 This is the recommended stack for RTX PRO 5000/6000 and other recent GPUs.
 
+Experimental DROID Newton support is described in [newton.md](newton.md).
+
 ## Install
 
 Isaac Sim 6 requires Python 3.12. It cannot share an environment with an
