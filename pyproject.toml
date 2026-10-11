@@ -32,7 +32,7 @@ dependencies = [
     # Computer vision and image processing
     "opencv-python",
     "Pillow",
-    "imageio",
+    "imageio[ffmpeg]",
     # Scientific computing
     "scipy",
     "matplotlib",

@@ -10,6 +10,7 @@ EULA so a fresh install works headless without any prompts.
 """
 
 import os
+import sys
 
 # Accept the Omniverse EULA non-interactively. Must be set before any
 # isaaclab import. setdefault → user can still override.
@@ -62,21 +63,21 @@ def env_name_arg(request):
     return request.config.getoption("--env-name")
 
 
-_EXIT_STATUS = 0
-
-
+@pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_sessionfinish(session, exitstatus):
-    """Close Isaac Sim without letting its ``SystemExit(0)`` mask failures."""
+    """Write all pytest reports before Kit shutdown, preserving failed exits."""
+    # Run outside the other session-finish hooks so JUnit and the terminal
+    # summary are complete before SimulationApp.close() can terminate Python.
+    yield
+    sys.stdout.flush()
+    sys.stderr.flush()
     if exitstatus:
-        # SimulationApp.close() terminates the process with status 0 in some
-        # packaged Isaac Sim builds.  Let pytest return the failure status;
-        # process teardown will release the app resources.
-        return
+        # Skipping app.close() is insufficient: Kit's interpreter-exit hooks
+        # can still turn a failed pytest session into process status 0.
+        os._exit(int(exitstatus))
     try:
         simulation_app.close()
     except SystemExit:
-        # SimulationApp.close() may terminate with status 0.  Suppress that so
-        # pytest can report and return its real session exit status instead.
         pass
     except Exception:
         pass

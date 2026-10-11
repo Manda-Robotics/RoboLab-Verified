@@ -6,7 +6,7 @@
 The per-policy runners build their parser as::
 
     add_common_eval_args(parser)
-    AppLauncher.add_app_launcher_args(parser)
+    add_app_launcher_args(parser)
 
 IsaacLab 2.3's ``add_app_launcher_args`` raises ``ValueError`` if the parser
 already declares a field it owns (e.g. ``rendering_mode``). This never shows up
@@ -19,22 +19,26 @@ import argparse
 from isaaclab.app import AppLauncher
 
 from robolab.eval.runner import add_common_eval_args
+from robolab.core.utils.app_launcher import add_app_launcher_args
 
 
 def test_common_eval_args_do_not_collide_with_app_launcher():
     parser = argparse.ArgumentParser()
     add_common_eval_args(parser)
-    # Must not raise: AppLauncher owns `rendering_mode`, so add_common_eval_args
-    # must not declare it (or any other AppLauncher-owned field).
-    AppLauncher.add_app_launcher_args(parser)
+    # Exercise the same compatibility wrapper as the policy entry points.
+    add_app_launcher_args(parser)
+    native_parser = argparse.ArgumentParser()
+    AppLauncher.add_app_launcher_args(native_parser)
+    native_dests = {action.dest for action in native_parser._actions}
 
     dests = {action.dest for action in parser._actions}
-    # `renderer` and `rendering_type` are ours; `rendering_mode` is owned by
-    # AppLauncher. run_evaluation() consumes args.renderer and args.rendering_type,
-    # so both of ours must be present, and AppLauncher's field must coexist.
+    # Preserve every native option, including rendering_mode on older Lab.
+    # Lab 3 removed that option; RoboLab's stable launch flags still coexist.
+    assert native_dests <= dests
     assert "renderer" in dests
     assert "rendering_type" in dests
-    assert "rendering_mode" in dests
+    launch = parser.parse_args(["--headless", "--enable_cameras"])
+    assert launch.headless and launch.enable_cameras
     assert "enable_gt_state" in dests
     assert parser.parse_args([]).physics == "physx"
     assert parser.parse_args(["--physics", "newton_mjwarp"]).physics == "newton_mjwarp"

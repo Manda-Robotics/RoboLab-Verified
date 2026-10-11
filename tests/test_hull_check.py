@@ -177,9 +177,12 @@ def test_build_local_hull_cube():
     assert hull.planes_full.shape == (12, 4)
     norms = hull.planes_full[:, :3].norm(dim=-1)
     assert torch.allclose(norms, torch.ones(12))
-    # Top face (n_z = 1) split into 2 triangles → both dropped → 10 remain
-    assert hull.planes_open_top.shape == (10, 4)
-    assert (hull.planes_open_top[:, 2] < 0.7).all()
+    # Drop the two rim triangles and add Verified's cap 5 cm above the rim.
+    assert hull.planes_open_top.shape == (11, 4)
+    assert (hull.planes_open_top[:-1, 2] < 0.7).all()
+    torch.testing.assert_close(hull.planes_open_top[-1], torch.tensor([0.0, 0.0, 1.0, -0.55]))
+    points = torch.tensor([[0.0, 0.0, 0.54], [0.0, 0.0, 0.56]])
+    assert point_in_hull(points, hull.planes_open_top).tolist() == [True, False]
 
 
 def test_build_local_hull_tetrahedron():
@@ -211,10 +214,11 @@ def test_build_local_hull_open_top_threshold_passthrough():
 
     Cube top faces have ``n_z`` exactly 1.0. Strict ``keep = n_z < threshold``
     semantics: threshold > 1.0 keeps everything, threshold ≤ 1.0 drops the top.
+    Disable the separate height cap here to isolate normal-threshold filtering.
     """
     points = _cube_points(0.5)
-    permissive = build_local_hull(points, open_top_threshold=2.0)   # > 1, keeps top
-    strict = build_local_hull(points, open_top_threshold=0.5)       # drops top
+    permissive = build_local_hull(points, open_top_threshold=2.0, open_top_cap_margin=None)   # > 1, keeps top
+    strict = build_local_hull(points, open_top_threshold=0.5, open_top_cap_margin=None)       # drops top
     assert permissive.planes_open_top.shape == (12, 4)  # nothing dropped
     assert strict.planes_open_top.shape == (10, 4)      # top 2 triangles dropped
 

@@ -5,7 +5,9 @@ from `ymetz/RoboLab`, ending at `56d461a`. Their common base is `82725b5`;
 Verified has 186 commits after that base. The merge retains both histories.
 Only `pyproject.toml` and `robolab/eval/runner.py` had textual conflicts.
 
-**This is an integration candidate, not a validated Newton benchmark.** The
+**The small-sample GPU/contact integration checks pass; the backend remains experimental.**
+See the [October 11–12 GPU report](newton-gpu-2026-10-12.md), including a
+Newton-specific pail fall under stationary control. The
 RUNTIME evidence in the Verified change register was collected with PhysX and
 does not transfer to Newton. PhysX is still the default. Select Newton with
 `--physics newton_mjwarp` in a shared evaluation runner.
@@ -49,9 +51,10 @@ the external recordings were not reviewed during this integration.
 That log also leaves open a tiny red-onion hull compilation failure, a non-target
 pail leaving the scene, earlier obscured camera scenes, uncalibrated inertias and
 contact forces, and zero recorded end-effector velocities despite motion. The
-last issue means velocity-derived metrics must not be trusted without checking
-them against recorded poses. Multi-environment contact correctness, long runs,
-reset/cleanup and policy success-rate parity remain unestablished.
+October GPU run did not reproduce the zero-velocity issue and checked recorded
+velocities against pose differences. It established sampled two-environment
+contact routing, force clearing, recording and repeat resets. Long runs, broader
+scene coverage, calibration and policy success-rate parity remain unestablished.
 
 The added CPU tests exercise reversed object ordering, separate environments,
 multiple filter bodies, release to zero, tensor conversion, unchanged PhysX
@@ -83,8 +86,9 @@ interpret a sandbox bind failure as a simulator failure.
 Follow the pinned installation in [the Newton guide](../newton.md): Isaac Sim
 6.1.0.0 and Isaac Lab source revision
 `4ed09d414e93f35b8573db8850f8b27572779176`. Do not re-sync the older `isaac60`
-wheel extra over that environment. Keep a separate PhysX environment for its
-baseline and give every attempt a fresh output directory.
+wheel extra over that environment. Use the same pinned stack for a solver-control
+comparison; keep legacy PhysX wheel stacks in a separate environment. Give every
+attempt a fresh output directory.
 
 1. Run the no-policy smoke on `RubiksCubeTask`, first with one environment, then
    two. Check exit status **and** `ROBOLAB_SMOKE_PASS`/`smoke_result.json`, RGB
@@ -132,6 +136,6 @@ already running:
   --video-mode sensor --output-folder-name verified_pi05_newton_cube
 ```
 
-No merged-build GPU results are claimed here. Preserve the exact repository
-commit, package versions, resolved config, MJCF where available, videos and HDF5
-for every validation run.
+The [GPU report](newton-gpu-2026-10-12.md) records the merged-build results and
+remaining failures. Preserve the exact repository commit, package versions,
+resolved config, MJCF where available, videos and HDF5 for every validation run.

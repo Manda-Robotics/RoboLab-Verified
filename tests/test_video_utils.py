@@ -71,3 +71,24 @@ def test_video_profile_rejects_invalid_encoder_settings(kwargs, message):
     video_utils = _video_utils_module()
     with pytest.raises(ValueError, match=message):
         video_utils.VideoWriter("episode.mp4", **kwargs)
+
+
+def test_video_writer_encodes_and_decodes_mp4(tmp_path):
+    """A fresh install must include the real encoder, not just imageio's API."""
+    video_utils = _video_utils_module()
+    path = tmp_path / "episode.mp4"
+    writer = video_utils.VideoWriter(str(path), fps=15, max_width=None)
+    values = [32, 96, 160]
+    try:
+        for value in values:
+            writer.write(np.full((32, 48, 3), value, dtype=np.uint8))
+    finally:
+        writer.release()
+
+    assert path.stat().st_size > 0
+    with video_utils.imageio.get_reader(str(path)) as reader:
+        frames = list(reader.iter_data())
+    assert len(frames) == len(values)
+    for frame, value in zip(frames, values):
+        assert frame.shape == (32, 48, 3)
+        assert abs(float(frame.mean()) - value) < 4  # H.264 is lossy.
