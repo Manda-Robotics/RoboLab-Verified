@@ -7,7 +7,8 @@ Only `pyproject.toml` and `robolab/eval/runner.py` had textual conflicts.
 
 **The small-sample GPU/contact integration checks pass; the backend remains experimental.**
 See the [October 11–12 GPU report](newton-gpu-2026-10-12.md), including a
-Newton-specific pail fall under stationary control. The
+difference in pail motion under stationary control. That comparison does not
+establish a physics defect or which backend is physically correct. The
 RUNTIME evidence in the Verified change register was collected with PhysX and
 does not transfer to Newton. PhysX is still the default. Select Newton with
 `--physics newton_mjwarp` in a shared evaluation runner.
@@ -121,9 +122,10 @@ attempt a fresh output directory.
    placement events against HDF5 and video; explicitly observe stability after
    release. Include reset/repeated-run checks and compare EE velocities to pose
    differences. A reported success alone is insufficient.
-5. Triage the known hull/scene failures, then compare a declared task/seed set
-   against PhysX using the same policy and observation/action settings. Report
-   successes, grasp/slip behavior, contact evidence and scene failures separately.
+5. Triage the known hull issue and observed scene differences, then compare a
+   declared task/seed set against PhysX using the same policy and observation/action
+   settings. Report successes, grasp/slip behavior, contact evidence and non-target
+   object motion separately.
    Do not infer parity from matching seeds or the earlier three successes.
 
 Example policy launch after the smoke/contact checks, with the policy server
@@ -137,5 +139,5 @@ already running:
 ```
 
 The [GPU report](newton-gpu-2026-10-12.md) records the merged-build results and
-remaining failures. Preserve the exact repository commit, package versions,
+remaining unknowns. Preserve the exact repository commit, package versions,
 resolved config, MJCF where available, videos and HDF5 for every validation run.

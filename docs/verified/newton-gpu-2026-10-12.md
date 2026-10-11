@@ -1,9 +1,11 @@
 # Newton GPU validation — October 11–12, 2026
 
 The merged `newton-port` runs on an RTX PRO 5000 and passes the tested contact,
-recording, and evaluation contracts. It remains experimental: a stationary
-bottle-scene control reproduces a Newton-specific non-target pail fall.
-Target success must not be treated as validation of every object in the scene.
+recording, and evaluation contracts. The bottle task completed successfully, with
+non-target object falls also recorded. Such events do not by themselves establish
+a physics defect: a robot can physically knock an object over. A separate
+stationary control found different pail motion between Newton and PhysX; its cause
+remains unexplained. Broader benchmark validation is still outstanding.
 
 ## Build and environment
 
@@ -64,7 +66,7 @@ body names); those were corrected without changing simulator behavior.
 | --- | --- | ---: | --- | --- |
 | Newton | RubiksCubeTask | 2 | 2 successes | 155, 284 |
 | Newton | BananaOnPlateTask | 1 | success | 173 |
-| Newton | OneBottleInSquarePailTask | 1 | target success; collateral scene failure | 297 |
+| Newton | OneBottleInSquarePailTask | 1 | target success; non-target falls recorded | 297 |
 | PhysX | RubiksCubeTask | 1 | success | 156 |
 
 All five completed recordings contained finite numeric data. The cube runs
@@ -85,12 +87,16 @@ P74, P75 and P77 passed on every run directory; P72/P73 were exercised by the
 banana run and passed. P76 was not exercised. P79 was N/A with upstream friction;
 Newton friction overrides remain unsupported. N/A is not a pass.
 
-## Remaining scene failure
+## Observed scene differences
 
 In `OneBottleInSquarePailTask`, the policy run recorded `plasticpail_a02` leaving
-the scene at step 62 and `utilityjug_a01` at step 192. Paired no-policy controls
-held the initial arm target for 120 steps (8 simulated seconds), with identical
-authored initial object positions:
+the scene at step 62 and `utilityjug_a01` at step 192. These event flags describe
+object motion, not a demonstrated simulation error. The policy's bottle grasp
+succeeded, and a bottle knocked over during robot motion can be physically
+plausible. The extra pail and the knocked-over jug are distinct objects.
+
+Paired no-policy controls held the initial arm target for 120 steps (8 simulated
+seconds), with identical authored initial object positions:
 
 | `plasticpail_a02` | Newton | PhysX |
 | --- | ---: | ---: |
@@ -98,16 +104,19 @@ authored initial object positions:
 | Height change | -0.762 m | -0.0245 m |
 | Final root height | -0.626 m | 0.112 m |
 
-This reproduces the pail instability without policy motion. The generic smoke
-program's default 1 m displacement bound passes both controls, so its pass marker
-alone does not establish scene stability. The saved trajectories expose the fall.
-The utility jug's policy-run failure was not independently attributed.
+This establishes a backend difference in pail motion without policy motion, not
+which backend is physically correct. PhysX is a comparison here, not ground
+truth. The generic smoke program's default 1 m displacement bound passes both
+controls; the saved trajectories provide the more specific observation that the
+pail falls in one control and remains supported in the other. The utility jug's
+policy-run fall was not independently attributed.
 
-Investigate the pail/rack collision import, support geometry, and contact/material
-behavior before promoting this scene. The tiny red-onion hull issue, broad scene
-coverage, long-duration stability, force/inertia calibration, and success-rate
-parity remain outside this validation. No five-second post-success policy hold was
-run; ordinary Verified rest gates were used.
+To explain the pail difference, inspect its initial support, collision geometry
+and contact/material behavior. No Newton implementation defect or required solver
+change has been established by this observation. The tiny red-onion hull issue,
+broad scene coverage, long-duration stability, force/inertia calibration, and
+success-rate parity remain outside this validation. No five-second post-success
+policy hold was run; ordinary Verified rest gates were used.
 
 ## Fixes made during validation
 
