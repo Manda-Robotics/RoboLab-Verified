@@ -30,10 +30,11 @@ pads, cached object hulls, contact time constant 0.0045 s, impedance endpoints
 131072 constraints and CUDA graphs disabled with a fail-before-kernel capacity
 guard. The native CoACD disk cache remains a local startup optimization, not
 a different decomposition method. The recording/analysis harness and recordings
-are not distributed with RoboLab. No automatic shell-inertia fallback is applied.
-An additional cooking scene failed compilation on a tiny red-onion convex hull;
-the bottle task also had a non-target pail leave the scene. Both remain open
-compatibility/scene issues despite the successful target placements.
+are not distributed with RoboLab. At that stage no shell-inertia fallback was
+applied: a cooking scene failed on a tiny red-onion hull, and the bottle task
+had a non-target pail leave the scene. The October Verified follow-ups address
+these failures; see the [settling report](verified/newton-settling-2026-10-12.md)
+and [mesh-import audit](verified/newton-mesh-audit-2026-10-12.md).
 
 After promotion, an ordinary `policies/pi0_family/run.py --policy pi05 --physics
 newton_mjwarp` cube episode also succeeded at step 174 (11.6 s), without the study
@@ -47,6 +48,7 @@ For programmatic experiments, set `cfg.newton_contact_settings` before
 
 ```python
 cfg.newton_contact_settings = {
+    "mesh_compatibility": True,
     "single_hull_fingertips": True,
     "filter_immovable_contacts": True,
     "support_rolling_friction": 0.001,  # rolling-friction length in metres
@@ -63,6 +65,12 @@ cfg.newton_contact_settings = {
 The Verified port now defaults to scenery filtering and support rolling
 resistance; see the [October 12 validation](verified/newton-settling-2026-10-12.md).
 Set these two options to `False` and `None` for the original-contact control.
+
+The mesh compatibility option retries tiny-mesh inertia preprocessing only when
+all users have explicit body inertia. It also gives generated flat CoACD
+fragments <= 0.1 mm a 1 micrometre thickness; it does not modify source USD or
+body inertial properties. Set `mesh_compatibility=False` for the original import
+path. See the mesh-import audit for the measured approximation and limitations.
 
 The resolved dictionary is retained on the environment config. Contact response
 is applied to CPU and GPU model geom arrays before the first MJWarp step;

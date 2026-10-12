@@ -31,7 +31,7 @@ def configure_physics(cfg, backend="physx"):
     robot.spawn.usd_path = str(Path(ROBOTS_DIR) / overlay)
     if not Path(robot.spawn.usd_path).is_file():
         raise FileNotFoundError(f"Newton robot overlay missing: {robot.spawn.usd_path}")
-    settings = dict(single_hull_fingertips=True, filter_immovable_contacts=True, support_rolling_friction=0.001, timeconst=0.0045,
+    settings = dict(mesh_compatibility=True, single_hull_fingertips=True, filter_immovable_contacts=True, support_rolling_friction=0.001, timeconst=0.0045,
                     impedance=(0.99, 0.999), contact_capacity=65536,
                     constraint_capacity=131072, gripper_stiffness=10.0,
                     gripper_damping=0.5, gripper_target_velocity=3.141592653589793)
@@ -40,6 +40,8 @@ def configure_physics(cfg, backend="physx"):
         raise ValueError("Unknown Newton contact setting")
     settings.update(overrides)
     from math import isfinite
+    if not isinstance(settings["mesh_compatibility"], bool):
+        raise ValueError("mesh_compatibility must be boolean")
     if not isinstance(settings["filter_immovable_contacts"], bool):
         raise ValueError("filter_immovable_contacts must be boolean")
     rolling = settings["support_rolling_friction"]
@@ -153,7 +155,11 @@ def physics_context(cfg, backend="physx", launcher_args=None):
             raise ValueError("The guarded Newton contact preset requires CUDA graphs disabled")
         from robolab.core.environments.newton_contacts import contact_runtime
         contacts = contact_runtime(cfg.newton_contact_settings)
-    with meshes, contacts:
+    compatibility = nullcontext()
+    if native_mesh_import and getattr(cfg, "newton_contact_settings", {}).get("mesh_compatibility", False):
+        from robolab.core.environments.newton_mesh_compat import mesh_compatibility
+        compatibility = mesh_compatibility()
+    with meshes, compatibility, contacts:
         with launch_simulation(cfg, launch_args):
             yield
 

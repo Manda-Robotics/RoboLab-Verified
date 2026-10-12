@@ -14,10 +14,11 @@ an RTX PRO 5000, replicated-world contact/recording checks, and paired bottle
 and cube grasp/release replays. In one reused scene with restored starting states,
 immovable-scenery filtering stops the shelf disturbance, and support-local
 rolling resistance reduces the sideways jug's late rocking from 14.65 to 0.031 mm.
-These are now the experimental Newton defaults. Broader scene coverage is still
-being audited; the cooking scene's tiny-onion-mesh import failure reproduces.
-The
-RUNTIME evidence in the Verified change register was collected with PhysX and
+These are now the experimental Newton defaults. The [wider scene audit](newton-mesh-audit-2026-10-12.md)
+adds narrow mesh-import fixes for cooking, tools and pitcher, with 91 Newton
+unit cases and four 20-second GPU scene checks passing. The shelf-of-mugs
+scene remains under investigation for initialization memory exhaustion.
+The RUNTIME evidence in the Verified change register was collected with PhysX and
 does not transfer to Newton. PhysX is still the default. Select Newton with
 `--physics newton_mjwarp` in a shared evaluation runner.
 
