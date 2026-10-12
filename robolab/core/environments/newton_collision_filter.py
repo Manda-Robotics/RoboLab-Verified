@@ -82,6 +82,32 @@ def filter_immovable_contacts(solver, wp, kinematic_flag):
     return report
 
 
+def reserve_rolling_contact_capacity(solver, wp):
+    """Reserve dim-6 contact storage in pinned MJWarp 3.11, in eager mode.
+
+    io.put_model caches the largest contact dimension, and io.make_data/put_data
+    allocate contact.efc_address with 2*(maxdim-1) columns. Mutating geom_condim
+    alone can therefore cause out-of-bounds writes. This is the only data array
+    sized by nmaxcondim/nmaxpyramid in the pinned version; the other constraint
+    arrays use the independently configured njmax budget. Preserve live entries
+    so callers can reserve capacity before a controlled dim-3/dim-6 comparison.
+    Must be called outside CUDA graph capture/replay.
+    """
+    gpu, data = solver.mjw_model, solver.mjw_data
+    old = data.contact.efc_address
+    if len(old.shape) != 2 or old.shape[0] != data.naconmax:
+        raise RuntimeError("Unsupported MuJoCo-Warp contact constraint buffer")
+    if gpu.nmaxcondim not in (0, 1, 3, 4, 6) or gpu.nmaxpyramid > 10:
+        raise RuntimeError("Unsupported MuJoCo-Warp maximum contact dimension")
+    if old.shape[1] < 10:
+        values = np.full((old.shape[0], 10), -1, dtype=np.int32)
+        values[:, :old.shape[1]] = old.numpy()
+        replacement = wp.array(values, dtype=old.dtype, device=old.device)
+        data.contact.efc_address = replacement
+    gpu.nmaxcondim = 6
+    gpu.nmaxpyramid = 10
+
+
 def override_support_rolling(solver, coefficient, wp, kinematic_flag):
     """Opt-in rolling resistance only for contacts with immovable supports.
 
@@ -115,6 +141,7 @@ def override_support_rolling(solver, coefficient, wp, kinematic_flag):
             cpu[mask, columns] = value
             device[..., mask, columns] = value
         staged.append((field, cpu, device))
+    reserve_rolling_contact_capacity(solver, wp)
     for field, cpu, device in staged:
         getattr(model, field)[:] = cpu
         getattr(gpu, field).assign(device)

@@ -96,7 +96,11 @@ def test_support_rolling_preserves_dynamic_pairs_and_sliding_friction():
     gpu = NS(**{name: Array(getattr(model, name)[None]) for name in fields})
     solver = NS(_use_mujoco_contacts=True, mj_model=model, mjw_model=gpu,
                 model=NS(body_flags=Array(flags)), mjc_body_to_newton=Array(mapping))
-    report = module.override_support_rolling(solver, .001, None, 2)
+    gpu.nmaxcondim, gpu.nmaxpyramid = 4, 6
+    solver.mjw_data = NS(naconmax=8, contact=NS(efc_address=Array(np.full((8, 6), -1))))
+    report = module.override_support_rolling(solver, .001, NS(array=Array), 2)
+    assert gpu.nmaxcondim == 6 and gpu.nmaxpyramid == 10
+    assert solver.mjw_data.contact.efc_address.shape == (8, 10)
     assert report['support_geoms'] == 3
     assert report['explicit_support_pairs'] == 1
     np.testing.assert_array_equal(model.geom_condim, [6, 6, 3, 3, 6])
@@ -116,3 +120,15 @@ def test_support_rolling_rejects_invalid_coefficient_and_collision_pipeline():
             module.override_support_rolling(None, value, None, 2)
     with pytest.raises(ValueError, match='native MuJoCo'):
         module.override_support_rolling(NS(_use_mujoco_contacts=False), .001, None, 2)
+
+
+def test_reserve_rolling_capacity_preserves_live_addresses_and_is_idempotent():
+    addresses = np.arange(12).reshape(3, 4)
+    solver = NS(mjw_model=NS(nmaxcondim=3, nmaxpyramid=4),
+                mjw_data=NS(naconmax=3, contact=NS(efc_address=Array(addresses))))
+    module.reserve_rolling_contact_capacity(solver, NS(array=Array))
+    expanded = solver.mjw_data.contact.efc_address
+    np.testing.assert_array_equal(expanded.numpy()[:, :4], addresses)
+    assert (expanded.numpy()[:, 4:] == -1).all()
+    module.reserve_rolling_contact_capacity(solver, NS(array=Array))
+    assert solver.mjw_data.contact.efc_address is expanded
