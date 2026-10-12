@@ -90,7 +90,8 @@ def test_unknown_kernel_layout_fails_closed():
 
 
 @pytest.mark.parametrize("filter_enabled", [False, True])
-def test_runtime_patches_once_and_restores_on_failure(monkeypatch, filter_enabled):
+@pytest.mark.parametrize("rolling", [None, .001])
+def test_runtime_patches_once_and_restores_on_failure(monkeypatch, filter_enabled, rolling):
     import sys
     updates = []
     class Solver:
@@ -107,15 +108,18 @@ def test_runtime_patches_once_and_restores_on_failure(monkeypatch, filter_enable
     monkeypatch.setattr(contacts, "override_contact_response", lambda *a: updates.append("response"))
     monkeypatch.setattr(contacts, "override_contact_impedance", lambda *a: updates.append("impedance"))
     monkeypatch.setitem(sys.modules, "robolab.core.environments.newton_collision_filter",
-                        NS(filter_immovable_contacts=lambda *a: updates.append("filter")))
+                        NS(filter_immovable_contacts=lambda *a: updates.append("filter"),
+                           override_support_rolling=lambda *a: updates.append("rolling")))
     settings = dict(single_hull_fingertips=False, timeconst=.0045, impedance=(.99, .999),
-                    filter_immovable_contacts=filter_enabled)
+                    filter_immovable_contacts=filter_enabled, support_rolling_friction=rolling)
     with pytest.raises(ValueError, match="exit"):
         with contacts.contact_runtime(settings):
             solver = Solver()
             assert solver._mujoco_warp_step() == 42
             assert solver._mujoco_warp_step() == 42
-            assert updates == (["filter"] if filter_enabled else []) + ["response", "impedance"]
+            assert updates == ((["filter"] if filter_enabled else [])
+                               + (["rolling"] if rolling is not None else [])
+                               + ["response", "impedance"])
             with pytest.raises(RuntimeError, match="nested"):
                 with contacts.contact_runtime(settings):
                     pass
