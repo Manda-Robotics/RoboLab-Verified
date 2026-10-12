@@ -89,7 +89,8 @@ def test_unknown_kernel_layout_fails_closed():
             wp.launch(NS(key="ccd_kernel", adj=NS(args=[])), inputs=[])
 
 
-def test_runtime_patches_once_and_restores_on_failure(monkeypatch):
+@pytest.mark.parametrize("filter_enabled", [False, True])
+def test_runtime_patches_once_and_restores_on_failure(monkeypatch, filter_enabled):
     import sys
     updates = []
     class Solver:
@@ -101,17 +102,20 @@ def test_runtime_patches_once_and_restores_on_failure(monkeypatch):
     original = Solver._mujoco_warp_step
     launch = lambda *a, **kw: None
     monkeypatch.setitem(sys.modules, "warp", NS(launch=launch))
-    monkeypatch.setitem(sys.modules, "newton", NS(ModelBuilder=Builder))
+    monkeypatch.setitem(sys.modules, "newton", NS(ModelBuilder=Builder, BodyFlags=NS(KINEMATIC=2)))
     monkeypatch.setitem(sys.modules, "newton.solvers", NS(SolverMuJoCo=Solver))
     monkeypatch.setattr(contacts, "override_contact_response", lambda *a: updates.append("response"))
     monkeypatch.setattr(contacts, "override_contact_impedance", lambda *a: updates.append("impedance"))
-    settings = dict(single_hull_fingertips=False, timeconst=.0045, impedance=(.99, .999))
+    monkeypatch.setitem(sys.modules, "robolab.core.environments.newton_collision_filter",
+                        NS(filter_immovable_contacts=lambda *a: updates.append("filter")))
+    settings = dict(single_hull_fingertips=False, timeconst=.0045, impedance=(.99, .999),
+                    filter_immovable_contacts=filter_enabled)
     with pytest.raises(ValueError, match="exit"):
         with contacts.contact_runtime(settings):
             solver = Solver()
             assert solver._mujoco_warp_step() == 42
             assert solver._mujoco_warp_step() == 42
-            assert updates == ["response", "impedance"]
+            assert updates == (["filter"] if filter_enabled else []) + ["response", "impedance"]
             with pytest.raises(RuntimeError, match="nested"):
                 with contacts.contact_runtime(settings):
                     pass

@@ -131,6 +131,10 @@ def contact_runtime(settings):
         if not any(owner is solver for owner in owners):
             if settings["single_hull_fingertips"] and len(reports) != 2:
                 raise RuntimeError("Expected exactly two DROID fingertip pads before replication")
+            if settings.get("filter_immovable_contacts", False):
+                from newton import BodyFlags
+                from robolab.core.environments.newton_collision_filter import filter_immovable_contacts
+                filter_immovable_contacts(solver, wp, int(BodyFlags.KINEMATIC))
             override_contact_response(solver, settings["timeconst"], wp)
             override_contact_impedance(solver, settings["impedance"])
             owners.append(solver)
