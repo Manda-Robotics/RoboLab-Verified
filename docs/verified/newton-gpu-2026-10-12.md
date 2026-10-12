@@ -8,6 +8,11 @@ stationary control found different pail motion and persistent sideways-jug
 rocking under Newton; the causes remain unexplained. Broader benchmark validation
 is still outstanding.
 
+A fresh-host [October 12 follow-up](newton-rocking-2026-10-12.md) records longer
+passive controls, CPU/GPU contact comparisons, sleep-state measurements and a
+candidate immovable-scenery contact filter. The observations below remain the
+historical results of the first validation session.
+
 ## Build and environment
 
 - RoboLab-Verified base: `f4ca3b1ca3eb3fd0746b4f6257c807504698b73e`.
