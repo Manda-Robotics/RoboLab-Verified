@@ -73,6 +73,7 @@ def find_background_files(folder_path: str = BACKGROUND_ASSET_DIR, filename: str
 class EmptyWarehouseBackgroundCfg:
     dome_light = AssetBaseCfg(
     prim_path="/World/background",
+    init_state=AssetBaseCfg.InitialStateCfg(rot=(1.0, 0.0, 0.0, 0.0)),
     spawn=sim_utils.DomeLightCfg(
         texture_file=find_background_files(BACKGROUND_ASSET_DIR, "empty_warehouse.hdr"),
         intensity=500.0,
@@ -85,6 +86,7 @@ class EmptyWarehouseBackgroundCfg:
 class BilliardHallBackgroundCfg:
     dome_light = AssetBaseCfg(
     prim_path="/World/background",
+    init_state=AssetBaseCfg.InitialStateCfg(rot=(1.0, 0.0, 0.0, 0.0)),
     spawn=sim_utils.DomeLightCfg(
         texture_file=find_background_files(BACKGROUND_ASSET_DIR, "billiard_hall.hdr"),
         intensity=500.0,
@@ -97,6 +99,7 @@ class BilliardHallBackgroundCfg:
 class BrownPhotoStudioBackgroundCfg:
     dome_light = AssetBaseCfg(
     prim_path="/World/background",
+    init_state=AssetBaseCfg.InitialStateCfg(rot=(1.0, 0.0, 0.0, 0.0)),
     spawn=sim_utils.DomeLightCfg(
         texture_file=find_background_files(BACKGROUND_ASSET_DIR, "brown_photostudio.hdr"),
         intensity=500.0,
@@ -109,6 +112,7 @@ class BrownPhotoStudioBackgroundCfg:
 class HomeOfficeBackgroundCfg:
     dome_light = AssetBaseCfg(
     prim_path="/World/background",
+    init_state=AssetBaseCfg.InitialStateCfg(rot=(1.0, 0.0, 0.0, 0.0)),
     spawn=sim_utils.DomeLightCfg(
         texture_file=find_background_files(BACKGROUND_ASSET_DIR, "home_office.exr"),
         intensity=500.0,
@@ -183,6 +187,7 @@ def generate_background_config(background_path: str, class_name: str = None, int
     class GeneratedBackgroundConfig:
         dome_light = AssetBaseCfg(
             prim_path="/World/background",
+            init_state=AssetBaseCfg.InitialStateCfg(rot=(1.0, 0.0, 0.0, 0.0)),
             spawn=sim_utils.DomeLightCfg(
                 texture_file=background_path,
                 intensity=intensity,

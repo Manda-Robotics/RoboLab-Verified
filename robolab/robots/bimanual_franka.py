@@ -168,6 +168,7 @@ class BimanualFrankaCfg:
 
     frames = FrameTransformerCfg(
         prim_path="{ENV_REGEX_NS}/robot/torso",
+        source_frame_offset=OffsetCfg(rot=(1.0, 0.0, 0.0, 0.0)),
         debug_vis=False,
         target_frames=[
             FrameTransformerCfg.FrameCfg(
@@ -348,7 +349,7 @@ def _rel_ik_action(arm: str) -> DifferentialInverseKinematicsActionCfg:
             command_type="pose", use_relative_mode=True, ik_method="dls"
         ),
         scale=0.5,
-        body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.0]),
+        body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(rot=(1.0, 0.0, 0.0, 0.0), pos=[0.0, 0.0, 0.0]),
     )
 
 

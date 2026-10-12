@@ -336,12 +336,22 @@ class SubtaskCompletionRecorderTerm(RecorderTerm):
         ``score_peak``.
         """
         sm = self.subtask_state_machines[eid]
-        if sm.is_complete():
-            return 1.0
-        return judge_ladder_final(sm.subtasks, sm.unnormalized_total_score,
-                                  lambda i, st: ConditionalsStateMachine(env=self._env, env_id=eid, subtask=st,
-                                                                          objects_in_scene=sm.objects_in_scene,
-                                                                          subtask_group_id=i))
+        def final_machine(i, st):
+            final = ConditionalsStateMachine(
+                env=self._env, env_id=eid, subtask=st,
+                objects_in_scene=sm.objects_in_scene, subtask_group_id=i)
+            original = sm.stage_state_machines.get(i)
+            if original is not None:
+                # P126: retain P64/P74 calibration, but no latched completion
+                # or condition cache. Never treat the terminal frame as spawn.
+                final._excluded = {g: list(v) for g, v in original._excluded.items()}
+                final._eff_score = {g: list(v) for g, v in original._eff_score.items()}
+            # Unvisited stages use authored weights: this is a final-scene
+            # diagnostic, not a claim that the sequential procedure was followed.
+            final._spawn_probed = True
+            return final
+
+        return judge_ladder_final(sm.subtasks, sm.unnormalized_total_score, final_machine)
 
     def record_final_status(self) -> tuple[str, dict] | tuple[None, None]:
         """Record final status for all envs when episode ends incomplete."""

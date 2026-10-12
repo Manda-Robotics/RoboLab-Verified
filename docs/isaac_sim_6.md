@@ -102,3 +102,21 @@ replay of the same recording on both (`examples/run_recorded.py --env-config cur
 `run_recorded.py` accepts `--max-steps`, `--no-video` and `--output-dir` so a reproducer can replay
 only the stretch up to an event. Exact trajectory reproduction still holds only on the stack that
 made the recording; a published number states its stack.
+
+
+### CoRL release candidate check (2026-10-11)
+
+On a dedicated RTX PRO 6000 96 GB, driver 595.91.07, with Isaac Sim 6.0.1.0,
+Isaac Lab 3.0.0b2.post1 and torch 2.11.0+cu128, the P126 candidate and PR #4
+(e86eb12) both render the BananasInCrate scene with intact robot geometry and
+nonblank 1280x720 exterior/wrist RGB observations. Proprioception is finite; an
+independent SciPy rotation calculation from the native articulation pose agrees
+with the public WXYZ `ee_quat` within 3.45e-8 radians.
+
+The before/after check confirms PR #4's inherited frame offsets change from
+native XYZW `(0, 0, 1, 0)` to identity `(0, 0, 0, 1)`. The rendered dome background
+changes orientation; the scene objects and robot stay in the same positions.
+This changes policy pixels compared with the historical blog configuration and
+must be recorded in release provenance. These checks cover this scene and DROID
+rig, not every robot or all 120 tasks. The selected policies use joint-position
+actions; this check does not validate all Cartesian IK paths touched by PR #4.

@@ -9,7 +9,7 @@ from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.utils import configclass
 
 from robolab.core.scenes.utils import import_scene
-from robolab.core.task.conditionals import object_above, object_on_top, pick_and_place
+from robolab.core.task.conditionals import object_above, object_on_top, pick_and_place_on_surface
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
@@ -37,9 +37,9 @@ class MustardAboveRaisinTask(Task):
     episode_length_s: int = 40
     attributes = ['spatial']
     subtasks = [
-        pick_and_place(
+        pick_and_place_on_surface(
             object=["mustard_bottle"],
-            container="raisin_box",
+            surface="raisin_box",
             logical="all",
             score=1.0
         )

@@ -136,3 +136,144 @@ Defects that no change above removes.
   describe in some cells (H-E1, H-E2).
 - `MarkerInMugTask`: the marker in `workdesk.usda` drops 7.1 mm at reset (`scripts/find_sinking_objects.py`, found in the first external trial). Not re-authored; reported like the other unsettled objects.
 - The `H-B` rows under Open items above.
+
+
+## H-CORL-1: completed ladder bypasses final-scene scoring
+
+Evidence: `archive/TESTING/dense_output/d6_BananasInCrate/BananasInCrateTask`,
+`run_0.hdf5`, `data/demo_2`; `log_0_env2.json` and the parent
+`episode_results.jsonl`. Stage 0 completes at step 875, but its dense predicate
+is false at the final step 900. The recorded result is success=false,
+score=1, score_peak=1. This is a progress diagnostic defect, not evidence that
+binary success is incorrectly true.
+
+P34's `judge_final_score` returns 1 immediately for a completed live ladder.
+Removing only that shortcut is insufficient: a fresh condition machine would
+apply P64/P74's spawn probe to the terminal frame and exclude newly satisfied
+conditions. P126 retains activated stages' exclusion masks and effective weights,
+then evaluates fresh trackers on the final frame without another spawn probe.
+Unvisited stages use authored weights; final-scene progress is explicitly not
+proof that a sequential task was performed in order. Live progress and confirmed
+binary success are unchanged. Tests exercise completion followed by loss,
+completion retained, spawn exclusion, reset isolation, and an unvisited stage.
+Simulator replay is still required; no corpus-wide impact count is claimed.
+
+
+GPU control, 2026-10-11: Isaac Sim 6.0.1.0 / Isaac Lab 3.0.0b2.post1 on an RTX
+PRO 6000 (driver 595.91.07). A scripted banana pose intervention in a live
+BananasInCrate scene drives a separate one-rung position predicate. On the same
+undone state, the method extracted from public base 790c1a5 returns 1.0 and P126
+returns 0.0. Retained completion returns 1.0; a spawn-true control returns 0.0;
+live historical progress stays 1.0. This passes with both original rotations and
+PR #4's explicit rotations. It is a live-state regression control, not a policy
+episode or replay of the historical placement predicate. Historical trajectory
+replay and a corpus-wide impact estimate remain distinct, unfinished checks.
+
+
+Recorded-condition replay, 2026-10-11: replaying all 900 frames of the existing
+`data/demo_2/conditions` trace through the stage machine reproduces first
+completion at step 875. On frame 900 the recorded stage truth is false, the
+public-base terminal method returns 1.0, P126 returns 0.0, and historical progress
+remains 1.0. The four object ladders and choose-K=1 rule follow the recorded task
+and its current definition. Source HDF5 SHA256:
+`707b3c000552886826b1fc4494de2600b4e4cb573d0365ec8501db527d1ce3cd`.
+This is a condition-trace replay, not a new physics rollout or a population-wide
+accuracy estimate.
+
+
+## H-CORL-2: mustard surface placement has a containment progress ladder
+
+2026-10-11 Isaac6 pilot, `corl26_smoke_pi05/MustardAboveRaisinTask`, run 0 env 0:
+confirmed task success at step 205 (13.667 s), final and live progress both 0.
+The final video shows the bottle supported on the raisin box; the recorded
+containment rung is false. Termination correctly uses `object_on_top`, while the
+ladder expands `pick_and_place(..., container="raisin_box")` into containment.
+P127 selects the existing `pick_and_place_on_surface` composite for this task.
+Only progress changes; termination, policy observations/actions and physics do
+not. Saved-action replay on Isaac Sim 6 passed: the same 205 actions still terminate successfully at step 205, and final progress changes from 0 to 1. The original pilot recording is preserved unchanged.
+
+The same pilot supplies a concrete example of P13's known counting distinction:
+BananasInBinOneMore ends with two eligible bananas placed (`banana_01` and
+`banana_03`), when termination requires exactly one. Binary failure is correct;
+the choose-K progress metric credits the top K groups and remains 1.0. Do not
+interpret full progress as task success. Its textual `reason` also preserves an
+earlier error rather than explaining the final overfill; use the condition trace
+and video for this example.
+
+## H-CORL-3: velocity-based settling misses a visually settled banana
+
+The 2026-10-11 pi05 `BananasInBinOneMoreTask` pilot released its first banana at
+step 121, but the velocity streak did not credit it until step 262. During
+steps 130–200 its recorded position spans only 0.38/1.44/0.88 mm in XYZ while
+median reported linear speed is 0.0393 m/s, above the 0.02 m/s rest threshold.
+The policy proceeds to add another banana; the exact-count goal and the
+all-target success rest streak never align before timeout. This is a missed
+earlier completion, not sufficient evidence of a policy counting failure.
+
+P128 is a candidate replacement of the rest metric only: pairwise sampled pose
+diameter <=2 mm and rotation <=2 degrees over >=0.2 seconds (four samples at
+15 Hz), with contiguous samples and per-environment reset handling. Counting,
+gripper detachment, target selection and the success structure are unchanged.
+The old velocity metric remains available for same-trajectory shadow checks.
+
+Isaac6 saved-action replay succeeds at step 126 with progress 1. The 126 actions
+and the banana's XYZ trajectory match the original recording exactly; the old
+rest rule is false on the replay's terminal frame. The offline suite reports
+318 passed / 4 skipped (Node-dependent dashboard tests). Twenty fresh pi05
+attempts of this exact task all succeed (five environments, four runs). At the
+candidate terminal frame, the legacy rule has not yet accepted four of these
+trajectories; this is not a separately rolled-out legacy baseline. All 20
+recordings and request snapshots are retained. The change is not yet a
+benchmark-wide validation. Dense annotation segmentation is unchanged.
+
+## H-CORL-4: asset origins are not container bases
+
+In Isaac6 pi05_qa50 BananasInCrateTask, the P37 origin-height guard rejects
+preplaced banana_01 on every recorded frame in all five environments. The
+purple crate origin is at its centre, 73.18 mm above its lowest geometry.
+Consequently the exact-two goal can remain false after the requested placement,
+and later become true only after extra bananas are added. This is a Verified
+scoring defect, not evidence of a policy failure or a P128 rest regression.
+
+The all-task static audit finds 80 of 120 tasks using the guard: 73 in binary
+success, 79 in progress, with overlap. This is exposure, not 80 demonstrated
+failures. The confirmed case is BananasInCrateTask; geometry counterexamples
+prioritize SauceBottlesCrateTask, SmallerObjectButterInBinTask, and
+RecycleCartonsVerticalCrateTask (progress only). Those constructed poses do not
+prove collision-free, reachable failures.
+
+P129 uses the lowest actual hull vertex transformed into world coordinates for
+both bodies, keeping the existing 1 cm tolerance. This is the outer geometry
+bottom, not an inferred interior floor. Hull containment, release, settling,
+and exact counting are unchanged. Seven focused tests cover origin rebasing,
+rotations, batch independence, crate/butter offsets, and reversed bowl stacking.
+The full pod suite passes 325 tests with four skips.
+
+Re-evaluating the saved crate states predicts first success at steps
+163/580/129/281/203 instead of 853/timeout/timeout/651/timeout. This is an offline
+counterfactual, not a new policy rollout. The first GPU saved-action replay
+succeeds at step 160; its action prefix is identical but physics diverges
+(up to 9.8 cm object XYZ difference), so do not claim an identical trajectory.
+The previous origin guard remains false on that replay's terminal state.
+Five saved-action replays and 70 fresh pi05 episodes are being validated;
+benchmark-wide approval remains pending human review.
+
+P129 live QA counterexample: pi05_geometry_qa70 BowlStackingLeftOnRightTask
+environments 1 and 2 are wrong-order stacks but succeed at steps 239 and 196.
+Their required-top minus base bottom heights are -6.64 and -8.72 mm, within
+the retained 10 mm tolerance. The old guard shadow rejects both; correct env3
+succeeds under both guards. Thus the synthetic inverted-bowl test did not
+establish real tilted-stack order preservation. P129 is blocked for release
+until both stacking directions have an explicit, recorded-pose-tested ordering
+requirement in success and progress. Do not change the ongoing sweep identity.
+
+P130 resolves the identified P129 ordering counterexample: both stacking tasks
+now additionally require the designated upper bowl's hull-vertex mean to be
+strictly higher in world Z. The option defaults off for other tasks and is enabled
+in both termination and progress. Saved-state rescoring rejects left-on-right
+env1/env2 while retaining env3; all original opposite-direction outcomes stay
+unchanged. Ten fresh episodes completed (left-on-right 0/5, right-on-left 3/5),
+with 327 offline tests passing and four skips. Finn accepted the corrected scoring.
+These fresh episodes replace the ten P129 bowl episodes in the canonical baseline;
+the other 60 P129 episodes retain behavior under the default-off option.
+The vertex mean is a geometric reference, not a physical centre of mass.

@@ -13,8 +13,11 @@ a human reviewer could not tell whether the placement would have survived
 2026-08-25): if the target objects are already at rest when the predicate first
 holds, the episode ends right there; if something is still moving, wait until it
 has settled. "At rest" = every target object named by the predicate's parameters
-slower than ``max_speed`` for ``rest_s`` in a row (a short streak, not one tick —
-a bouncing object is momentarily at zero speed at the top of each bounce). The
+stable over ``rest_s`` (P128 pose window; legacy mode uses speed below
+``max_speed`` for a short streak, not one tick —
+a bouncing object is momentarily at zero speed at the top of each bounce).
+The target set and success predicate are unchanged. Pose mode bounds sampled
+translation and rotation; it does not add another hold after that window. The
 policy keeps acting while we wait — knocking the object back out means no
 success. Nothing else changes: timeouts, subtask credit and events are as
 before; the subtask ladder still marks the stage at the first hold, and the
@@ -50,14 +53,18 @@ def _target_names(params: dict) -> list[str]:
 
 
 class SuccessConfirmer:
-    """Stateful per-env hold counter for one success predicate (one per task env cfg)."""
+    """Per-env success confirmation; pose-window or legacy velocity settling.
+
+    Pose mode retains the original target set and raw predicate, replacing
+    only its rest criterion. No second hold is added after the pose window.
+    """
 
     def __init__(self, func: Callable, rest_s: float, max_speed: float, targets: list[str]):
         self.func = func
         self.rest_s = float(rest_s)
         self.max_speed = float(max_speed)
         self.targets = targets
-        self.rest_count: torch.Tensor | None = None       # consecutive steps with every target at rest
+        self.rest_count: torch.Tensor | None = None       # legacy velocity streak; diagnostic only in pose mode
         self.first_hold_step: torch.Tensor | None = None   # -1 until the raw predicate first holds
         self.confirmed_step: torch.Tensor | None = None
 
@@ -105,7 +112,15 @@ class SuccessConfirmer:
         newly = raw & (self.first_hold_step < 0)
         self.first_hold_step = torch.where(newly, step, self.first_hold_step)
 
-        confirmed = raw & (self.rest_count >= self.rest_steps(env))
+        import robolab.constants as constants
+        if constants.REST_METRIC == "pose":
+            from robolab.core.task.rest import pose_at_rest
+            stable = torch.ones(env.num_envs, dtype=torch.bool, device=env.device)
+            for name in self.targets:
+                stable &= pose_at_rest(env, name, self.rest_s)
+            confirmed = raw & stable
+        else:
+            confirmed = raw & (self.rest_count >= self.rest_steps(env))
         self.confirmed_step = torch.where(confirmed & (self.confirmed_step < 0), step, self.confirmed_step)
         return confirmed
 

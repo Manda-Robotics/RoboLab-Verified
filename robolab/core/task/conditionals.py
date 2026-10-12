@@ -287,13 +287,30 @@ def object_picked_up(
 
 @atomic
 def _object_above_container_base(world, obj: str, container: str, tol: float = 0.01, env_id: int | None = None):
-    """True where the object's root sits at or above the container's root (its base),
-    minus ``tol``. Scalar for ``env_id``, ``(N,)`` bool otherwise."""
-    po, _ = world.get_pose(obj, env_id=env_id)
-    pc, _ = world.get_pose(container, env_id=env_id)
+    """Object geometry must not extend below the container's lowest geometry.
+
+    P129: compare actual hull bottoms in world space, not asset origins.
+    This accepts containers centred on their origin and objects with offset
+    origins. Directional bowl stacking additionally requires centroid ordering. The existing 1 cm tolerance is unchanged. Containment, release
+    and settling remain separate requirements.
+    """
+    bottom_obj = geometry_bottom_height(world, obj, env_id=env_id)
+    bottom_container = geometry_bottom_height(world, container, env_id=env_id)
     if env_id is not None:
-        return bool(po[2] >= pc[2] - tol)
-    return po[:, 2] >= pc[:, 2] - tol
+        return bool(bottom_obj >= bottom_container - tol)
+    return bottom_obj >= bottom_container - tol
+
+
+@atomic
+def _object_center_above_container(world, obj: str, container: str, env_id: int | None = None):
+    """P130: directional order for nested bowls, independent of tilted bottoms.
+
+    Require the designated upper hull centroid to be strictly higher. There is
+    no negative tolerance: that would admit the reversed stack again. This is
+    additional to containment, contact, release and settling, not a replacement.
+    """
+    above = geometry_centroid_height(world, obj, env_id=env_id) > geometry_centroid_height(world, container, env_id=env_id)
+    return bool(above) if env_id is not None else above
 
 
 def object_in_container(
@@ -309,6 +326,7 @@ def object_in_container(
     logical: str = "all",
     K: int = 1,
     env_id: int | None = None,
+    require_above_container: bool = False,
 ):
     """Checks if objects are in an open-top container.
 
@@ -333,6 +351,8 @@ def object_in_container(
             tolerance=tolerance,
             env_id=env_id,
         ))
+        if require_above_container:
+            result = _and(result, _object_center_above_container(world, obj, container, env_id=env_id))
         result = _and(result, at_rest(env, obj, env_id=env_id))   # P46: credit a placement only once it settles
         if require_contact_with is True:
             result = _and(result, in_contact(world, obj, container, env_id=env_id))

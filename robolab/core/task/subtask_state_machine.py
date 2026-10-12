@@ -51,6 +51,9 @@ class SubtaskStateMachine:
         self.total_subtasks = len(self.subtasks)
         self.conditionals_state_machine: ConditionalsStateMachine | None = None
 
+        # Keep each activated stage's calibration for terminal re-evaluation.
+        self.stage_state_machines: dict[int, ConditionalsStateMachine] = {}
+
         # Current state tracking
         self.current_subtask_index = 0 # Index of current subtask (also count of completed subtasks)
         self.unnormalized_total_score = calculate_unnormalized_total_score(self.subtasks)
@@ -66,6 +69,7 @@ class SubtaskStateMachine:
         self.initialized = True
         self.current_subtask_index = 0
         self.conditionals_state_machine = None
+        self.stage_state_machines.clear()
         self._initialize_state_machine()
 
 
@@ -84,6 +88,7 @@ class SubtaskStateMachine:
                 objects_in_scene=self.objects_in_scene,
                 subtask_group_id=self.current_subtask_index
             )
+            self.stage_state_machines[self.current_subtask_index] = self.conditionals_state_machine
         else:
             self.conditionals_state_machine = None
 

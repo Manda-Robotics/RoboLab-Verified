@@ -55,3 +55,10 @@ def test_disabled_gate_is_transparent():
     env = _Env(1); _install(_World({"cube": torch.tensor([9.9])}))
     assert R.at_rest(env, "cube", env_id=0) is True
     C.PLACEMENT_REST_S = 0.2
+
+
+import pytest
+@pytest.fixture(autouse=True)
+def legacy_velocity_mode(monkeypatch):
+    import robolab.constants as constants
+    monkeypatch.setattr(constants, "REST_METRIC", "velocity")

@@ -40,6 +40,21 @@ class LocalHull(NamedTuple):
     planes_open_top: torch.Tensor
 
 
+def lowest_world_z(vertices: torch.Tensor, position: torch.Tensor, quaternion: torch.Tensor) -> torch.Tensor:
+    """Lowest mesh height, using local hull vertices and a WXYZ world pose.
+
+    Project actual vertices onto world up, rather than rotating a local AABB.
+    Works for a single pose or a batch; rebasing the asset origin without
+    changing its world geometry leaves this value unchanged. This is the
+    outer geometry's lowest point, not an estimate of its interior floor.
+    """
+    q = quaternion / torch.linalg.vector_norm(quaternion, dim=-1, keepdim=True).clamp_min(1e-12)
+    w, x, y, z = q.unbind(-1)
+    up_local = torch.stack((2 * (x * z - w * y), 2 * (y * z + w * x),
+                            1 - 2 * (x * x + y * y)), dim=-1)
+    return (up_local @ vertices.T).amin(dim=-1) + position[..., 2]
+
+
 def build_local_hull(
     points_np: np.ndarray,
     device: torch.device | str = "cpu",

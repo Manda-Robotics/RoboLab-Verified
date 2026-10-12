@@ -183,6 +183,7 @@ class EventTracker:
                 continue
         step_dt = float(getattr(env, "step_dt", 0.0) or 1 / 15)
         for eid, obj_name, hand, kind, extra in tracker.pop_events():
+            event_count_before = len(events)
             if frozen_mask[eid]:
                 continue
             mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
@@ -225,7 +226,7 @@ class EventTracker:
                 events.append((f"'{obj_name}' towed without a grasp — moving with an OPEN hand (stuck to a finger; physics artifact, episode is not trustworthy)", StatusCode.TOWED_WITHOUT_GRASP, mask))
             else:
                 events.append((f"'{obj_name}' dropped (left the closed hand)", StatusCode.OBJECT_DROPPED, mask))
-            if verbose:
+            if verbose and len(events) > event_count_before:
                 print(f"[EventTracker] env{eid}: {events[-1][0]}")
 
         # publish towed objects for the results row (episode is bogus if non-empty)
@@ -443,7 +444,7 @@ class EventTracker:
             # whether the hand was carrying it, since grasp detection can miss a carry.
             how = "released inside" if kind == "placed" else "ended up in"
             events.append((f"Wrong object placed: '{obj}' {how} '{cont}' (not a target)", StatusCode.WRONG_OBJECT_PLACED, mask))
-            if verbose:
+            if verbose and len(events) > event_count_before:
                 print(f"[EventTracker] env{eid}: {events[-1][0]}")
         # publish the count for the results row
         env._collateral_placed = {eid: len(v) for eid, v in self._collateral.collateral.items()}

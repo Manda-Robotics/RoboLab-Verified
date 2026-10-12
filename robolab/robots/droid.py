@@ -144,18 +144,21 @@ class DroidCfg:
     # True to render RGB axes at every tracked link in the viewport.
     frames = FrameTransformerCfg(
         prim_path="{ENV_REGEX_NS}/robot/panda_link0",
+        source_frame_offset=OffsetCfg(rot=(1.0, 0.0, 0.0, 0.0)),
         debug_vis=False,
         visualizer_cfg=_frame_marker_cfg,
         target_frames=[
             FrameTransformerCfg.FrameCfg(
                 prim_path=f"{{ENV_REGEX_NS}}/robot/panda_link{i}",
                 name=f"panda_link{i}",
+                offset=OffsetCfg(rot=(1.0, 0.0, 0.0, 0.0)),
             )
             for i in range(8)
         ] + [
             FrameTransformerCfg.FrameCfg(
                 prim_path="{ENV_REGEX_NS}/robot/Gripper/Robotiq_2F_85/base_link",
                 name="gripper_base",
+                offset=OffsetCfg(rot=(1.0, 0.0, 0.0, 0.0)),
             ),
             FrameTransformerCfg.FrameCfg(
                 prim_path="{ENV_REGEX_NS}/robot/Gripper/Robotiq_2F_85/base_link",
@@ -415,10 +418,10 @@ class DroidIKActionCfg:
         body_name="base_link",  # Robotiq 2F-85 base flange (gripper mount); matches ee_pos/ee_quat helpers
         controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
         scale=1.0,
-        body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.0]),
+        body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(rot=(1.0, 0.0, 0.0, 0.0), pos=[0.0, 0.0, 0.0]),
         # Robotiq 2F-85 max height base flange -> fingertip is 162.8mm (per Robotiq spec).
         # Uncomment to control the fingertip plane instead of the base flange.
-        # body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.1628]),
+        # body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(rot=(1.0, 0.0, 0.0, 0.0), pos=[0.0, 0.0, 0.1628]),
     )
 
     finger_joint = BinaryJointPositionZeroToOneActionCfg(
@@ -457,7 +460,7 @@ class DroidRelIKActionCfg:
         ),
         # Robotiq 2F-85 max height base flange -> fingertip is 162.8mm (per Robotiq spec).
         # Uncomment to control the fingertip plane instead of the base flange.
-        # body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.1628]),
+        # body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(rot=(1.0, 0.0, 0.0, 0.0), pos=[0.0, 0.0, 0.1628]),
     )
 
     finger_joint = BinaryJointPositionZeroToOneActionCfg(

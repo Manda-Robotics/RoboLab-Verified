@@ -75,3 +75,10 @@ def test_wrapper_keeps_signature_and_targets():
     assert t.func.confirmer.targets == ["a", "b"]
     assert _target_names({"groups": [{"object": ["x"], "container": "c"}, {"object": "y"}]}) == ["x", "y"]
     assert confirmed_success_term(term, rest_s=0, max_speed=0.02) is term    # disabled → untouched
+
+
+import pytest
+@pytest.fixture(autouse=True)
+def legacy_velocity_mode(monkeypatch):
+    import robolab.constants as constants
+    monkeypatch.setattr(constants, "REST_METRIC", "velocity")

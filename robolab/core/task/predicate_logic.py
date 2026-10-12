@@ -23,7 +23,7 @@ from isaaclab.utils.math import quat_apply, quat_apply_inverse
 
 import robolab.constants
 from robolab.constants import DEBUG
-from robolab.core.task.hull_check import build_local_hull, point_in_hull
+from robolab.core.task.hull_check import build_local_hull, point_in_hull, lowest_world_z
 from robolab.core.utils.geometry_utils import spatial_condition_check_vector_based
 from robolab.core.utils.isaaclab_compat import quat_wxyz_to_isaaclab
 from robolab.core.utils.transform_utils import transform_pose_from_w_to_b_vectorized
@@ -329,6 +329,20 @@ def _untransformed_hull(world, body_name: str):
         points = _read_local_mesh_points(world, body_name)
         cache[body_name] = build_local_hull(points, device=world.env.device)
     return cache[body_name]
+
+
+def geometry_bottom_height(world, body_name: str, env_id: int | None = None):
+    """World height of the lowest actual hull vertex, independent of asset origin."""
+    hull = _untransformed_hull(world, body_name)
+    position, quaternion = world.get_pose(body_name, env_id=env_id)
+    return lowest_world_z(hull.vertices, position, quaternion)
+
+
+def geometry_centroid_height(world, body_name: str, env_id: int | None = None):
+    """World height of the hull centroid; invariant to an asset-origin rebase."""
+    hull = _untransformed_hull(world, body_name)
+    position, quaternion = world.get_pose(body_name, env_id=env_id)
+    return lowest_world_z(hull.centroid.unsqueeze(0), position, quaternion)
 
 
 def _obj_centroid_in_container(

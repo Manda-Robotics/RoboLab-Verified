@@ -77,17 +77,21 @@ VERBOSE = False
 VISUALIZE = False
 ENABLE_SUBTASK_PROGRESS_CHECKING = True
 # Confirmed success (findings.md A2): an episode is scored a success when the
-# success predicate holds AND every target object has been at rest (slower than
-# SUCCESS_MAX_SPEED m/s) for SUCCESS_REST_S seconds in a row. An object already at
+# success predicate holds AND every target object has been at rest under
+# REST_METRIC for SUCCESS_REST_S seconds. An object already at
 # rest when the goal is reached ends the episode immediately; a moving one makes
 # the episode wait until it settles. 0 restores upstream's first-frame termination.
 SUCCESS_REST_S = 0.2
 # A *placement* is credited in the subtask ladder only once the object has been at
-# rest (< SUCCESS_MAX_SPEED) for PLACEMENT_REST_S — the same question P30 asks of
+# rest under REST_METRIC for PLACEMENT_REST_S — the same question P30 asks of
 # success, so a bounce through a container no longer scores (findings.md A2/H-B25;
 # BananaInBowl v_ env3). 0 restores upstream's credit-on-first-frame.
 PLACEMENT_REST_S = 0.2
 SUCCESS_MAX_SPEED = 0.02
+# P128 candidate: sampled pose stability; velocity retained for controlled comparison.
+REST_METRIC = "pose"
+REST_MAX_DISPLACEMENT_M = 0.002
+REST_MAX_ANGLE_DEG = 2.0
 # A grasp is a carry, not a touch (findings.md B1; robolab/core/task/grasp.py):
 # the object must stay in contact for GRASP_HOLD_S with its offset to the hand
 # changing < GRASP_COUPLING_M while the hand moves >= GRASP_HAND_MOVE_M. A contact

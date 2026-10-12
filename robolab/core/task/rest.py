@@ -1,16 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Has this object come to rest?
+"""Object settling for placement predicates.
 
-P30 gates *success* on the target being at rest; the subtask **ladder** still
-credited a placement on the first frame its predicate held, so an object that
-passed through a bowl and bounced onto the rim scored 1.0 anyway (BananaInBowl
-v_ run env 3, 2026-08-26: released at 20.87 s, "Completed subtask" at 20.93 s,
-banana ends 8 cm off centre on the rim). Placement predicates therefore ask the
-same question the success gate does: has the object been slower than
-``max_speed`` for ``seconds`` in a row?
-
-State is per env instance and updated at most once per (object, sim step), so
-the many predicate evaluations inside one step share one streak.
+P128 uses a contiguous sampled pose window: every pair of positions is within
+2 mm and every pair of orientations within 2 degrees for 0.2 s by default.
+This tolerates contact-solver velocity jitter without accepting sampled bounces
+or motion exceeding those limits. It cannot observe motion between samples.
+The P46 velocity streak is retained for explicit legacy comparisons.
+State is per environment, sampled once per object/simulation step, with reset
+and missing-step invalidation in pose mode.
 """
 from __future__ import annotations
 
@@ -69,12 +66,76 @@ def rest_steps(env, seconds: float) -> int:
 
 
 def at_rest(env, obj: str, env_id: int | None = None, seconds: float | None = None):
-    """True where ``obj`` has been slower than ``SUCCESS_MAX_SPEED`` for
-    ``PLACEMENT_REST_S`` in a row. ``PLACEMENT_REST_S = 0`` disables the gate
+    """True where the selected rest metric holds for ``PLACEMENT_REST_S``.
+    Pose mode bounds the full sampled pose window; velocity mode is retained
+    for legacy comparisons. ``PLACEMENT_REST_S = 0`` disables the gate
     (upstream behaviour: credit on the first frame)."""
     s = float(getattr(robolab.constants, "PLACEMENT_REST_S", 0.0) or 0.0) if seconds is None else seconds
     if s <= 0:
         return True if env_id is not None else torch.ones(env.num_envs, dtype=torch.bool, device=env.device)
-    streak = get_rest_tracker(env).update(obj)
-    ok = streak >= rest_steps(env, s)
+    if robolab.constants.REST_METRIC == "pose":
+        ok = pose_at_rest(env, obj, s)
+    else:
+        streak = get_rest_tracker(env).update(obj)
+        ok = streak >= rest_steps(env, s)
     return bool(ok[env_id]) if env_id is not None else ok
+
+
+class PoseRestTracker:
+    """Contiguous pose window, sampled once per simulation step and reset per env.
+
+    Pairwise position/rotation diameters reject return-to-start motion within
+    the sampled window. This cannot observe motion between simulator samples.
+    """
+    def __init__(self, env):
+        self.env = env
+        self.history = {}
+        self.last_step = {}
+        self.valid = {}
+
+    def stable(self, obj: str, seconds: float) -> torch.Tensor:
+        import math
+        from collections import deque
+        from robolab.core.world.world_state import get_world
+        env = self.env
+        dt = float(env.step_dt)
+        if dt <= 0:
+            raise ValueError("Pose rest requires a positive simulation step_dt")
+        samples = max(2, int(math.ceil(seconds / dt)) + 1)
+        counter = getattr(env, "common_step_counter", None)
+        step = int(counter) if counter is not None else int(env.episode_length_buf.max().item())
+        key = (obj, samples)
+        h = self.history.setdefault(key, deque(maxlen=samples))
+        prev = self.last_step.get(key)
+        if prev != step:
+            if prev is not None and step != prev + 1:
+                h.clear()
+                self.valid.pop(key, None)
+            pos, quat = get_world(env).get_pose(obj, env_id=None)
+            pos, quat = pos.clone(), quat.clone()
+            count = self.valid.get(key, torch.zeros(env.num_envs, dtype=torch.long, device=env.device))
+            count = torch.where(env.episode_length_buf <= 1, torch.ones_like(count), count + 1)
+            self.valid[key] = count.clamp(max=samples)
+            h.append((pos, quat))
+            self.last_step[key] = step
+        if len(h) < samples:
+            return torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
+        p = torch.stack([x[0] for x in h])
+        q = torch.stack([x[1] for x in h])
+        norm = torch.linalg.norm(q, dim=-1, keepdim=True)
+        finite = torch.isfinite(p).all(dim=(0, 2)) & torch.isfinite(q).all(dim=(0, 2)) & (norm[..., 0] > 1e-8).all(dim=0)
+        q = q / norm.clamp_min(1e-8)
+        span = torch.linalg.norm(p[:, None] - p[None, :], dim=-1).amax(dim=(0, 1))
+        dots = (q[:, None] * q[None, :]).sum(dim=-1).abs().clamp(max=1)
+        limit = math.cos(math.radians(robolab.constants.REST_MAX_ANGLE_DEG) / 2)
+        return (self.valid[key] >= samples) & finite & (span <= robolab.constants.REST_MAX_DISPLACEMENT_M) & (dots.amin(dim=(0, 1)) >= limit)
+
+
+_POSE_TRACKERS: dict[int, PoseRestTracker] = {}
+
+
+def pose_at_rest(env, obj: str, seconds: float):
+    tracker = _POSE_TRACKERS.get(id(env))
+    if tracker is None or tracker.env is not env:
+        tracker = _POSE_TRACKERS[id(env)] = PoseRestTracker(env)
+    return tracker.stable(obj, seconds)

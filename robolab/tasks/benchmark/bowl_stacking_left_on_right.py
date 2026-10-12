@@ -19,7 +19,7 @@ class BowlStackingLeftOnRightTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=object_in_container,
-        params={"object": ["bowl_2"], "container": "bowl_1", "gripper_name": "gripper", "require_contact_with": True, "require_gripper_detached": True}
+        params={"object": ["bowl_2"], "container": "bowl_1", "gripper_name": "gripper", "require_contact_with": True, "require_gripper_detached": True, "require_above_container": True}
     )
 
 @dataclass
@@ -37,7 +37,7 @@ class BowlStackingLeftOnRightTask(Task):
     subtasks = [
         Subtask(
             name="stack_bowl_left_on_right",
-            conditions=partial(object_in_container, object=["bowl_2"], container="bowl_1", gripper_name="gripper", require_contact_with=True, require_gripper_detached=True),
+            conditions=partial(object_in_container, object=["bowl_2"], container="bowl_1", gripper_name="gripper", require_contact_with=True, require_gripper_detached=True, require_above_container=True),
             logical="all",
             score=1.0
         )
