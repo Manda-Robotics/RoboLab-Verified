@@ -1,0 +1,87 @@
+{
+  "approximations": [
+    "Omit bolt, nut, washer and thread colliders",
+    "Close 1 mm shelf slat gaps at scale 0.2",
+    "Use post convex envelopes and solid rectangular rails, brackets and braces"
+  ],
+  "collision_asset_sha256": "97a3690f84fbb3588ec131cd71c174ee61a25507f82dc897c9727676dc048db3",
+  "format_version": 2,
+  "max_validated_scale": 0.2,
+  "meshes": {
+    "M_Rack_L01_Frame": {
+      "part_count": 4,
+      "paths": [
+        "/RackColliders/M_Rack_L01_Frame/post_0",
+        "/RackColliders/M_Rack_L01_Frame/post_1",
+        "/RackColliders/M_Rack_L01_Frame/post_2",
+        "/RackColliders/M_Rack_L01_Frame/post_3"
+      ],
+      "source_component_count": 4,
+      "source_geometry_sha256": "5f757af089adb2c544bcf5ab600a55daccf84f71fb147c73b014221fe21f90df"
+    },
+    "M_Rack_L01_FrameJoints": {
+      "part_count": 12,
+      "paths": [
+        "/RackColliders/M_Rack_L01_FrameJoints/foot_0",
+        "/RackColliders/M_Rack_L01_FrameJoints/foot_1",
+        "/RackColliders/M_Rack_L01_FrameJoints/foot_2",
+        "/RackColliders/M_Rack_L01_FrameJoints/foot_3",
+        "/RackColliders/M_Rack_L01_FrameJoints/brace_0",
+        "/RackColliders/M_Rack_L01_FrameJoints/brace_1",
+        "/RackColliders/M_Rack_L01_FrameJoints/brace_2",
+        "/RackColliders/M_Rack_L01_FrameJoints/brace_3",
+        "/RackColliders/M_Rack_L01_FrameJoints/brace_4",
+        "/RackColliders/M_Rack_L01_FrameJoints/brace_5",
+        "/RackColliders/M_Rack_L01_FrameJoints/brace_6",
+        "/RackColliders/M_Rack_L01_FrameJoints/brace_7"
+      ],
+      "source_component_count": 732,
+      "source_geometry_sha256": "75a10c05b4b1ea47495c35232f4267b9a8f4f89efdee07ed5adef21fc65099f7"
+    },
+    "M_Rack_L01_Shelf": {
+      "part_count": 4,
+      "paths": [
+        "/RackColliders/M_Rack_L01_Shelf/deck_0",
+        "/RackColliders/M_Rack_L01_Shelf/deck_1",
+        "/RackColliders/M_Rack_L01_Shelf/deck_2",
+        "/RackColliders/M_Rack_L01_Shelf/deck_3"
+      ],
+      "source_component_count": 56,
+      "source_geometry_sha256": "6ae33d2aec9a5ee5b5cdc866d98c70fcdcecdb649f93c8c2857ad9969121efc9"
+    },
+    "M_Rack_L01_ShelfElements": {
+      "part_count": 24,
+      "paths": [
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_0",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_1",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_2",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_3",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_4",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_5",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_6",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_7",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_8",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_9",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_10",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_11",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_12",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_13",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_14",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_15",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_16",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_17",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_18",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_19",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_20",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_21",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_22",
+        "/RackColliders/M_Rack_L01_ShelfElements/rail_bracket_23"
+      ],
+      "source_component_count": 24,
+      "source_geometry_sha256": "d0927f55d734efa42c6702dfe4982c69a2f6ad1ef5bcf1a7720cabd64e2fa6e1"
+    }
+  },
+  "newton": "1.5.2",
+  "part_count": 44,
+  "source_asset_sha256": "94f332ada51a44466386d2d23e40b77d5ead54aa2c918aad32f9d76da71dff0b"
+}

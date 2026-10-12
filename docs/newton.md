@@ -48,6 +48,7 @@ For programmatic experiments, set `cfg.newton_contact_settings` before
 
 ```python
 cfg.newton_contact_settings = {
+    "compact_shelf_colliders": True,
     "compact_contact_storage": True,
     "mesh_compatibility": True,
     "single_hull_fingertips": True,
@@ -78,16 +79,28 @@ an unused Newton candidate table when native MuJoCo generates contacts. Both
 collision-mask compiler paths still receive the logical exclusions lazily.
 Explicit cross-body filters are preserved; use with Newton's own collision
 pipeline is rejected. Set `compact_contact_storage=False` for the original
-allocation path. MuJoCo-Warp's own quadratic pair tables remain: the detailed
-shelf-of-mugs test needed about 10 minutes to initialize even with cached native
-hulls, and sampled 92 GiB peak host RAM under a 128 GiB guard. See the
-[mesh and memory audit](verified/newton-mesh-audit-2026-10-12.md).
+allocation path. MuJoCo-Warp's own quadratic pair tables remain, so collision
+geometry complexity still matters. The detailed shelf previously needed about
+ten minutes and 92 GiB host RAM. The compiled shelf asset below brings this to
+18–19 seconds and under 8 GiB in the three tested shelf tasks; see the
+[compiled shelf audit](verified/newton-shelf-2026-10-13.md).
 
 The resolved dictionary is retained on the environment config. Contact response
 is applied to CPU and GPU model geom arrays before the first MJWarp step;
-equality parameters are unchanged. Only the two Robotiq fingertip pad collision
-meshes switch from CoACD to a single convex hull; their visuals and transforms
-remain unchanged. Object assets still use native authored approximation.
+equality parameters are unchanged. The two Robotiq fingertip pad collision
+meshes use a single convex hull. The `rack_l04` shelf uses the compiled collision
+asset described below. Other object assets retain native authored approximation;
+original visuals are retained.
+
+The `compact_shelf_colliders` option replaces rack_l04's detailed CoACD output
+with a compiled 44-piece USD: four post envelopes, four feet, eight braces,
+four continuous decks and 24 rails/brackets. It preserves deck bounds and heights,
+body mass/COM/inertia, transforms, materials and explicit collision filters.
+Fastener collisions are omitted and the approximately 1 mm deck seams are closed
+at the validated scale of 0.2. Original rendering is retained. Source and compiled
+asset fingerprints prevent silent reuse after geometry changes. See the
+[asset build and audit instructions](../assets/objects/vomp/rack_l04/README.md).
+Set `compact_shelf_colliders=False` to restore the expensive original import.
 
 The scoped adapters require the pinned stack and one active simulation runtime
 per process. They restore patched methods on exit. Eager execution is intentional:

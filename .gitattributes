@@ -21,3 +21,6 @@ assets/robots/franka_robotiq_2f_85_newton_nogravity.usda -filter diff merge text
 *.exr filter=lfs diff=lfs merge=lfs -text
 *.jpg filter=lfs diff=lfs merge=lfs -text
 *.hdr filter=lfs diff=lfs merge=lfs -text
+# Generated, reviewable shelf collision geometry (CC BY 4.0).
+# Preserve the USD writer's canonical terminal blank line.
+assets/objects/vomp/rack_l04/rack_l04_colliders.usda -filter diff merge text whitespace=-blank-at-eof

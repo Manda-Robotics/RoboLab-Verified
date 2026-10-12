@@ -15,12 +15,15 @@ and cube grasp/release replays. In one reused scene with restored starting state
 immovable-scenery filtering stops the shelf disturbance, and support-local
 rolling resistance reduces the sideways jug's late rocking from 14.65 to 0.031 mm.
 These are now the experimental Newton defaults. The [wider scene audit](newton-mesh-audit-2026-10-12.md)
-adds narrow mesh-import repairs and compact Newton contact storage. The final
-build passes 98 Newton tests, 313 Verified offline tests, 238 simulator/integration
+adds narrow mesh-import repairs and compact Newton contact storage. That
+follow-up passed 98 Newton tests, 313 Verified offline tests, 238 simulator/integration
 cases, the two-world contact/recording audit, bottle/cube recorded-action replays,
-and five 20-second passive scenes. The shelf-of-mugs scene now runs and settles;
-its detailed rack still makes startup expensive (about 10 minutes with cached
-native decomposition, and a sampled 92 GiB peak host RAM on the passing run).
+and five 20-second passive scenes. The [compiled shelf follow-up](newton-shelf-2026-10-13.md)
+replaces the rack's 35,903 collision pieces with 44 prebuilt convex pieces. The
+three shelf task configurations initialize in 18–19 seconds with less than 8 GiB
+peak host RSS, versus about ten minutes and 92 GiB for the detailed rack. All
+106 Newton regression tests, three 20-second shelf task runs and eight isolated
+GPU drop/slide probes pass; body mass and inertia are preserved exactly.
 This is sampled integration coverage, not a complete benchmark or fresh-policy
 validation. See the audit for exact revisions, settings, limits and evidence.
 The RUNTIME evidence in the Verified change register was collected with PhysX and

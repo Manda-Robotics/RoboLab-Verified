@@ -1,0 +1,11 @@
+SPDX-License-Identifier: CC-BY-4.0
+
+Copyright (c) 2026 NVIDIA Corporation.
+
+The VOMP rack_l04 asset and its simplified rack_l04_colliders.usda derivative
+are licensed under the Creative Commons Attribution 4.0 International License:
+https://creativecommons.org/licenses/by/4.0/
+
+Source: the VOMP assets distributed with NVIDIA RoboLab, as documented in
+THIRD_PARTY_NOTICES.md at the repository root. The derivative's modifications
+are described in this directory's README.md.

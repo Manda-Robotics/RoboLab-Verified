@@ -6,6 +6,11 @@ Vast instance 55558470 (RTX PRO 5000, 48 GB) and the same pinned Isaac Sim
 Newton 1.5.2 / MuJoCo and MJWarp 3.11.0 stack. The starting repository revision
 is `c718aca`; the final evidence bundle contains the exact tested patch.
 
+The [October 13 compiled shelf follow-up](newton-shelf-2026-10-13.md) resolves the
+rack startup cost recorded below: 44 collision pieces, 18–19 second startup and
+under 8 GiB peak RSS in the three tested shelf tasks. The detailed-rack figures
+below remain the historical baseline.
+
 ## Findings and fixes
 
 The cooking and tools scenes fail during MuJoCo compilation on very small,

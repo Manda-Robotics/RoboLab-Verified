@@ -64,7 +64,7 @@ RoboLab bundles 3D objects, backgrounds, materials, fixtures, scenes, and robots
 | `basic` | CC BY-NC-SA 4.0 | © 2026 NVIDIA Corporation. |
 | `fruits_veggies` | CC BY-NC-SA 4.0 | © 2026 NVIDIA Corporation. |
 | `objaverse` | CC BY-NC-SA 4.0 | © 2026 NVIDIA Corporation. |
-| `vomp` | CC BY 4.0 | © 2026 NVIDIA Corporation. |
+| `vomp` | CC BY 4.0 | © 2026 NVIDIA Corporation. Includes the simplified `rack_l04_colliders.usda` derivative; see [its provenance and modifications](assets/objects/vomp/rack_l04/README.md). |
 
 ### Backgrounds, materials, fixtures, scenes, robots
 
