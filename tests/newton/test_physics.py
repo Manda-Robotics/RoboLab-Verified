@@ -51,6 +51,7 @@ def test_newton_configuration_preserves_timing_and_selects_overlay(monkeypatch):
     assert cfg.sim.physics.use_cuda_graph is False
     assert cfg.newton_contact_settings["timeconst"] == .0045
     assert cfg.newton_contact_settings["filter_immovable_contacts"] is False
+    assert cfg.newton_contact_settings["support_rolling_friction"] is None
     assert cfg.sim.physics.num_substeps == 4
     assert cfg.scene.robot.actuators["gripper"].stiffness == 10
     assert cfg.scene.robot.actuators["gripper"].damping == .5
@@ -84,6 +85,8 @@ def test_verified_friction_override_rejected_before_newton_import():
     {"contact_capacity": 0}, {"constraint_capacity": 1.5},
     {"timeconst": .001}, {"impedance": (.999, .99)},
     {"gripper_damping": -1}, {"typo": 1}, {"filter_immovable_contacts": "yes"},
+    {"support_rolling_friction": -1}, {"support_rolling_friction": float("nan")},
+    {"support_rolling_friction": True},
 ])
 def test_invalid_contact_settings_rejected(monkeypatch, overrides):
     install_module(monkeypatch, "isaaclab_newton.physics", NewtonCfg=SimpleNamespace, MJWarpSolverCfg=SimpleNamespace)

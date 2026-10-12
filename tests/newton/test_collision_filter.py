@@ -81,3 +81,38 @@ def test_invalid_mapping_fails_before_filtering():
     mapping[0, 1] = 99
     with pytest.raises(RuntimeError, match="Invalid Newton body index"):
         module.immovable_body_mask(model, mapping, flags, 2)
+
+
+def test_support_rolling_preserves_dynamic_pairs_and_sliding_friction():
+    model, mapping, flags = fixture()
+    model.geom_condim = np.full(5, 3)
+    model.geom_friction = np.tile([.7, .005, .0001], (5, 1))
+    model.npair = 2
+    model.pair_geom1, model.pair_geom2 = np.array([1, 2]), np.array([2, 3])
+    model.pair_dim = np.array([3, 4])
+    model.pair_friction = np.tile([.5, .6, .004, .0002, .0003], (2, 1))
+    fields = ('geom_condim', 'geom_friction', 'pair_dim', 'pair_friction')
+    originals = {name: getattr(model, name).copy() for name in fields}
+    gpu = NS(**{name: Array(getattr(model, name)[None]) for name in fields})
+    solver = NS(_use_mujoco_contacts=True, mj_model=model, mjw_model=gpu,
+                model=NS(body_flags=Array(flags)), mjc_body_to_newton=Array(mapping))
+    report = module.override_support_rolling(solver, .001, None, 2)
+    assert report['support_geoms'] == 3
+    assert report['explicit_support_pairs'] == 1
+    np.testing.assert_array_equal(model.geom_condim, [6, 6, 3, 3, 6])
+    np.testing.assert_array_equal(model.geom_friction[:, :2], originals['geom_friction'][:, :2])
+    np.testing.assert_array_equal(model.geom_friction[[2, 3]], originals['geom_friction'][[2, 3]])
+    np.testing.assert_array_equal(model.pair_dim, [6, 4])
+    np.testing.assert_array_equal(model.pair_friction[:, :3], originals['pair_friction'][:, :3])
+    np.testing.assert_array_equal(model.pair_friction[1], originals['pair_friction'][1])
+    assert (model.pair_friction[0, -2:] == .001).all()
+    for name in fields:
+        np.testing.assert_array_equal(getattr(gpu, name).numpy()[0], getattr(model, name))
+
+
+def test_support_rolling_rejects_invalid_coefficient_and_collision_pipeline():
+    for value in (0, -1, float('nan'), float('inf')):
+        with pytest.raises(ValueError, match='finite and positive'):
+            module.override_support_rolling(None, value, None, 2)
+    with pytest.raises(ValueError, match='native MuJoCo'):
+        module.override_support_rolling(NS(_use_mujoco_contacts=False), .001, None, 2)

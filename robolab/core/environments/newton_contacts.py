@@ -135,6 +135,11 @@ def contact_runtime(settings):
                 from newton import BodyFlags
                 from robolab.core.environments.newton_collision_filter import filter_immovable_contacts
                 filter_immovable_contacts(solver, wp, int(BodyFlags.KINEMATIC))
+            if settings.get("support_rolling_friction") is not None:
+                from newton import BodyFlags
+                from robolab.core.environments.newton_collision_filter import override_support_rolling
+                override_support_rolling(solver, settings["support_rolling_friction"], wp,
+                                         int(BodyFlags.KINEMATIC))
             override_contact_response(solver, settings["timeconst"], wp)
             override_contact_impedance(solver, settings["impedance"])
             owners.append(solver)

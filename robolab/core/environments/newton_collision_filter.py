@@ -80,3 +80,47 @@ def filter_immovable_contacts(solver, wp, kinematic_flag):
     solver._robolab_immovable_contact_filter = report
     print("IMMOVABLE_CONTACT_FILTER", report, flush=True)
     return report
+
+
+def override_support_rolling(solver, coefficient, wp, kinematic_flag):
+    """Opt-in rolling resistance only for contacts with immovable supports.
+
+    Coefficient is a length in metres, not sliding friction. Raising only the
+    support contact dimension leaves object/finger and other dynamic/dynamic
+    contact dimensions unchanged. Existing sliding/torsional values survive.
+    Both compiled models are updated, including explicit support contact pairs.
+    """
+    if not np.isfinite(coefficient) or coefficient <= 0:
+        raise ValueError("Support rolling friction must be finite and positive")
+    if not solver._use_mujoco_contacts:
+        raise ValueError("Support rolling friction requires native MuJoCo contacts")
+    model, gpu = solver.mj_model, solver.mjw_model
+    fixed = immovable_body_mask(model, solver.mjc_body_to_newton.numpy(),
+                                solver.model.body_flags.numpy(), kinematic_flag)
+    selected = fixed[model.geom_bodyid]
+    updates = [("geom_condim", selected, None, 6),
+               ("geom_friction", selected, slice(2, 3), coefficient)]
+    explicit = selected[model.pair_geom1] | selected[model.pair_geom2]
+    if model.npair:
+        updates.extend([("pair_dim", explicit, None, 6),
+                        ("pair_friction", explicit, slice(3, 5), coefficient)])
+    staged = []
+    for field, mask, columns, value in updates:
+        cpu = getattr(model, field).copy()
+        device = getattr(gpu, field).numpy().copy()
+        if columns is None:
+            cpu[mask] = value
+            device[..., mask] = value
+        else:
+            cpu[mask, columns] = value
+            device[..., mask, columns] = value
+        staged.append((field, cpu, device))
+    for field, cpu, device in staged:
+        getattr(model, field)[:] = cpu
+        getattr(gpu, field).assign(device)
+    report = {"coefficient_m": float(coefficient), "support_geoms": int(selected.sum()),
+              "explicit_support_pairs": int(explicit.sum()),
+              "dynamic_dynamic_contact_parameters_unchanged": True}
+    solver._robolab_support_rolling = report
+    print("SUPPORT_ROLLING_OVERRIDE", report, flush=True)
+    return report

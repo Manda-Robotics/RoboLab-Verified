@@ -31,7 +31,7 @@ def configure_physics(cfg, backend="physx"):
     robot.spawn.usd_path = str(Path(ROBOTS_DIR) / overlay)
     if not Path(robot.spawn.usd_path).is_file():
         raise FileNotFoundError(f"Newton robot overlay missing: {robot.spawn.usd_path}")
-    settings = dict(single_hull_fingertips=True, filter_immovable_contacts=False, timeconst=0.0045,
+    settings = dict(single_hull_fingertips=True, filter_immovable_contacts=False, support_rolling_friction=None, timeconst=0.0045,
                     impedance=(0.99, 0.999), contact_capacity=65536,
                     constraint_capacity=131072, gripper_stiffness=10.0,
                     gripper_damping=0.5, gripper_target_velocity=3.141592653589793)
@@ -42,6 +42,9 @@ def configure_physics(cfg, backend="physx"):
     from math import isfinite
     if not isinstance(settings["filter_immovable_contacts"], bool):
         raise ValueError("filter_immovable_contacts must be boolean")
+    rolling = settings["support_rolling_friction"]
+    if rolling is not None and (isinstance(rolling, bool) or not isfinite(rolling) or rolling <= 0):
+        raise ValueError("support_rolling_friction must be a positive finite length in metres")
     for key in ("contact_capacity", "constraint_capacity"):
         if isinstance(settings[key], bool) or not isinstance(settings[key], int) or settings[key] < 1:
             raise ValueError(f"{key} must be a positive integer")
