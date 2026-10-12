@@ -50,6 +50,7 @@ def test_newton_configuration_preserves_timing_and_selects_overlay(monkeypatch):
     assert cfg.sim.physics.solver_cfg.njmax == 131072
     assert cfg.sim.physics.use_cuda_graph is False
     assert cfg.newton_contact_settings["mesh_compatibility"] is True
+    assert cfg.newton_contact_settings["compact_contact_storage"] is True
     assert cfg.newton_contact_settings["timeconst"] == .0045
     assert cfg.newton_contact_settings["filter_immovable_contacts"] is True
     assert cfg.newton_contact_settings["support_rolling_friction"] == .001
@@ -83,7 +84,7 @@ def test_verified_friction_override_rejected_before_newton_import():
 
 
 @pytest.mark.parametrize("overrides", [
-    {"mesh_compatibility": "yes"}, {"contact_capacity": 0}, {"constraint_capacity": 1.5},
+    {"compact_contact_storage": "yes"}, {"mesh_compatibility": "yes"}, {"contact_capacity": 0}, {"constraint_capacity": 1.5},
     {"timeconst": .001}, {"impedance": (.999, .99)},
     {"gripper_damping": -1}, {"typo": 1}, {"filter_immovable_contacts": "yes"},
     {"support_rolling_friction": -1}, {"support_rolling_friction": float("nan")},

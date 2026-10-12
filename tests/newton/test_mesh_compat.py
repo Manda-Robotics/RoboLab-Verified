@@ -154,3 +154,36 @@ def test_runtime_scope_restores_compiler_and_builder_on_failure(monkeypatch):
     with pytest.raises(RuntimeError, match="Re-audit"):
         with compat.mesh_compatibility():
             pass
+
+
+def test_many_rejected_fragments_need_only_two_full_compiles():
+    spec = mesh_spec()
+    for i in range(1, 8):
+        spec.add_mesh(name=f"tiny_{i}", uservert=(V * (1e-5 + i*1e-7)).ravel(), userface=F.ravel())
+        spec.bodies[1].add_geom(type=mujoco.mjtGeom.mjGEOM_MESH, meshname=f"tiny_{i}")
+    # Small enough to probe, but valid in solid mode: do not change it.
+    spec.add_mesh(name="small_valid", uservert=(V * 5e-5).ravel(), userface=F.ravel())
+    spec.bodies[1].add_geom(type=mujoco.mjtGeom.mjGEOM_MESH, meshname="small_valid")
+    full_calls = []
+    def compile_original(candidate):
+        if candidate is spec:
+            full_calls.append(1)
+        return mujoco.MjSpec.compile(candidate)
+    reports = []
+    model = compat.compile_with_explicit_inertia(spec, compile_original, mujoco, reports)
+    assert len(full_calls) == 2
+    assert len(reports) == 8
+    assert model.body_mass[1] == .12
+    np.testing.assert_array_equal(model.body_inertia[1], [.003, .004, .005])
+    assert all(mesh.inertia == mujoco.mjtMeshInertia.mjMESH_INERTIA_LEGACY for mesh in spec.meshes)
+
+
+def test_batch_probe_skips_unsafe_users_and_restores_all_modes():
+    spec = mesh_spec()
+    spec.add_mesh(name="unsafe", uservert=(V * 1e-5).ravel(), userface=F.ravel())
+    body = spec.worldbody.add_body()
+    body.add_freejoint()
+    body.add_geom(type=mujoco.mjtGeom.mjGEOM_MESH, meshname="unsafe")
+    with pytest.raises(ValueError, match="volume is too small"):
+        compat.compile_with_explicit_inertia(spec, mujoco.MjSpec.compile, mujoco, [])
+    assert all(mesh.inertia == mujoco.mjtMeshInertia.mjMESH_INERTIA_LEGACY for mesh in spec.meshes)

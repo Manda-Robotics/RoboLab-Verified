@@ -48,6 +48,7 @@ For programmatic experiments, set `cfg.newton_contact_settings` before
 
 ```python
 cfg.newton_contact_settings = {
+    "compact_contact_storage": True,
     "mesh_compatibility": True,
     "single_hull_fingertips": True,
     "filter_immovable_contacts": True,
@@ -71,6 +72,16 @@ all users have explicit body inertia. It also gives generated flat CoACD
 fragments <= 0.1 mm a 1 micrometre thickness; it does not modify source USD or
 body inertial properties. Set `mesh_compatibility=False` for the original import
 path. See the mesh-import audit for the measured approximation and limitations.
+
+The compact storage option avoids storing redundant same-body exclusions and
+an unused Newton candidate table when native MuJoCo generates contacts. Both
+collision-mask compiler paths still receive the logical exclusions lazily.
+Explicit cross-body filters are preserved; use with Newton's own collision
+pipeline is rejected. Set `compact_contact_storage=False` for the original
+allocation path. MuJoCo-Warp's own quadratic pair tables remain: the detailed
+shelf-of-mugs test needed about 10 minutes to initialize even with cached native
+hulls, and sampled 92 GiB peak host RAM under a 128 GiB guard. See the
+[mesh and memory audit](verified/newton-mesh-audit-2026-10-12.md).
 
 The resolved dictionary is retained on the environment config. Contact response
 is applied to CPU and GPU model geom arrays before the first MJWarp step;

@@ -12,14 +12,72 @@ import re
 import numpy as np
 
 
+def _explicit_mesh_users(spec, mesh, mujoco):
+    users = [g for g in spec.geoms if g.meshname == mesh.name]
+    return (users and all(g.parent.explicitinertial and g.parent.mass > 0 for g in users)
+            and spec.compiler.inertiafromgeom != mujoco.mjtInertiaFromGeom.mjINERTIAFROMGEOM_TRUE)
+
+
+def _rejected_small_meshes(spec, compile_original, mujoco):
+    """Confirm tiny-volume failures in isolation instead of recompiling a scene.
+
+    Probe only inline meshes <= 0.1 mm across with explicit body inertia. The
+    original compiler must reject the exact copied mesh with its tiny-volume
+    error; size alone never selects the SHELL fallback. Other meshes retain the
+    ordinary full-model compiler path.
+    """
+    if spec.compiler.inertiafromgeom == mujoco.mjtInertiaFromGeom.mjINERTIAFROMGEOM_TRUE:
+        return
+    safe_users = {}
+    for geom in spec.geoms:
+        if geom.meshname:
+            safe_users[geom.meshname] = (safe_users.get(geom.meshname, True)
+                                        and geom.parent.explicitinertial and geom.parent.mass > 0)
+    for mesh in spec.meshes:
+        if (mesh.file or mesh.needsdf
+                or mesh.inertia == mujoco.mjtMeshInertia.mjMESH_INERTIA_SHELL):
+            continue
+        vertices = np.asarray(mesh.uservert).reshape(-1, 3) * mesh.scale
+        if (len(vertices) < 4 or not np.isfinite(vertices).all()
+                or np.linalg.norm(np.ptp(vertices, axis=0)) > 1e-4
+                or not safe_users.get(mesh.name, False)):
+            continue
+        probe = mujoco.MjSpec()
+        probe.compiler.inertiafromgeom = spec.compiler.inertiafromgeom
+        probe.compiler.alignfree = spec.compiler.alignfree
+        probe.add_mesh(name=mesh.name, uservert=mesh.uservert, userface=mesh.userface,
+                       scale=mesh.scale, refpos=mesh.refpos, refquat=mesh.refquat,
+                       maxhullvert=mesh.maxhullvert, inertia=mesh.inertia)
+        body = probe.worldbody.add_body(mass=1, inertia=[1, 1, 1], explicitinertial=True)
+        body.add_freejoint()
+        body.add_geom(type=mujoco.mjtGeom.mjGEOM_MESH, meshname=mesh.name)
+        try:
+            compile_original(probe)
+        except ValueError as error:
+            match = re.search(r"Error: mesh volume is too small: (.*?) \. Try setting inertia to shell", str(error))
+            if match and match[1] == mesh.name:
+                yield mesh
+
+
 def compile_with_explicit_inertia(spec, compile_original, mujoco, reports):
-    """Retry only a rejected mesh whose every user has explicit body inertia.
+    """Retry only rejected meshes whose every user has explicit body inertia.
 
     SHELL changes mesh inertia preprocessing, not the collision surface. Never
     allow it to determine a body's mass/inertia. Restore the input spec even
     when another compiler error follows a successful retry.
     """
     changed = []
+    batch_checked = False
+
+    def select(mesh):
+        changed.append((mesh, mesh.inertia))
+        mesh.inertia = mujoco.mjtMeshInertia.mjMESH_INERTIA_SHELL
+        vertices = np.asarray(mesh.uservert).reshape(-1, 3) * mesh.scale
+        report = {"kind": "tiny_mesh_explicit_inertia", "mesh": mesh.name,
+                  "extent_m": np.ptp(vertices, axis=0).tolist()}
+        reports.append(report)
+        print("NEWTON_MESH_COMPAT=" + json.dumps(report), flush=True)
+
     try:
         while True:
             try:
@@ -29,21 +87,17 @@ def compile_with_explicit_inertia(spec, compile_original, mujoco, reports):
                 if not match:
                     raise
                 mesh = next((m for m in spec.meshes if m.name == match[1]), None)
-                if mesh is None or mesh.inertia == mujoco.mjtMeshInertia.mjMESH_INERTIA_SHELL:
-                    raise
-                users = [g for g in spec.geoms if g.meshname == mesh.name]
-                if (not users or any(not g.parent.explicitinertial or not g.parent.mass > 0 for g in users)
-                        or spec.compiler.inertiafromgeom == mujoco.mjtInertiaFromGeom.mjINERTIAFROMGEOM_TRUE):
+                if (mesh is None or mesh.inertia == mujoco.mjtMeshInertia.mjMESH_INERTIA_SHELL
+                        or not _explicit_mesh_users(spec, mesh, mujoco)):
                     raise
                 vertices = np.asarray(mesh.uservert).reshape(-1, 3) * mesh.scale
                 if len(vertices) < 4 or not np.isfinite(vertices).all():
                     raise
-                changed.append((mesh, mesh.inertia))
-                mesh.inertia = mujoco.mjtMeshInertia.mjMESH_INERTIA_SHELL
-                report = {"kind": "tiny_mesh_explicit_inertia", "mesh": mesh.name,
-                          "extent_m": np.ptp(vertices, axis=0).tolist()}
-                reports.append(report)
-                print("NEWTON_MESH_COMPAT=" + json.dumps(report), flush=True)
+                select(mesh)
+                if not batch_checked:
+                    batch_checked = True
+                    for rejected in _rejected_small_meshes(spec, compile_original, mujoco):
+                        select(rejected)
     finally:
         for mesh, inertia in changed:
             mesh.inertia = inertia
