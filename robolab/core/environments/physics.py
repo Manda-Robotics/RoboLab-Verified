@@ -31,7 +31,7 @@ def configure_physics(cfg, backend="physx"):
     robot.spawn.usd_path = str(Path(ROBOTS_DIR) / overlay)
     if not Path(robot.spawn.usd_path).is_file():
         raise FileNotFoundError(f"Newton robot overlay missing: {robot.spawn.usd_path}")
-    settings = dict(single_hull_fingertips=True, filter_immovable_contacts=False, support_rolling_friction=None, timeconst=0.0045,
+    settings = dict(single_hull_fingertips=True, filter_immovable_contacts=True, support_rolling_friction=0.001, timeconst=0.0045,
                     impedance=(0.99, 0.999), contact_capacity=65536,
                     constraint_capacity=131072, gripper_stiffness=10.0,
                     gripper_damping=0.5, gripper_target_velocity=3.141592653589793)

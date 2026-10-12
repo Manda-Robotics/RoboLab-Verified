@@ -50,8 +50,8 @@ def test_newton_configuration_preserves_timing_and_selects_overlay(monkeypatch):
     assert cfg.sim.physics.solver_cfg.njmax == 131072
     assert cfg.sim.physics.use_cuda_graph is False
     assert cfg.newton_contact_settings["timeconst"] == .0045
-    assert cfg.newton_contact_settings["filter_immovable_contacts"] is False
-    assert cfg.newton_contact_settings["support_rolling_friction"] is None
+    assert cfg.newton_contact_settings["filter_immovable_contacts"] is True
+    assert cfg.newton_contact_settings["support_rolling_friction"] == .001
     assert cfg.sim.physics.num_substeps == 4
     assert cfg.scene.robot.actuators["gripper"].stiffness == 10
     assert cfg.scene.robot.actuators["gripper"].damping == .5

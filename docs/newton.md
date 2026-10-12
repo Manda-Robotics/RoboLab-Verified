@@ -48,6 +48,8 @@ For programmatic experiments, set `cfg.newton_contact_settings` before
 ```python
 cfg.newton_contact_settings = {
     "single_hull_fingertips": True,
+    "filter_immovable_contacts": True,
+    "support_rolling_friction": 0.001,  # rolling-friction length in metres
     "timeconst": 0.0045,
     "impedance": (0.99, 0.999),
     "contact_capacity": 65536,
@@ -57,6 +59,10 @@ cfg.newton_contact_settings = {
     "gripper_target_velocity": 3.141592653589793,
 }
 ```
+
+The Verified port now defaults to scenery filtering and support rolling
+resistance; see the [October 12 validation](verified/newton-settling-2026-10-12.md).
+Set these two options to `False` and `None` for the original-contact control.
 
 The resolved dictionary is retained on the environment config. Contact response
 is applied to CPU and GPU model geom arrays before the first MJWarp step;

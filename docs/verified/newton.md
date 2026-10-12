@@ -6,14 +6,17 @@ Verified has 186 commits after that base. The merge retains both histories.
 Only `pyproject.toml` and `robolab/eval/runner.py` had textual conflicts.
 
 **The small-sample GPU/contact integration checks pass; the backend remains experimental.**
-See the [October 11–12 GPU report](newton-gpu-2026-10-12.md) and the
-[October 12 passive-contact follow-up](newton-rocking-2026-10-12.md). The fresh
-host passed 61 Newton unit and 238 simulator/integration tests. Jug rocking also
-reproduces in CPU MuJoCo; PhysX settles without sleeping. A diagnostic filter of
-contacts between immovable scenery eliminates the shelf's internal solver motion
-and keeps the pail supported in an eight-second control. Import geometry varies,
-so this remains a candidate fix requiring a frozen-model comparison and broader
-validation. Production physics settings remain unchanged. The
+See the [October 11–12 GPU report](newton-gpu-2026-10-12.md),
+[passive-contact investigation](newton-rocking-2026-10-12.md), and
+[validated settling fixes](newton-settling-2026-10-12.md). The latest contact
+work passed 76 Newton unit cases locally, 238 simulator/integration cases on
+an RTX PRO 5000, replicated-world contact/recording checks, and paired bottle
+and cube grasp/release replays. In one reused scene with restored starting states,
+immovable-scenery filtering stops the shelf disturbance, and support-local
+rolling resistance reduces the sideways jug's late rocking from 14.65 to 0.031 mm.
+These are now the experimental Newton defaults. Broader scene coverage is still
+being audited; the cooking scene's tiny-onion-mesh import failure reproduces.
+The
 RUNTIME evidence in the Verified change register was collected with PhysX and
 does not transfer to Newton. PhysX is still the default. Select Newton with
 `--physics newton_mjwarp` in a shared evaluation runner.
