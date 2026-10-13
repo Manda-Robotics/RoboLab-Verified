@@ -34,9 +34,26 @@ def test_compiled_geometry_matches_all_source_contact_surfaces():
     entry = manifest['meshes'][build.MESH_NAME]
     assert entry['source_geometry_sha256'] == keyboard.geometry_key(vertices, faces)
     for (v, f), path in zip(components, entry['paths'], strict=True):
-        compiled_v, compiled_f, inset = build.compile_component(v, f)
+        compiled_v, _, inset = build.compile_component(v, f)
         np.testing.assert_array_equal(parts[path][0], compiled_v.astype(np.float32))
-        np.testing.assert_array_equal(parts[path][1], compiled_f)
+        # Qhull can triangulate coplanar faces differently across platforms.
+        # Verify a closed, outward convex surface with the same enclosed volume.
+        from collections import Counter
+        from scipy.spatial import ConvexHull
+        baked_v, baked_f = parts[path]
+        baked_v = baked_v.astype(float)
+        tri = baked_v[baked_f]
+        normals = np.cross(tri[:, 1]-tri[:, 0], tri[:, 2]-tri[:, 0])
+        lengths = np.linalg.norm(normals, axis=1)
+        assert (lengths > 1e-12).all()
+        normals /= lengths[:, None]
+        assert np.einsum('ij,ij->i', normals, tri.mean(1)-baked_v.mean(0)).min() > 0
+        assert np.einsum('fvi,fi->fv', baked_v[None]-tri[:, :1], normals).max() < 5e-7
+        edges = Counter(tuple(sorted(edge)) for face in baked_f
+                        for edge in zip(face, np.roll(face, -1)))
+        assert set(edges.values()) == {2}
+        volume = np.einsum('ij,ij->i', tri[:, 0], np.cross(tri[:, 1], tri[:, 2])).sum()/6
+        assert volume == pytest.approx(ConvexHull(baked_v).volume, rel=1e-5)
         assert inset < 2e-7
         assert len(compiled_v) <= 44
 
