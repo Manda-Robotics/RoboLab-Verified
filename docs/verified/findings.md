@@ -59,6 +59,7 @@ upstream v0.3.1, plus nine human review sessions whose episode-level verdicts ar
 | D5 | `nohup` + block-buffered stdout loses the run's result lines. | Observed on every long run that died at shutdown. | P10. |
 | D6 | The VRAM-bound env count is undocumented. | Cosmos3-Nano: 4 envs max on 48 GB. | [env_vram_size_guide.md](../env_vram_size_guide.md). |
 | D7 | A cut-short run leaves HDF5 trajectories with no results row. | — | P10's marker lets tooling tell a partial run from a finished one; rows are not fabricated. |
+| D8 | The recorder labels `target_lost` failures as successes in HDF5 by copying the OR of non-timeout termination terms. JSON correctly uses the named success term. | Newton `ReorientJugTask`, seed 0: target lost at step 780 (52 s), JSON `success=false`, HDF5 `success=true`; [retained baseline and hashes](evidence/newton-all-tasks-p126-baseline.json). | P126: offline regressions and recorded GPU target-loss/success controls; [verification and replay limitations](evidence/newton-all-tasks-p126-verification.json). |
 
 ## E. Dashboard
 

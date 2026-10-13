@@ -1,0 +1,109 @@
+{
+  "source_label": "778afa7+p126-draft-b904d3472eb6",
+  "negative_control": {
+    "kind": "controlled target-loss diagnostic, not a policy episode",
+    "task": "ReorientJugTask",
+    "before_target_pos_w": [
+      [
+        0.3296028971672058,
+        0.3881154954433441,
+        0.06509260088205338
+      ]
+    ],
+    "injected_target_pos_w": [
+      [
+        2.3296029567718506,
+        0.3881154954433441,
+        -0.23490741848945618
+      ]
+    ],
+    "result": {
+      "env_id": 0,
+      "success": false,
+      "step": 11,
+      "early_resets": 0,
+      "pre_satisfied": false,
+      "success_first_hold_step": null,
+      "success_confirmed_step": null,
+      "score_final": 0.0,
+      "collateral_placed": 0,
+      "towed_objects": []
+    },
+    "termination_terms": {
+      "time_out": [
+        false
+      ],
+      "success": [
+        false
+      ],
+      "target_lost": [
+        true
+      ]
+    },
+    "hdf5_success": false,
+    "recorded_steps": 11,
+    "hdf5_sha256": "a117aebba4aa46e8400fe74496fd6ca5d38e796707341053675aa586035b069f"
+  },
+  "success_replay": {
+    "task": "BananasOutOfBinTask",
+    "input_file": "/workspace/newton-all-tasks/policy_BananasOutOfBinTask/BananasOutOfBinTask/run_0.hdf5",
+    "input_sha256": "73ff9f0b8b10d4a79ff1c3c3a962d9082647e3be3cc78202b1e6c76152806986",
+    "recorded_actions_sha256": "726b7b05978c284f03e5523255578c930057496f5260289f5c69a4c577547d94",
+    "before": {
+      "hdf5_success": true,
+      "json_success": true,
+      "step": 482
+    },
+    "replay": {
+      "env_id": 0,
+      "success": true,
+      "step": 480,
+      "early_resets": 0,
+      "pre_satisfied": false,
+      "success_first_hold_step": 476,
+      "success_confirmed_step": 480,
+      "score_final": 1.0,
+      "collateral_placed": 0,
+      "towed_objects": []
+    },
+    "termination_terms": {
+      "time_out": [
+        false
+      ],
+      "success": [
+        true
+      ],
+      "target_lost": [
+        false
+      ]
+    },
+    "steps_replayed": 480,
+    "after_hdf5_success": true,
+    "after_hdf5_steps": 480
+  },
+  "checked_hdf5": [
+    {
+      "file": "recording_target_loss_control/controlled-loss.hdf5",
+      "sha256": "a117aebba4aa46e8400fe74496fd6ca5d38e796707341053675aa586035b069f",
+      "steps": 11,
+      "success": false
+    },
+    {
+      "file": "p126-verification/success_BananasOutOfBinTask/replay.hdf5",
+      "sha256": "3249003b0ff82d56be09c6a0401e895d73dd5935cba232b2782ef3d0090c5d05",
+      "steps": 480,
+      "success": true
+    }
+  ],
+  "limitations": [
+    "The original jug replay did not terminate within its 780 saved actions; it does not validate the failure fix. A deterministic target-loss control validates that path.",
+    "The first replay launcher failed after spawning due to a missing diagnostic metadata file, so its child exit statuses were not collected. Successful replay outputs and HDF5 were independently verified; the controlled target-loss test exited 0.",
+    "Recorded-action replay is not bitwise deterministic: the successful banana episode ended at 480 instead of 482 steps."
+  ],
+  "archive": {
+    "file": "p126-evidence.tar.gz",
+    "bytes": 768391,
+    "sha256": "83478d5c6fce5ed4d535ddf7ab5c858460243b98282167c78df1c6e56238ba4c",
+    "verified_files": 32
+  }
+}
