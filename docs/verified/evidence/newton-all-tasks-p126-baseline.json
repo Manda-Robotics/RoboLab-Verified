@@ -1,0 +1,26 @@
+{
+  "task": "ReorientJugTask",
+  "episode_step": 780,
+  "duration_s": 52.0,
+  "json_success": false,
+  "hdf5_success": true,
+  "hdf5_steps": 780,
+  "events": {
+    "GRIPPER_FULLY_CLOSED": 6,
+    "GRASP_ATTEMPT_FAILED": 4,
+    "GRIPPER_HIT_OBJECT": 1,
+    "TARGET_OBJECT_BUMPED": 3,
+    "OBJECT_FELL_OFF_TABLE": 1,
+    "TARGET_LOST": 1
+  },
+  "hdf5_sha256": "d6a0506017fbb966be713ffcca0ccbcb1ad11461815286ca3791a84b72c4fdde",
+  "source_label": "778afa7-runtime-c513131",
+  "baseline_archive": {
+    "case": "policy_ReorientJugTask",
+    "file": "policy_ReorientJugTask.tar.gz",
+    "bytes": 1541663,
+    "sha256": "ce20c8da534fc68c66bf1b61a8d020f1b18143cbbd1b8504b4992d856df93b12",
+    "files": 16,
+    "verified_files": 16
+  }
+}
