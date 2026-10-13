@@ -164,14 +164,20 @@ def physics_context(cfg, backend="physx", launcher_args=None):
         from robolab.core.environments.newton_mesh_compat import mesh_compatibility
         compatibility = mesh_compatibility()
     storage = nullcontext()
+    initialization = nullcontext()
     if native_mesh_import and getattr(cfg, "newton_contact_settings", {}).get("compact_contact_storage", False):
         from robolab.core.environments.newton_native_contacts import native_contact_storage
         storage = native_contact_storage()
+        import mujoco
+        from newton.solvers import SolverMuJoCo
+        from robolab.core.environments.newton_initialization import defer_initial_cpu_contacts
+
+        initialization = defer_initial_cpu_contacts(SolverMuJoCo, mujoco)
     shelf = nullcontext()
     if native_mesh_import and getattr(cfg, "newton_contact_settings", {}).get("compact_shelf_colliders", False):
         from robolab.core.environments.newton_shelf import shelf_colliders
         shelf = shelf_colliders()
-    with storage, meshes, shelf, compatibility, contacts:
+    with storage, meshes, shelf, compatibility, contacts, initialization:
         with launch_simulation(cfg, launch_args):
             yield
 
