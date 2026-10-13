@@ -151,6 +151,7 @@ class WorldState:
         env: ManagerBasedRLEnv,
     ):
         self._local_geometry_cache: dict[str, dict] = {}
+        self._extra_pose_views: dict[str, Any] = {}
         # Stateful predicate storage. Outer key identifies the predicate +
         # its parameterization; inner dict is opaque to WorldState except for
         # the optional "__reset__" callable, which is invoked per env_ids on
@@ -162,6 +163,7 @@ class WorldState:
         if env != self.env:
             self.env = env
             self._local_geometry_cache.clear()
+            self._extra_pose_views.clear()
             self._predicate_state.clear()
             if robolab.constants.DEBUG:
                 caller_info = get_caller_info()
@@ -214,7 +216,21 @@ class WorldState:
         if body in self.objects.keys():
             return self.objects.get(body)
         elif body in self.extras.keys():
-            return self.extras.get(body)
+            extra = self.extras[body]
+            if isinstance(extra, AssetBaseCfg):
+                # Lab 3 keeps static extras as configs rather than creating
+                # Xform views. Build a read-only USD view lazily; standardizing
+                # xform ops here would mutate already-cloned scene geometry.
+                if body not in self._extra_pose_views:
+                    from isaaclab.sim.views import UsdFrameView
+
+                    view = UsdFrameView(extra.prim_path, device=self.env.device,
+                                        validate_xform_ops=False)
+                    if view.count == 0:
+                        raise ValueError(f"[WorldState] No prims match static object '{body}': {extra.prim_path}")
+                    self._extra_pose_views[body] = view
+                return self._extra_pose_views[body]
+            return extra
         elif body in self.articulations.keys():
             return self.articulations.get(body)
         elif body in self.deformable_objects.keys():
