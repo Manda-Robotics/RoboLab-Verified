@@ -49,6 +49,7 @@ def test_newton_configuration_preserves_timing_and_selects_overlay(monkeypatch):
     assert cfg.sim.physics.solver_cfg.nconmax == 65536
     assert cfg.sim.physics.solver_cfg.njmax == 131072
     assert cfg.sim.physics.use_cuda_graph is False
+    assert cfg.newton_contact_settings["enable_multiccd"] is True
     assert cfg.newton_contact_settings["mesh_compatibility"] is True
     assert cfg.newton_contact_settings["compact_keyboard_colliders"] is True
     assert cfg.newton_contact_settings["compact_shelf_colliders"] is True
@@ -86,7 +87,7 @@ def test_verified_friction_override_rejected_before_newton_import():
 
 
 @pytest.mark.parametrize("overrides", [
-    {"compact_keyboard_colliders": "yes"}, {"compact_shelf_colliders": "yes"}, {"compact_contact_storage": "yes"}, {"mesh_compatibility": "yes"}, {"contact_capacity": 0}, {"constraint_capacity": 1.5},
+    {"enable_multiccd": "yes"}, {"compact_keyboard_colliders": "yes"}, {"compact_shelf_colliders": "yes"}, {"compact_contact_storage": "yes"}, {"mesh_compatibility": "yes"}, {"contact_capacity": 0}, {"constraint_capacity": 1.5},
     {"timeconst": .001}, {"impedance": (.999, .99)},
     {"gripper_damping": -1}, {"typo": 1}, {"filter_immovable_contacts": "yes"},
     {"support_rolling_friction": -1}, {"support_rolling_friction": float("nan")},

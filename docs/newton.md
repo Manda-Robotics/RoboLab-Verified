@@ -48,6 +48,7 @@ For programmatic experiments, set `cfg.newton_contact_settings` before
 
 ```python
 cfg.newton_contact_settings = {
+    "enable_multiccd": True,
     "compact_keyboard_colliders": True,
     "compact_shelf_colliders": True,
     "compact_contact_storage": True,
@@ -96,6 +97,16 @@ meshes use a single convex hull. The `rack_l04` shelf uses the compiled collisio
 asset described below. The HOT3D keyboard uses 110 compiled component hulls.
 Other object assets retain native authored approximation;
 original visuals are retained.
+
+The `enable_multiccd` option enables native multi-point contact manifolds for
+convex meshes before MuJoCo compilation and GPU upload. Newton 1.5.2 otherwise
+disables them. This prevents flat contact patches from behaving like a single
+pivot: the three-cube stack's top-cube motion at 17–20 seconds fell from a
+20.63 mm XY span to 0.20 mm, with unchanged geometry, mass and friction. The
+pinned Isaac Lab configuration lacks this field, so a scoped constructor bridge
+sets it only for native-contact GPU solvers. Newton handles the corresponding
+zero-margin requirement. Set `enable_multiccd=False` for the earlier
+single-contact diagnostic control; do not mix results from those presets.
 
 The `compact_shelf_colliders` option replaces rack_l04's detailed CoACD output
 with a compiled 44-piece USD: four post envelopes, four feet, eight braces,
