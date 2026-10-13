@@ -24,3 +24,6 @@ assets/robots/franka_robotiq_2f_85_newton_nogravity.usda -filter diff merge text
 # Generated, reviewable shelf collision geometry (CC BY 4.0).
 # Preserve the USD writer's canonical terminal blank line.
 assets/objects/vomp/rack_l04/rack_l04_colliders.usda -filter diff merge text whitespace=-blank-at-eof
+
+# Generated HOT3D keyboard collision geometry; same license as its source.
+assets/objects/hot3d/keyboard_colliders.usda -filter diff merge text whitespace=-blank-at-eof

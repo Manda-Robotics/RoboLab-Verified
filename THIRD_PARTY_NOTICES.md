@@ -59,7 +59,7 @@ RoboLab bundles 3D objects, backgrounds, materials, fixtures, scenes, and robots
 |---|---|---|
 | `handal` | CC BY-NC-SA 4.0 | Derivative of the [HANDAL](https://github.com/NVlabs/HANDAL) dataset, © 2023 NVIDIA Corporation. See [`assets/objects/handal/LICENSE`](./assets/objects/handal/LICENSE). |
 | `hope` | CC BY-NC-SA 4.0 | Derivative of the [HOPE](https://github.com/swtyree/hope-dataset) dataset, © 2021 NVIDIA Corporation. See [`assets/objects/hope/LICENSE`](./assets/objects/hope/LICENSE). |
-| `hot3d` | CC BY-SA 4.0, with HOT3D Dataset License Agreement non-sale restriction | Derivative of the [HOT3D](https://www.projectaria.com/datasets/hot3d/license/) Model Data, © Meta Platforms Technologies, LLC. See [`assets/objects/hot3d/LICENSE`](./assets/objects/hot3d/LICENSE). |
+| `hot3d` | CC BY-SA 4.0, with HOT3D Dataset License Agreement non-sale restriction | Derivative of the [HOT3D](https://www.projectaria.com/datasets/hot3d/license/) Model Data, © Meta Platforms Technologies, LLC. See [`assets/objects/hot3d/LICENSE`](./assets/objects/hot3d/LICENSE). Includes the compiled keyboard collider derivative; [modifications](assets/objects/hot3d/README.md). |
 | `ycb` | MIT | Derivative of the [YCB-Video](https://github.com/yuxng/YCB_Video_toolbox) dataset, © 2017 Yu Xiang. See [`assets/objects/ycb/LICENSE`](./assets/objects/ycb/LICENSE). |
 | `basic` | CC BY-NC-SA 4.0 | © 2026 NVIDIA Corporation. |
 | `fruits_veggies` | CC BY-NC-SA 4.0 | © 2026 NVIDIA Corporation. |

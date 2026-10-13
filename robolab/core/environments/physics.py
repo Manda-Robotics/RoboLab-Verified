@@ -31,7 +31,7 @@ def configure_physics(cfg, backend="physx"):
     robot.spawn.usd_path = str(Path(ROBOTS_DIR) / overlay)
     if not Path(robot.spawn.usd_path).is_file():
         raise FileNotFoundError(f"Newton robot overlay missing: {robot.spawn.usd_path}")
-    settings = dict(compact_shelf_colliders=True, compact_contact_storage=True, mesh_compatibility=True, single_hull_fingertips=True, filter_immovable_contacts=True, support_rolling_friction=0.001, timeconst=0.0045,
+    settings = dict(compact_keyboard_colliders=True, compact_shelf_colliders=True, compact_contact_storage=True, mesh_compatibility=True, single_hull_fingertips=True, filter_immovable_contacts=True, support_rolling_friction=0.001, timeconst=0.0045,
                     impedance=(0.99, 0.999), contact_capacity=65536,
                     constraint_capacity=131072, gripper_stiffness=10.0,
                     gripper_damping=0.5, gripper_target_velocity=3.141592653589793)
@@ -40,6 +40,8 @@ def configure_physics(cfg, backend="physx"):
         raise ValueError("Unknown Newton contact setting")
     settings.update(overrides)
     from math import isfinite
+    if not isinstance(settings["compact_keyboard_colliders"], bool):
+        raise ValueError("compact_keyboard_colliders must be boolean")
     if not isinstance(settings["compact_shelf_colliders"], bool):
         raise ValueError("compact_shelf_colliders must be boolean")
     if not isinstance(settings["compact_contact_storage"], bool):
@@ -177,7 +179,11 @@ def physics_context(cfg, backend="physx", launcher_args=None):
     if native_mesh_import and getattr(cfg, "newton_contact_settings", {}).get("compact_shelf_colliders", False):
         from robolab.core.environments.newton_shelf import shelf_colliders
         shelf = shelf_colliders()
-    with storage, meshes, shelf, compatibility, contacts, initialization:
+    keyboard = nullcontext()
+    if native_mesh_import and getattr(cfg, "newton_contact_settings", {}).get("compact_keyboard_colliders", False):
+        from robolab.core.environments.newton_keyboard import keyboard_colliders
+        keyboard = keyboard_colliders()
+    with storage, meshes, shelf, keyboard, compatibility, contacts, initialization:
         with launch_simulation(cfg, launch_args):
             yield
 

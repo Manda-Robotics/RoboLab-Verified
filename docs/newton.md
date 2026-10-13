@@ -48,6 +48,7 @@ For programmatic experiments, set `cfg.newton_contact_settings` before
 
 ```python
 cfg.newton_contact_settings = {
+    "compact_keyboard_colliders": True,
     "compact_shelf_colliders": True,
     "compact_contact_storage": True,
     "mesh_compatibility": True,
@@ -79,7 +80,10 @@ an unused Newton candidate table when native MuJoCo generates contacts. Both
 collision-mask compiler paths still receive the logical exclusions lazily.
 Explicit cross-body filters are preserved; use with Newton's own collision
 pipeline is rejected. Set `compact_contact_storage=False` for the original
-allocation path. MuJoCo-Warp's own quadratic pair tables remain, so collision
+allocation and initialization path. On the GPU path, the redundant CPU staging
+contact solve is deferred to MJWarp; initial kinematics and equalities are still
+computed, and contact flags are restored before uploading. CPU solvers and
+runtime GPU contacts are unchanged. MuJoCo-Warp's own quadratic pair tables remain, so collision
 geometry complexity still matters. The detailed shelf previously needed about
 ten minutes and 92 GiB host RAM. The compiled shelf asset below brings this to
 18–19 seconds and under 8 GiB in the three tested shelf tasks; see the
@@ -89,7 +93,8 @@ The resolved dictionary is retained on the environment config. Contact response
 is applied to CPU and GPU model geom arrays before the first MJWarp step;
 equality parameters are unchanged. The two Robotiq fingertip pad collision
 meshes use a single convex hull. The `rack_l04` shelf uses the compiled collision
-asset described below. Other object assets retain native authored approximation;
+asset described below. The HOT3D keyboard uses 110 compiled component hulls.
+Other object assets retain native authored approximation;
 original visuals are retained.
 
 The `compact_shelf_colliders` option replaces rack_l04's detailed CoACD output
@@ -101,6 +106,14 @@ at the validated scale of 0.2. Original rendering is retained. Source and compil
 asset fingerprints prevent silent reuse after geometry changes. See the
 [asset build and audit instructions](../assets/objects/vomp/rack_l04/README.md).
 Set `compact_shelf_colliders=False` to restore the expensive original import.
+
+The `compact_keyboard_colliders` option replaces the HOT3D keyboard's 5,504
+CoACD pieces with 110 component hulls. The source consists of separate, convex
+keycaps and base pieces; this keeps their exterior surfaces and inter-key gaps,
+closing only open keycap bottoms. Source and compiled geometry fingerprints
+are checked before import. Mass, inertia, visuals and filters retain the native
+import path. Set the option to `False` for native decomposition. See the
+[build and geometry checks](../assets/objects/hot3d/README.md).
 
 The scoped adapters require the pinned stack and one active simulation runtime
 per process. They restore patched methods on exit. Eager execution is intentional:
