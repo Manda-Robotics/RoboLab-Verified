@@ -15,7 +15,7 @@ from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import TiledCameraCfg
-from isaaclab.sensors.frame_transformer.frame_transformer_cfg import FrameTransformerCfg
+from isaaclab.sensors.frame_transformer.frame_transformer_cfg import FrameTransformerCfg, OffsetCfg
 from isaaclab.utils import configclass
 
 from robolab.constants import ROBOTS_DIR
@@ -125,11 +125,13 @@ class KinovaGen3Cfg:
 
     frames = FrameTransformerCfg(
         prim_path="{ENV_REGEX_NS}/robot/base_link",
+        source_frame_offset=OffsetCfg(rot=(1.0, 0.0, 0.0, 0.0)),
         debug_vis=False,
         target_frames=[
             FrameTransformerCfg.FrameCfg(
                 prim_path=f"{{ENV_REGEX_NS}}/robot/{END_EFFECTOR_LINK_NAME}",
                 name="eef_frame",
+                offset=OffsetCfg(rot=(1.0, 0.0, 0.0, 0.0)),
             )
         ],
     )
