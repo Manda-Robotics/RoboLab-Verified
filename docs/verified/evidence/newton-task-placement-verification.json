@@ -1280,7 +1280,7 @@
     "friction",
     "solver parameters"
   ],
-  "scope": "Two 20-second source-based corrected physics runs; policy and complete task coverage remain in progress.",
+  "scope": "Two 20-second source-based corrected physics runs and one fresh successful policy episode for each corrected scene. Complete 120-task coverage remains in progress.",
   "initial_contact_diagnostics": {
     "desk-full-baseline-contacts.json": {
       "zero_margin_geometry_diagnostic": true,
@@ -1553,5 +1553,246 @@
     "file": "placement-contact-evidence.tar.gz",
     "bytes": 6590,
     "sha256": "e43cf54f66794c7323b1e90547fb95ca40031bb47b77371529c914fcf29da4c7"
+  },
+  "policy_cases": {
+    "policy_MouseOnKeyboardTask_deskfix": {
+      "result": {
+        "env_name": "MouseOnKeyboardTask",
+        "task_name": "MouseOnKeyboardTask",
+        "run_name": "MouseOnKeyboardTask_0",
+        "run": 0,
+        "episode": 0,
+        "env_id": 0,
+        "policy": "pi05",
+        "instruction": "Put the computer mouse on the keyboard",
+        "attributes": [
+          "semantics",
+          "simple"
+        ],
+        "success": true,
+        "episode_step": 201,
+        "duration": 13.4,
+        "early_resets": 0,
+        "pre_satisfied": false,
+        "collateral_placed": 0,
+        "towed_objects": [],
+        "physics_artifact": false,
+        "success_first_hold_s": 13.4,
+        "success_confirmed_s": 13.4,
+        "dt": 0.06666666666666667,
+        "metrics": {
+          "ee_sparc": -4.062403092793694,
+          "joint_sparc_mean": -4.787121135675558,
+          "ee_isj": 136.90447526664235,
+          "joint_isj": 1763.3533266121322,
+          "ee_path_length": 0.9592343244523575,
+          "joint_rmse_mean": 0.022420805187070982,
+          "ee_speed_max": 0.2938813865184784,
+          "ee_speed_mean": 0.0667533427476883
+        },
+        "events": {
+          "GRIPPER_HIT_OBJECT": 1,
+          "OBJECT_BUMPED": 5,
+          "GRIPPER_HIT_TABLE": 1,
+          "OBJECT_GRIPPED": 1,
+          "OBJECT_CARRIED": 1,
+          "OBJECT_GRABBED_SUCCESS": 1,
+          "OBJECT_RELEASED": 1,
+          "SUBTASK_COMPLETED": 1
+        },
+        "instruction_type": "default",
+        "timing": {
+          "policy_inference_s": 2.899,
+          "policy_inference_avg_ms": 14.4,
+          "env_step_s": 199.918,
+          "env_step_avg_ms": 994.6,
+          "video_write_s": 0.733,
+          "video_write_avg_ms": 3.6,
+          "wall_total_s": 203.55,
+          "it_per_sec": 0.99
+        },
+        "score": 1.0,
+        "score_peak": 1.0,
+        "reason": "Completed subtask 'pick_and_place' 1/1",
+        "phases": {
+          "time_by_family_s": {
+            "motion": 4.73,
+            "in_hand": 3.87,
+            "grasp": 2.07,
+            "scene": 1.53,
+            "still": 0.67,
+            "table": 0.33,
+            "settle": 0.2
+          },
+          "n_phases": 21,
+          "n_picks": 1,
+          "n_picks_pass": 1,
+          "n_picks_wrong_object": 0,
+          "n_drops": 0,
+          "n_places_by_cause": {
+            "released": 1
+          },
+          "n_places_pass": 1,
+          "first_contact_s": 4.67,
+          "time_in_hand_s": 3.87,
+          "time_press_table_s": 1.27,
+          "n_flags": 0
+        },
+        "tows": {
+          "tow_tier": null,
+          "n_tow": 0,
+          "n_drag": 0,
+          "n_press": 0,
+          "n_squeeze": 0,
+          "towed_objects": [],
+          "tow_time_s": 0.0,
+          "first_tow_s": null,
+          "max_depth_mm": 0.0
+        }
+      },
+      "recording_checks": {
+        "finite_numeric_data": true,
+        "all_step_lengths_match": true,
+        "unit_quaternions": true,
+        "pad_and_extra_contact_channels": true,
+        "video_lengths_match": true
+      },
+      "archive": {
+        "case": "policy_MouseOnKeyboardTask_deskfix",
+        "file": "policy_MouseOnKeyboardTask_deskfix.tar.gz",
+        "bytes": 782231,
+        "sha256": "bb9a425e4b8e2919202169d9506e03a3b063c9a4fa6a3dd39d3a238c5bdd87b3",
+        "files": 17,
+        "verified_files": 17
+      },
+      "review": "Five evenly spaced shoulder/wrist frames plus events and finite-state/recording checks; no claim of full video review."
+    },
+    "policy_ToolOrganizationTask_toolsfix": {
+      "result": {
+        "env_name": "ToolOrganizationTask",
+        "task_name": "ToolOrganizationTask",
+        "run_name": "ToolOrganizationTask_0",
+        "run": 0,
+        "episode": 0,
+        "env_id": 0,
+        "policy": "pi05",
+        "instruction": "Put the red hammer and black hammer in the left bin",
+        "attributes": [
+          "semantics",
+          "spatial",
+          "color",
+          "moderate"
+        ],
+        "success": true,
+        "episode_step": 2468,
+        "duration": 164.53333333333333,
+        "early_resets": 0,
+        "pre_satisfied": false,
+        "collateral_placed": 1,
+        "towed_objects": [],
+        "physics_artifact": false,
+        "success_first_hold_s": 164.53333333333333,
+        "success_confirmed_s": 164.53333333333333,
+        "dt": 0.06666666666666667,
+        "metrics": {
+          "ee_sparc": -5.580784492911997,
+          "joint_sparc_mean": -13.080384675891697,
+          "ee_isj": 2198.263461308811,
+          "joint_isj": 31704.7148525487,
+          "ee_path_length": 11.228044867631924,
+          "joint_rmse_mean": 0.02134342917662482,
+          "ee_speed_max": 0.2998345196247101,
+          "ee_speed_mean": 0.06503116339445114
+        },
+        "events": {
+          "GRIPPER_HIT_TABLE": 20,
+          "OBJECT_GRIPPED": 14,
+          "OBJECT_CARRIED": 14,
+          "OBJECT_GRABBED_SUCCESS": 8,
+          "OBJECT_DROPPED": 6,
+          "GRIPPER_FULLY_CLOSED": 8,
+          "TARGET_OBJECT_BUMPED": 20,
+          "GRASP_ATTEMPT_FAILED": 6,
+          "OBJECT_RELEASED": 8,
+          "MULTIPLE_OBJECTS_GRABBED": 1,
+          "OBJECT_IN_CONTAINER_SUCCESS": 1,
+          "GRIPPER_HIT_OBJECT": 2,
+          "WRONG_OBJECT_GRABBED": 1,
+          "OBJECT_BUMPED": 1,
+          "WRONG_OBJECT_PLACED": 1,
+          "SUBTASK_COMPLETED": 1,
+          "wrong_objects_grabbed": [
+            "spring_clamp"
+          ]
+        },
+        "instruction_type": "default",
+        "timing": {
+          "policy_inference_s": 32.886,
+          "policy_inference_avg_ms": 13.3,
+          "env_step_s": 1495.083,
+          "env_step_avg_ms": 605.8,
+          "video_write_s": 7.154,
+          "video_write_avg_ms": 2.9,
+          "wall_total_s": 1535.123,
+          "it_per_sec": 1.61
+        },
+        "score": 1.0,
+        "score_peak": 1.0,
+        "reason": "Completed subtask 'pick_and_place' 1/1",
+        "phases": {
+          "time_by_family_s": {
+            "motion": 65.6,
+            "in_hand": 48.07,
+            "grasp": 27.47,
+            "scene": 8.6,
+            "table": 8.13,
+            "still": 6.47,
+            "settle": 0.2
+          },
+          "n_phases": 201,
+          "n_picks": 18,
+          "n_picks_pass": 16,
+          "n_picks_wrong_object": 1,
+          "n_drops": 6,
+          "n_places_by_cause": {
+            "knocked": 6,
+            "released": 8,
+            "slipped": 2
+          },
+          "n_places_pass": 8,
+          "first_contact_s": 14.13,
+          "time_in_hand_s": 48.33,
+          "time_press_table_s": 11.53,
+          "n_flags": 30
+        },
+        "tows": {
+          "tow_tier": null,
+          "n_tow": 0,
+          "n_drag": 0,
+          "n_press": 0,
+          "n_squeeze": 0,
+          "towed_objects": [],
+          "tow_time_s": 0.0,
+          "first_tow_s": null,
+          "max_depth_mm": 0.0
+        }
+      },
+      "recording_checks": {
+        "finite_numeric_data": true,
+        "all_step_lengths_match": true,
+        "unit_quaternions": true,
+        "pad_and_extra_contact_channels": true,
+        "video_lengths_match": true
+      },
+      "archive": {
+        "case": "policy_ToolOrganizationTask_toolsfix",
+        "file": "policy_ToolOrganizationTask_toolsfix.tar.gz",
+        "bytes": 5588627,
+        "sha256": "d1903bd039487b28aa3c1bb8885bfca28a617cede662cc5140465138f27fdcc2",
+        "files": 17,
+        "verified_files": 17
+      },
+      "review": "Five evenly spaced shoulder/wrist frames plus events and finite-state/recording checks; no claim of full video review."
+    }
   }
 }

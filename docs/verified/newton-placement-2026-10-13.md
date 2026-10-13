@@ -41,8 +41,11 @@ actual corrected scene runs, not the earlier configuration-offset controls.
 
 The fresh `MouseOnKeyboardTask` policy episode succeeds at step 201 (13.4 s),
 with a grasp, carry and release. This is one example, not evidence that the
-placement change improves policy success rates. The tools policy rerun and
-the full 120-task physics/policy sweep continue separately.
+placement change improves policy success rates. The fresh
+`ToolOrganizationTask` episode also succeeds at step 2468 (164.53 s), after
+several drops and retries; both hammer placements complete. Its finite-state,
+recording and success-label checks pass. The full 120-task physics/policy
+sweep continues separately.
 
 The desk edit affects `MarkerInMugTask`, `MouseOnKeyboardTask` and
 `PickGlassesTask`. The tools edit affects `ClampInRightBinTask`,
