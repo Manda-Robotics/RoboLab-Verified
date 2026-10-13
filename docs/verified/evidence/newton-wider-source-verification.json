@@ -1,0 +1,171 @@
+{
+  "archive": "wider-evidence-final.tar.gz",
+  "archive_bytes": 1106294180,
+  "archive_sha256": "bfcdbc98220127b26b62e4f92cddc0bcae9596da63e9527ebfa14f03aaf52f5d",
+  "verified_files": 47550,
+  "remote_base_commit": "be9332cb2a944be9a19ade2305ecdff5e86fe571",
+  "local_implementation_commit": "c5131318c23bd6f652db1effbc17ae9b3fe1b220",
+  "source_hash_comparisons": {
+    "assets/objects/hot3d/keyboard_colliders.json": {
+      "remote_sha256": "708f84dffaab6f4bc34e4742973d26713214269901f70ce748aa391455287cf4",
+      "local_sha256": "708f84dffaab6f4bc34e4742973d26713214269901f70ce748aa391455287cf4"
+    },
+    "assets/objects/hot3d/keyboard_colliders.usda": {
+      "remote_sha256": "d3342e1c42221f4f7506e9fc5f12933186f79c9aed7115fafd0630247c4d5f98",
+      "local_sha256": "d3342e1c42221f4f7506e9fc5f12933186f79c9aed7115fafd0630247c4d5f98"
+    },
+    "assets/scenes/fruits_out_of_basket.usda": {
+      "remote_sha256": "ac81848b9b85e825cdda527cd15e7e709470e09f2c41008f40e6bc732b303bfa",
+      "local_sha256": "ac81848b9b85e825cdda527cd15e7e709470e09f2c41008f40e6bc732b303bfa"
+    },
+    "assets/scenes/objects_around_table.usda": {
+      "remote_sha256": "3caedd962469e4a32c6ce452a3fb2f9e18b32ddfcd2e5167edaa61681f24020c",
+      "local_sha256": "3caedd962469e4a32c6ce452a3fb2f9e18b32ddfcd2e5167edaa61681f24020c"
+    },
+    "robolab/core/environments/newton_initialization.py": {
+      "remote_sha256": "a043212603ae95dc53183b2eac07904b19ed4aa8bfc14e8060f272ef8b6ca8bd",
+      "local_sha256": "a043212603ae95dc53183b2eac07904b19ed4aa8bfc14e8060f272ef8b6ca8bd"
+    },
+    "robolab/core/environments/newton_keyboard.py": {
+      "remote_sha256": "0a80b23896d091d89d62c3eb4de7b4a7fe477e5bf96121fba16da7ba334757a0",
+      "local_sha256": "0a80b23896d091d89d62c3eb4de7b4a7fe477e5bf96121fba16da7ba334757a0"
+    },
+    "robolab/core/environments/newton_multiccd.py": {
+      "remote_sha256": "b23d6b46eb61467da3ae535b8072e75e99a26f2229f19f77817bd0425690e010",
+      "local_sha256": "b23d6b46eb61467da3ae535b8072e75e99a26f2229f19f77817bd0425690e010"
+    },
+    "robolab/core/environments/newton_shelf.py": {
+      "remote_sha256": "a82757ef0c168fb517759673aafc3a8c3857c11f88dbf8f9a08c89dc1e276fa5",
+      "local_sha256": "a82757ef0c168fb517759673aafc3a8c3857c11f88dbf8f9a08c89dc1e276fa5"
+    },
+    "robolab/core/environments/physics.py": {
+      "remote_sha256": "7708cf3d7dba1bb34947d9533b0a36bf11c7d42f6ce49bd57fcb78789538a0b8",
+      "local_sha256": "7708cf3d7dba1bb34947d9533b0a36bf11c7d42f6ce49bd57fcb78789538a0b8"
+    },
+    "robolab/core/utils/newton_compiled_colliders.py": {
+      "remote_sha256": "142d589ad0d6790fdadf36df27ba5723f47f19d713d2ca43a0ffb2525ea87571",
+      "local_sha256": "142d589ad0d6790fdadf36df27ba5723f47f19d713d2ca43a0ffb2525ea87571"
+    },
+    "robolab/core/utils/rot_defaults.py": {
+      "remote_sha256": "b6f6d980570e602a853a702ebb2b0f9828dd5568801a9ebec9788fdecb7e1304",
+      "local_sha256": "b6f6d980570e602a853a702ebb2b0f9828dd5568801a9ebec9788fdecb7e1304"
+    },
+    "robolab/core/world/world_state.py": {
+      "remote_sha256": "ac2173a5f9c01d1693fe85c0bdff187c7b83c86e9deb20d7dfebb19287615777",
+      "local_sha256": "ac2173a5f9c01d1693fe85c0bdff187c7b83c86e9deb20d7dfebb19287615777"
+    },
+    "robolab/robots/bimanual_franka.py": {
+      "remote_sha256": "a7d8d099190f8c6fcecbc5acef8f0fdfdfb3ab8229e987a3a3762ea6d8b44022",
+      "local_sha256": "a7d8d099190f8c6fcecbc5acef8f0fdfdfb3ab8229e987a3a3762ea6d8b44022"
+    },
+    "robolab/robots/droid.py": {
+      "remote_sha256": "aba7f62b6aa60ef93331cbd6559a17d2cbd735c1aa1d48fa4e3cf2addfd54d25",
+      "local_sha256": "aba7f62b6aa60ef93331cbd6559a17d2cbd735c1aa1d48fa4e3cf2addfd54d25"
+    },
+    "robolab/robots/franka.py": {
+      "remote_sha256": "973dce7e6c899b889385356ed308c8eefd3acf7c0522fce01d13e8fe49fdc7a1",
+      "local_sha256": "973dce7e6c899b889385356ed308c8eefd3acf7c0522fce01d13e8fe49fdc7a1"
+    },
+    "robolab/robots/franka_definitions.py": {
+      "remote_sha256": "fd19c090101d55f66459282cf01ef0ce9ee530f31ccdb850d40407649560ab60",
+      "local_sha256": "fd19c090101d55f66459282cf01ef0ce9ee530f31ccdb850d40407649560ab60"
+    },
+    "robolab/robots/franka_high_pd.py": {
+      "remote_sha256": "4e5eafb8400bf2da34d1aae630abc2a2b6838de541e6efaf77cb0cf970305b1e",
+      "local_sha256": "4e5eafb8400bf2da34d1aae630abc2a2b6838de541e6efaf77cb0cf970305b1e"
+    },
+    "robolab/robots/kinova_gen3.py": {
+      "remote_sha256": "ea2f5fdd3084a8ba5ee1870db87d1271ee299d91403fb80e0cb04227ec36d72b",
+      "local_sha256": "ea2f5fdd3084a8ba5ee1870db87d1271ee299d91403fb80e0cb04227ec36d72b"
+    },
+    "robolab/tasks/benchmark/white_mug_in_center_of_table.py": {
+      "remote_sha256": "288b14a6aa3209e4af9eace1f4f10511bbf714d01398f85db3e492647a53b6b8",
+      "local_sha256": "288b14a6aa3209e4af9eace1f4f10511bbf714d01398f85db3e492647a53b6b8"
+    },
+    "robolab/variations/backgrounds.py": {
+      "remote_sha256": "8381fde2107c4a3f3f3cea0becad5f8294f22436a40ad6fc14b918269d3b66c3",
+      "local_sha256": "8381fde2107c4a3f3f3cea0becad5f8294f22436a40ad6fc14b918269d3b66c3"
+    },
+    "robolab/variations/lighting.py": {
+      "remote_sha256": "cdac8a21e960308df58bb546fe77cc1f5a40ba219ee1620c2d0c99b6e9a854ec",
+      "local_sha256": "cdac8a21e960308df58bb546fe77cc1f5a40ba219ee1620c2d0c99b6e9a854ec"
+    },
+    "scripts/build_newton_keyboard.py": {
+      "remote_sha256": "9bc6693fb0493be60ff45e66ee7c97baad5331a9734905688f6bb7a6b59fb894",
+      "local_sha256": "9bc6693fb0493be60ff45e66ee7c97baad5331a9734905688f6bb7a6b59fb894"
+    },
+    "tests/newton/test_keyboard_colliders.py": {
+      "remote_sha256": "d114035fbf340a84c5c4f689e76bf316f1b108352b5997f212215a2b3dd79fc9",
+      "local_sha256": "d114035fbf340a84c5c4f689e76bf316f1b108352b5997f212215a2b3dd79fc9"
+    },
+    "tests/newton/test_multiccd.py": {
+      "remote_sha256": "1c6be7426f872f799404a3a989ae26ec31a7cca9b75f26450580b3bdbee3bb20",
+      "local_sha256": "1c6be7426f872f799404a3a989ae26ec31a7cca9b75f26450580b3bdbee3bb20"
+    },
+    "tests/newton/test_newton_initialization.py": {
+      "remote_sha256": "10e7a243ab222a19280239ac72251c8c0974b71750db72981d4d4b21dd8d7bc2",
+      "local_sha256": "10e7a243ab222a19280239ac72251c8c0974b71750db72981d4d4b21dd8d7bc2"
+    },
+    "tests/newton/test_physics.py": {
+      "remote_sha256": "7a2f55066b953556a971b59cdff9967cd5214ac3d3742f950ccafd99c92312da",
+      "local_sha256": "7a2f55066b953556a971b59cdff9967cd5214ac3d3742f950ccafd99c92312da"
+    },
+    "tests/test_bimanual_frames.py": {
+      "remote_sha256": "6dcecda6e71a192ee8f53e02c737cb219803320447ca6e9ff3f212708a2b714a",
+      "local_sha256": "6dcecda6e71a192ee8f53e02c737cb219803320447ca6e9ff3f212708a2b714a"
+    },
+    "tests/test_static_extras.py": {
+      "remote_sha256": "3d83b03944e489b1c014c03cf6efbcdbcd9d32e6c58bee8647614efe7b7d1a12",
+      "local_sha256": "3d83b03944e489b1c014c03cf6efbcdbcd9d32e6c58bee8647614efe7b7d1a12"
+    }
+  },
+  "non_runtime_differences": [],
+  "local_only_files": [
+    ".gitattributes",
+    "THIRD_PARTY_NOTICES.md",
+    "assets/objects/hot3d/README.md",
+    "docs/newton.md",
+    "offline_tests/test_rot_defaults.py"
+  ],
+  "runtime_source_complete_and_matches": true,
+  "local_source_archive": {
+    "file": "local-implementation-source.tar.gz",
+    "sha256": "cae2f03eb564264a5e87e6df48e6c15c28158417178d35df17129169c7f814e2",
+    "bytes": 7655082,
+    "files_sha256": {
+      ".gitattributes": "d49ee9426d28ae600a45f40ab1d59e23014f8292f651b4e6cee7d0cba45af955",
+      "THIRD_PARTY_NOTICES.md": "9bd5f05a3ea567aebaa558d5833535d035a636ac78da4a329c781678d768eade",
+      "assets/objects/hot3d/README.md": "e514bc18fe7a0ac7321fdf2dd7c8b25a6a62a2d0f8c1d8e3fb2abbd5cbd6d181",
+      "assets/objects/hot3d/keyboard_colliders.json": "708f84dffaab6f4bc34e4742973d26713214269901f70ce748aa391455287cf4",
+      "assets/objects/hot3d/keyboard_colliders.usda": "d3342e1c42221f4f7506e9fc5f12933186f79c9aed7115fafd0630247c4d5f98",
+      "assets/scenes/fruits_out_of_basket.usda": "ac81848b9b85e825cdda527cd15e7e709470e09f2c41008f40e6bc732b303bfa",
+      "assets/scenes/objects_around_table.usda": "3caedd962469e4a32c6ce452a3fb2f9e18b32ddfcd2e5167edaa61681f24020c",
+      "docs/newton.md": "76cff9f3051feb40c6bca24564bffaaa6be850e1be7ac3511ee253a812f1311c",
+      "offline_tests/test_rot_defaults.py": "d784c9c0333617e1bf37779c5b93ec0810e9e48ffa06a3418d782ab23f653a99",
+      "robolab/core/environments/newton_initialization.py": "a043212603ae95dc53183b2eac07904b19ed4aa8bfc14e8060f272ef8b6ca8bd",
+      "robolab/core/environments/newton_keyboard.py": "0a80b23896d091d89d62c3eb4de7b4a7fe477e5bf96121fba16da7ba334757a0",
+      "robolab/core/environments/newton_multiccd.py": "b23d6b46eb61467da3ae535b8072e75e99a26f2229f19f77817bd0425690e010",
+      "robolab/core/environments/newton_shelf.py": "a82757ef0c168fb517759673aafc3a8c3857c11f88dbf8f9a08c89dc1e276fa5",
+      "robolab/core/environments/physics.py": "7708cf3d7dba1bb34947d9533b0a36bf11c7d42f6ce49bd57fcb78789538a0b8",
+      "robolab/core/utils/newton_compiled_colliders.py": "142d589ad0d6790fdadf36df27ba5723f47f19d713d2ca43a0ffb2525ea87571",
+      "robolab/core/utils/rot_defaults.py": "b6f6d980570e602a853a702ebb2b0f9828dd5568801a9ebec9788fdecb7e1304",
+      "robolab/core/world/world_state.py": "ac2173a5f9c01d1693fe85c0bdff187c7b83c86e9deb20d7dfebb19287615777",
+      "robolab/robots/bimanual_franka.py": "a7d8d099190f8c6fcecbc5acef8f0fdfdfb3ab8229e987a3a3762ea6d8b44022",
+      "robolab/robots/droid.py": "aba7f62b6aa60ef93331cbd6559a17d2cbd735c1aa1d48fa4e3cf2addfd54d25",
+      "robolab/robots/franka.py": "973dce7e6c899b889385356ed308c8eefd3acf7c0522fce01d13e8fe49fdc7a1",
+      "robolab/robots/franka_definitions.py": "fd19c090101d55f66459282cf01ef0ce9ee530f31ccdb850d40407649560ab60",
+      "robolab/robots/franka_high_pd.py": "4e5eafb8400bf2da34d1aae630abc2a2b6838de541e6efaf77cb0cf970305b1e",
+      "robolab/robots/kinova_gen3.py": "ea2f5fdd3084a8ba5ee1870db87d1271ee299d91403fb80e0cb04227ec36d72b",
+      "robolab/tasks/benchmark/white_mug_in_center_of_table.py": "288b14a6aa3209e4af9eace1f4f10511bbf714d01398f85db3e492647a53b6b8",
+      "robolab/variations/backgrounds.py": "8381fde2107c4a3f3f3cea0becad5f8294f22436a40ad6fc14b918269d3b66c3",
+      "robolab/variations/lighting.py": "cdac8a21e960308df58bb546fe77cc1f5a40ba219ee1620c2d0c99b6e9a854ec",
+      "scripts/build_newton_keyboard.py": "9bc6693fb0493be60ff45e66ee7c97baad5331a9734905688f6bb7a6b59fb894",
+      "tests/newton/test_keyboard_colliders.py": "d114035fbf340a84c5c4f689e76bf316f1b108352b5997f212215a2b3dd79fc9",
+      "tests/newton/test_multiccd.py": "1c6be7426f872f799404a3a989ae26ec31a7cca9b75f26450580b3bdbee3bb20",
+      "tests/newton/test_newton_initialization.py": "10e7a243ab222a19280239ac72251c8c0974b71750db72981d4d4b21dd8d7bc2",
+      "tests/newton/test_physics.py": "7a2f55066b953556a971b59cdff9967cd5214ac3d3742f950ccafd99c92312da",
+      "tests/test_bimanual_frames.py": "6dcecda6e71a192ee8f53e02c737cb219803320447ca6e9ff3f212708a2b714a",
+      "tests/test_static_extras.py": "3d83b03944e489b1c014c03cf6efbcdbcd9d32e6c58bee8647614efe7b7d1a12"
+    }
+  }
+}

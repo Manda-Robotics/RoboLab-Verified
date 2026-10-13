@@ -1,0 +1,119 @@
+{
+  "episodes": [
+    {
+      "env_id": 0,
+      "success": true,
+      "steps": 167,
+      "datasets": 83,
+      "video": "policy_parallel_RubiksCubeTask_4/RubiksCubeTask/Put_the_cube_in_the_bowl_0_env0.mp4",
+      "video_frames": 166,
+      "video_size": [
+        960,
+        270
+      ],
+      "ee_velocity_rms": 0.04137960448861122,
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "events": {
+        "TARGET_OBJECT_BUMPED": 1,
+        "OBJECT_GRIPPED": 1,
+        "OBJECT_CARRIED": 1,
+        "OBJECT_GRABBED_SUCCESS": 1,
+        "OBJECT_RELEASED": 1,
+        "SUBTASK_COMPLETED": 1
+      }
+    },
+    {
+      "env_id": 1,
+      "success": true,
+      "steps": 150,
+      "datasets": 83,
+      "video": "policy_parallel_RubiksCubeTask_4/RubiksCubeTask/Put_the_cube_in_the_bowl_0_env1.mp4",
+      "video_frames": 149,
+      "video_size": [
+        960,
+        270
+      ],
+      "ee_velocity_rms": 0.049074552953243256,
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "events": {
+        "GRASP_ATTEMPT_FAILED": 1,
+        "OBJECT_GRIPPED": 1,
+        "OBJECT_CARRIED": 1,
+        "OBJECT_GRABBED_SUCCESS": 1,
+        "OBJECT_RELEASED": 1,
+        "SUBTASK_COMPLETED": 1
+      }
+    },
+    {
+      "env_id": 2,
+      "success": true,
+      "steps": 160,
+      "datasets": 83,
+      "video": "policy_parallel_RubiksCubeTask_4/RubiksCubeTask/Put_the_cube_in_the_bowl_0_env2.mp4",
+      "video_frames": 159,
+      "video_size": [
+        960,
+        270
+      ],
+      "ee_velocity_rms": 0.04048829898238182,
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "events": {
+        "OBJECT_GRIPPED": 1,
+        "OBJECT_CARRIED": 1,
+        "OBJECT_GRABBED_SUCCESS": 1,
+        "OBJECT_RELEASED": 1,
+        "SUBTASK_COMPLETED": 1
+      }
+    },
+    {
+      "env_id": 3,
+      "success": true,
+      "steps": 146,
+      "datasets": 83,
+      "video": "policy_parallel_RubiksCubeTask_4/RubiksCubeTask/Put_the_cube_in_the_bowl_0_env3.mp4",
+      "video_frames": 145,
+      "video_size": [
+        960,
+        270
+      ],
+      "ee_velocity_rms": 0.04636256396770477,
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "events": {
+        "OBJECT_GRIPPED": 1,
+        "OBJECT_CARRIED": 1,
+        "OBJECT_GRABBED_SUCCESS": 1,
+        "OBJECT_RELEASED": 1,
+        "SUBTASK_COMPLETED": 1
+      }
+    }
+  ],
+  "initial_local_pose_errors_m": {
+    "0": {
+      "bowl": 0.0,
+      "rubiks_cube": 0.0,
+      "table": 0.0
+    },
+    "1": {
+      "bowl": 0.0,
+      "rubiks_cube": 0.0,
+      "table": 0.0
+    },
+    "2": {
+      "bowl": 0.0,
+      "rubiks_cube": 0.0,
+      "table": 0.0
+    },
+    "3": {
+      "bowl": 0.0,
+      "rubiks_cube": 0.0,
+      "table": 0.0
+    }
+  },
+  "different_terminal_steps": true,
+  "all_exports_stop_at_own_terminal_step": true,
+  "hdf5": "policy_parallel_RubiksCubeTask_4/RubiksCubeTask/run_0.hdf5"
+}

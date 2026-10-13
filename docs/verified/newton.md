@@ -5,27 +5,37 @@ from `ymetz/RoboLab`, ending at `56d461a`. Their common base is `82725b5`;
 Verified has 186 commits after that base. The merge retains both histories.
 Only `pyproject.toml` and `robolab/eval/runner.py` had textual conflicts.
 
-**The small-sample GPU/contact integration checks pass; the backend remains experimental.**
-See the [October 11–12 GPU report](newton-gpu-2026-10-12.md),
-[passive-contact investigation](newton-rocking-2026-10-12.md), and
-[validated settling fixes](newton-settling-2026-10-12.md). The latest contact
-work passed 76 Newton unit cases locally, 238 simulator/integration cases on
-an RTX PRO 5000, replicated-world contact/recording checks, and paired bottle
-and cube grasp/release replays. In one reused scene with restored starting states,
-immovable-scenery filtering stops the shelf disturbance, and support-local
-rolling resistance reduces the sideways jug's late rocking from 14.65 to 0.031 mm.
-These are now the experimental Newton defaults. The [wider scene audit](newton-mesh-audit-2026-10-12.md)
-adds narrow mesh-import repairs and compact Newton contact storage. That
-follow-up passed 98 Newton tests, 313 Verified offline tests, 238 simulator/integration
-cases, the two-world contact/recording audit, bottle/cube recorded-action replays,
-and five 20-second passive scenes. The [compiled shelf follow-up](newton-shelf-2026-10-13.md)
-replaces the rack's 35,903 collision pieces with 44 prebuilt convex pieces. The
-three shelf task configurations initialize in 18–19 seconds with less than 8 GiB
-peak host RSS, versus about ten minutes and 92 GiB for the detailed rack. All
-106 Newton regression tests, three 20-second shelf task runs and eight isolated
-GPU drop/slide probes pass; body mass and inertia are preserved exactly.
-This is sampled integration coverage, not a complete benchmark or fresh-policy
-validation. See the audit for exact revisions, settings, limits and evidence.
+**The sampled GPU/contact integration checks pass; the backend remains experimental.**
+The [October 13 wider validation](newton-wider-2026-10-13.md) checks 47 distinct
+layouts representing 120 task definitions (15 layouts for 20 seconds, the rest
+for six). The final preset enables native multi-point contacts, reducing the
+stack's top-cube late motion from 20.63 to about 0.20 mm. It also repairs scene
+placements/static extras, explicit rotations and CPU staging initialization,
+and compiles the keyboard from 5,503 collision pieces to 110.
+
+Final results: 317 Verified offline tests, 123 Newton GPU regression tests and
+241 simulator/integration tests passed. Fresh single-world pi0.5 episodes
+succeeded on cube, banana and bottle; all three tested shelf tasks failed after
+robot–rack collisions. Four parallel cube policy episodes succeeded with
+independent terminal recordings. Cube/shelf scaling passed at 1–16 worlds with
+default buffers. The default buffers fail GPU allocation at 32; explicit
+smaller buffers pass there at 55.35/41.40 aggregate environment steps per second,
+including three RTX cameras per world and excluding policy inference. These
+smaller buffers are tested overrides, not new defaults.
+
+The earlier [GPU report](newton-gpu-2026-10-12.md),
+[rocking investigation](newton-rocking-2026-10-12.md),
+[settling fixes](newton-settling-2026-10-12.md),
+[mesh-import audit](newton-mesh-audit-2026-10-12.md), and
+[compiled shelf audit](newton-shelf-2026-10-13.md) retain their original evidence.
+The compiled shelf replaces 35,903 pieces with 44 while preserving mass/inertia;
+the three earlier shelf configurations initialized in 18–19 seconds and under
+8 GiB host RSS, versus about ten minutes and 92 GiB with the detailed rack.
+
+This is sampled integration and fresh-policy coverage. Full task/seed coverage,
+robot–shelf manipulation behavior, hardware calibration and matched PhysX
+policy success rates remain open. See the wider audit for exact settings,
+revisions, recording checks and evidence hashes.
 The RUNTIME evidence in the Verified change register was collected with PhysX and
 does not transfer to Newton. PhysX is still the default. Select Newton with
 `--physics newton_mjwarp` in a shared evaluation runner.
@@ -71,8 +81,8 @@ pail leaving the scene, earlier obscured camera scenes, uncalibrated inertias an
 contact forces, and zero recorded end-effector velocities despite motion. The
 October GPU run did not reproduce the zero-velocity issue and checked recorded
 velocities against pose differences. It established sampled two-environment
-contact routing, force clearing, recording and repeat resets. Long runs, broader
-scene coverage, calibration and policy success-rate parity remain unestablished.
+contact routing, force clearing, recording and repeat resets. The October 13
+follow-up above extends scene and batch coverage; long episodes, calibration and policy success-rate parity remain unestablished.
 
 The added CPU tests exercise reversed object ordering, separate environments,
 multiple filter bodies, release to zero, tensor conversion, unchanged PhysX

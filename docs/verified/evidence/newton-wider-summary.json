@@ -1,0 +1,1979 @@
+{
+  "coverage": [
+    {
+      "scene": "toys_cleanup.usda",
+      "task": "AnimalsInBinTask",
+      "all_tasks": [
+        "AnimalsInBinTask",
+        "BlocksInBinTask",
+        "CleanUpToysTask",
+        "CubesAndBlocksInBinTask",
+        "RubiksCubesInBinTask",
+        "StackYellowOnRedTask"
+      ],
+      "case": "followup_manifold_AnimalsInBinTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.2993703102584387,
+      "motion_flags": {}
+    },
+    {
+      "scene": "workdesk_snacks.usda",
+      "task": "AppleAndYogurtInBowlTask",
+      "all_tasks": [
+        "AppleAndYogurtInBowlTask",
+        "ThrowAwayAppleTask",
+        "ThrowAwaySnacksTask"
+      ],
+      "case": "followup_manifold_AppleAndYogurtInBowlTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.43520958941553956,
+      "motion_flags": {
+        "smartphone": {
+          "tail_xy_span_mm": 0.37753272519237385,
+          "tail_angular_rms": 0.11411670945762112,
+          "max_drop_m": 0.0
+        },
+        "computer_mouse": {
+          "tail_xy_span_mm": 0.15565216897241446,
+          "tail_angular_rms": 0.17931525073910673,
+          "max_drop_m": 0.0
+        }
+      }
+    },
+    {
+      "scene": "bagel_plate_banana_bowl.usda",
+      "task": "BagelsOnPlateTask",
+      "all_tasks": [
+        "BagelsOnPlateTask",
+        "BananaOnPlateTask"
+      ],
+      "case": "followup_manifold_BagelsOnPlateTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 1.1647624778295875,
+      "motion_flags": {
+        "banana": {
+          "tail_xy_span_mm": 1.1647624778295875,
+          "tail_angular_rms": 0.23196325508866403,
+          "max_drop_m": 0.002262316644191742
+        }
+      }
+    },
+    {
+      "scene": "banana_bowl.usda",
+      "task": "BananaInBowlTask",
+      "all_tasks": [
+        "BananaInBowlTask"
+      ],
+      "case": "followup_long_manifold_BananaInBowlTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.2086678233925666,
+      "motion_flags": {
+        "bowl": {
+          "tail_xy_span_mm": 0.05449664927813765,
+          "tail_angular_rms": 0.10642523110431172,
+          "max_drop_m": 0.0
+        }
+      }
+    },
+    {
+      "scene": "bananas_5_grey_bin.usda",
+      "task": "BananasInBinOneMoreTask",
+      "all_tasks": [
+        "BananasInBinOneMoreTask",
+        "BananasInBinThreeTotalTask",
+        "BananasOutOfBinTask"
+      ],
+      "case": "followup_long_manifold_BananasInBinOneMoreTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.7847171774571241,
+      "motion_flags": {
+        "banana": {
+          "tail_xy_span_mm": 0.7847171774571241,
+          "tail_angular_rms": 0.1317037883654152,
+          "max_drop_m": 0.0008783191442489624
+        },
+        "banana_01": {
+          "tail_xy_span_mm": 0.7583551308638591,
+          "tail_angular_rms": 0.1257712301530291,
+          "max_drop_m": 0.007741138339042664
+        },
+        "banana_02": {
+          "tail_xy_span_mm": 0.3346280271272996,
+          "tail_angular_rms": 0.19175733846067977,
+          "max_drop_m": 0.0051486194133758545
+        }
+      }
+    },
+    {
+      "scene": "bananas_5_in_crate.usda",
+      "task": "BananasInCrateTask",
+      "all_tasks": [
+        "BananasInCrateTask"
+      ],
+      "case": "followup_manifold_BananasInCrateTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.9972660872894155,
+      "motion_flags": {
+        "banana": {
+          "tail_xy_span_mm": 0.39811122737560417,
+          "tail_angular_rms": 0.20091554702487122,
+          "max_drop_m": 0.0
+        },
+        "banana_03": {
+          "tail_xy_span_mm": 0.6920638632805662,
+          "tail_angular_rms": 0.15228222254632118,
+          "max_drop_m": 0.00021222978830337524
+        }
+      }
+    },
+    {
+      "scene": "rubiks_cube_banana_bowl.usda",
+      "task": "BananaThenRubiksCubeTask",
+      "all_tasks": [
+        "BananaThenRubiksCubeTask",
+        "RubiksCubeAndBananaTask",
+        "RubiksCubeBehindBowlTask",
+        "RubiksCubeInFrontOfBowlTask",
+        "RubiksCubeLeftOfBowlTask",
+        "RubiksCubeOrBananaTask",
+        "RubiksCubeThenBananaTask"
+      ],
+      "case": "followup_manifold_BananaThenRubiksCubeTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.8091643345404042,
+      "motion_flags": {
+        "banana": {
+          "tail_xy_span_mm": 0.8091643345404042,
+          "tail_angular_rms": 0.17659953077811932,
+          "max_drop_m": 0.0004545077681541443
+        }
+      }
+    },
+    {
+      "scene": "bin_condiments.usda",
+      "task": "BBQSauceInBinTask",
+      "all_tasks": [
+        "BBQSauceInBinTask",
+        "CannedFoodInBinTask",
+        "CoffeePotInBinTask",
+        "CondimentsInBinTask"
+      ],
+      "case": "followup_manifold_BBQSauceInBinTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 1.0844662528271793,
+      "motion_flags": {
+        "ranch_dressing": {
+          "tail_xy_span_mm": 0.1749833657921137,
+          "tail_angular_rms": 0.10887865605124868,
+          "max_drop_m": 0.0021467600017786026
+        },
+        "bbq_sauce_bottle": {
+          "tail_xy_span_mm": 1.0844662528271793,
+          "tail_angular_rms": 0.2891520541250655,
+          "max_drop_m": 0.00971389189362526
+        }
+      }
+    },
+    {
+      "scene": "clutter_fruit_bottle_bluebin.usda",
+      "task": "BigPumpkinInBinTask",
+      "all_tasks": [
+        "BigPumpkinInBinTask",
+        "ClearOrganicObjectsTask",
+        "ClutterPlasticTask",
+        "ClutterPumpkinTask",
+        "SmallPumpkinInBinTask"
+      ],
+      "case": "followup_long_manifold_BigPumpkinInBinTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 1.8438815429524236,
+      "motion_flags": {
+        "lemon_01": {
+          "tail_xy_span_mm": 0.30619658358073526,
+          "tail_angular_rms": 0.18168872969145267,
+          "max_drop_m": 0.0
+        },
+        "lemon_02": {
+          "tail_xy_span_mm": 0.018364041365970175,
+          "tail_angular_rms": 0.10033904347107304,
+          "max_drop_m": 0.0
+        },
+        "lime01": {
+          "tail_xy_span_mm": 0.19568879800399766,
+          "tail_angular_rms": 0.21826213818290774,
+          "max_drop_m": 0.0
+        },
+        "lime01_01": {
+          "tail_xy_span_mm": 0.189652997555887,
+          "tail_angular_rms": 0.22660077864641245,
+          "max_drop_m": 0.0
+        },
+        "orange_01": {
+          "tail_xy_span_mm": 0.14063250967626845,
+          "tail_angular_rms": 0.3679609387397077,
+          "max_drop_m": 0.0
+        },
+        "orange_02": {
+          "tail_xy_span_mm": 0.4973181421880016,
+          "tail_angular_rms": 0.5338923063378351,
+          "max_drop_m": 0.0
+        },
+        "pomegranate01": {
+          "tail_xy_span_mm": 0.09254171787579801,
+          "tail_angular_rms": 0.11437727468566368,
+          "max_drop_m": 0.0014730992843396962
+        },
+        "avocado01": {
+          "tail_xy_span_mm": 1.8438815429524236,
+          "tail_angular_rms": 0.17084606911992994,
+          "max_drop_m": 0.02248125709593296
+        },
+        "red_onion": {
+          "tail_xy_span_mm": 0.7742683197325797,
+          "tail_angular_rms": 0.43042245968198717,
+          "max_drop_m": 0.06288688629865646
+        }
+      }
+    },
+    {
+      "scene": "workdesk_bin.usda",
+      "task": "BlackItemsInBinTask",
+      "all_tasks": [
+        "BlackItemsInBinTask",
+        "ElectronicsInBinTask",
+        "KeyboardOutOfBinTask",
+        "PhoneOrRemoteInBinTask",
+        "SmartphoneInBinTask",
+        "SpoonInMugTask",
+        "ToyInBinTask"
+      ],
+      "case": "followup_manifold_BlackItemsInBinTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 2.301814542854721,
+      "motion_flags": {
+        "marker": {
+          "tail_xy_span_mm": 2.301814542854721,
+          "tail_angular_rms": 0.03988792711284364,
+          "max_drop_m": 0.0
+        },
+        "computer_mouse": {
+          "tail_xy_span_mm": 0.1414593532209369,
+          "tail_angular_rms": 0.17916775716804978,
+          "max_drop_m": 0.0
+        }
+      }
+    },
+    {
+      "scene": "colored_blocks.usda",
+      "task": "BlockStackingOrderAgnosticTask",
+      "all_tasks": [
+        "BlockStackingOrderAgnosticTask",
+        "BlockStackingSpecifiedOrderTask"
+      ],
+      "case": "followup_manifold_BlockStackingOrderAgnosticTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.007507374844698747,
+      "motion_flags": {}
+    },
+    {
+      "scene": "bin_mug_mustard_marker_bowl.usda",
+      "task": "BowlInBinTask",
+      "all_tasks": [
+        "BowlInBinTask"
+      ],
+      "case": "followup_manifold_BowlInBinTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.2598979692809674,
+      "motion_flags": {}
+    },
+    {
+      "scene": "bowls_2_table.usda",
+      "task": "BowlStackingLeftOnRightTask",
+      "all_tasks": [
+        "BowlStackingLeftOnRightTask",
+        "BowlStackingRightOnLeftTask"
+      ],
+      "case": "followup_manifold_BowlStackingLeftOnRightTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.02682929342594411,
+      "motion_flags": {}
+    },
+    {
+      "scene": "butter_raisin_box.usda",
+      "task": "ButterAboveRaisinTask",
+      "all_tasks": [
+        "ButterAboveRaisinTask"
+      ],
+      "case": "followup_manifold_ButterAboveRaisinTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.4336020109435523,
+      "motion_flags": {
+        "raisin_box": {
+          "tail_xy_span_mm": 0.4336020109435523,
+          "tail_angular_rms": 0.15367317575107953,
+          "max_drop_m": 0.0004754718393087387
+        }
+      }
+    },
+    {
+      "scene": "tools_container.usda",
+      "task": "ClampInRightBinTask",
+      "all_tasks": [
+        "ClampInRightBinTask",
+        "HammersInLeftBinTask",
+        "NonHammerToolsInRightBinTask",
+        "ToolOrganizationBothTask",
+        "ToolOrganizationTask"
+      ],
+      "case": "followup_manifold_ClampInRightBinTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 1.3995367542206785,
+      "motion_flags": {
+        "spring_clamp": {
+          "tail_xy_span_mm": 0.14578146972347758,
+          "tail_angular_rms": 0.12666087914402838,
+          "max_drop_m": 0.0
+        },
+        "husky_hammer": {
+          "tail_xy_span_mm": 1.3995367542206785,
+          "tail_angular_rms": 0.040608388391843706,
+          "max_drop_m": 0.0
+        }
+      }
+    },
+    {
+      "scene": "cooking_table.usda",
+      "task": "CookingClearPlateTask",
+      "all_tasks": [
+        "CookingClearPlateTask",
+        "CookingPickPastaToolTask",
+        "PickOrangeObjectTask"
+      ],
+      "case": "followup_long_manifold_CookingClearPlateTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.48417243688550776,
+      "motion_flags": {
+        "redonion": {
+          "tail_xy_span_mm": 0.20162349074058267,
+          "tail_angular_rms": 0.10664290918800913,
+          "max_drop_m": 0.0025380849838256836
+        },
+        "tomato_sauce_can": {
+          "tail_xy_span_mm": 0.009670658451250586,
+          "tail_angular_rms": 0.006379939096036736,
+          "max_drop_m": 0.035602714866399765
+        }
+      }
+    },
+    {
+      "scene": "mugs2_bananas2_ketchup_rubiks3_bin.usda",
+      "task": "DishesInBinTask",
+      "all_tasks": [
+        "DishesInBinTask",
+        "WhiteMugsInBinTask"
+      ],
+      "case": "followup_manifold_DishesInBinTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 1.1941144912937671,
+      "motion_flags": {
+        "banana_near": {
+          "tail_xy_span_mm": 1.1941144912937671,
+          "tail_angular_rms": 0.26240224100617004,
+          "max_drop_m": 0.00047288835048675537
+        },
+        "banana_far": {
+          "tail_xy_span_mm": 0.8817748381046336,
+          "tail_angular_rms": 0.2114511441200135,
+          "max_drop_m": 0.0005748718976974487
+        }
+      }
+    },
+    {
+      "scene": "foodpacking_1bin_1box_1can.usda",
+      "task": "FoodPacking1BoxesTask",
+      "all_tasks": [
+        "FoodPacking1BoxesTask",
+        "FoodPacking1CansTask"
+      ],
+      "case": "followup_manifold_FoodPacking1BoxesTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.06574476078118957,
+      "motion_flags": {}
+    },
+    {
+      "scene": "foodpacking_1bin_2box_2can.usda",
+      "task": "FoodPacking2BoxesTask",
+      "all_tasks": [
+        "FoodPacking2BoxesTask",
+        "FoodPacking2CansTask"
+      ],
+      "case": "followup_manifold_FoodPacking2BoxesTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.2589722426782377,
+      "motion_flags": {}
+    },
+    {
+      "scene": "foodpacking_1bin_3box_3can.usda",
+      "task": "FoodPacking3BoxesTask",
+      "all_tasks": [
+        "FoodPacking3BoxesTask",
+        "FoodPacking3CansTask"
+      ],
+      "case": "followup_manifold_FoodPacking3BoxesTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.17552864557693126,
+      "motion_flags": {
+        "spam_can": {
+          "tail_xy_span_mm": 0.15320680825823,
+          "tail_angular_rms": 0.10777723428052434,
+          "max_drop_m": 0.0
+        }
+      }
+    },
+    {
+      "scene": "food_packing.usda",
+      "task": "FoodPackingByColorTask",
+      "all_tasks": [
+        "FoodPackingByColorTask"
+      ],
+      "case": "followup_manifold_FoodPackingByColorTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.3139272840430706,
+      "motion_flags": {}
+    },
+    {
+      "scene": "fruits_out_of_basket.usda",
+      "task": "FruitsGreenLimesOnPlateTask",
+      "all_tasks": [
+        "FruitsGreenLimesOnPlateTask",
+        "FruitsOnPlate3Task",
+        "FruitsOnPlateTask",
+        "FruitsOrangesOnPlateTask"
+      ],
+      "case": "followup_manifold_FruitsGreenLimesOnPlateTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.6616784350051973,
+      "motion_flags": {
+        "lemon_01": {
+          "tail_xy_span_mm": 0.12386646530554088,
+          "tail_angular_rms": 0.12264701497379321,
+          "max_drop_m": 0.0
+        },
+        "lemon_02": {
+          "tail_xy_span_mm": 0.17807579675498142,
+          "tail_angular_rms": 0.13888337356629485,
+          "max_drop_m": 0.004006844013929367
+        },
+        "lime01": {
+          "tail_xy_span_mm": 0.26539777137519444,
+          "tail_angular_rms": 0.2430124630918861,
+          "max_drop_m": 0.0
+        },
+        "lime01_01": {
+          "tail_xy_span_mm": 0.26338194434734147,
+          "tail_angular_rms": 0.25049524247674393,
+          "max_drop_m": 0.0
+        },
+        "orange_01": {
+          "tail_xy_span_mm": 0.12736956061259166,
+          "tail_angular_rms": 0.10307420218082627,
+          "max_drop_m": 0.0030983672477304935
+        },
+        "orange_02": {
+          "tail_xy_span_mm": 0.6236337638328922,
+          "tail_angular_rms": 0.10790019450263921,
+          "max_drop_m": 0.011693969368934631
+        },
+        "redonion": {
+          "tail_xy_span_mm": 0.6616784350051973,
+          "tail_angular_rms": 0.38625186149964946,
+          "max_drop_m": 0.0
+        }
+      }
+    },
+    {
+      "scene": "fruits_in_basket.usda",
+      "task": "FruitsMovingOrangeOrLimeTask",
+      "all_tasks": [
+        "FruitsMovingOrangeOrLimeTask",
+        "FruitsMovingTask",
+        "FruitsOnionTask",
+        "FruitsOnionToPlateTask",
+        "WoodSpatulaToBowlTask"
+      ],
+      "case": "followup_long_manifold_FruitsMovingOrangeOrLimeTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 1.2059428930807168,
+      "motion_flags": {
+        "lemon_01": {
+          "tail_xy_span_mm": 0.7625128958265069,
+          "tail_angular_rms": 0.06612180195361494,
+          "max_drop_m": 0.03029283508658409
+        },
+        "orange_01": {
+          "tail_xy_span_mm": 1.2059428930807168,
+          "tail_angular_rms": 0.04860381206061395,
+          "max_drop_m": 0.0
+        },
+        "orange_02": {
+          "tail_xy_span_mm": 1.1119590230669965,
+          "tail_angular_rms": 0.05338048087771679,
+          "max_drop_m": 0.0
+        },
+        "redonion": {
+          "tail_xy_span_mm": 1.0458044171071403,
+          "tail_angular_rms": 0.4696119448449151,
+          "max_drop_m": 0.0
+        }
+      }
+    },
+    {
+      "scene": "breakfast_table.usda",
+      "task": "GrabABagelTask",
+      "all_tasks": [
+        "GrabABagelTask",
+        "GrabAFruitTask",
+        "MoveBananaToBagelPlateTask",
+        "UtensilsInMugTask",
+        "YogurtInBowlTask"
+      ],
+      "case": "followup_manifold_GrabABagelTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 1.5348526999691956,
+      "motion_flags": {
+        "coffee_pot": {
+          "tail_xy_span_mm": 1.1095380758240128,
+          "tail_angular_rms": 0.04267800765332867,
+          "max_drop_m": 0.0012912305537611246
+        },
+        "fork_big": {
+          "tail_xy_span_mm": 0.0835508413762941,
+          "tail_angular_rms": 0.41637079662192567,
+          "max_drop_m": 0.0011189170181751251
+        },
+        "apple_01": {
+          "tail_xy_span_mm": 1.5348526999691956,
+          "tail_angular_rms": 0.1341205996188795,
+          "max_drop_m": 0.004071258008480072
+        }
+      }
+    },
+    {
+      "scene": "ladle_pot.usda",
+      "task": "GreenSpoonsInPotTask",
+      "all_tasks": [
+        "GreenSpoonsInPotTask",
+        "PinkSpoonInPotTask",
+        "SpoonsInPotTask"
+      ],
+      "case": "followup_manifold_GreenSpoonsInPotTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 2.217504151746253,
+      "motion_flags": {
+        "ladle": {
+          "tail_xy_span_mm": 2.217504151746253,
+          "tail_angular_rms": 0.053486407566084464,
+          "max_drop_m": 0.0
+        },
+        "fork_big": {
+          "tail_xy_span_mm": 0.12796485983142583,
+          "tail_angular_rms": 0.35141891794761654,
+          "max_drop_m": 0.0
+        },
+        "spatula_14": {
+          "tail_xy_span_mm": 1.1042669349912213,
+          "tail_angular_rms": 0.030827470763046518,
+          "max_drop_m": 0.0
+        },
+        "spatula_15": {
+          "tail_xy_span_mm": 1.1706186138629848,
+          "tail_angular_rms": 0.016112023983862928,
+          "max_drop_m": 0.00016025081276893616
+        },
+        "ladle_01": {
+          "tail_xy_span_mm": 1.2169248506787174,
+          "tail_angular_rms": 0.038443778433403776,
+          "max_drop_m": 0.0
+        }
+      }
+    },
+    {
+      "scene": "shelf_with_cleaning_products.usda",
+      "task": "JugsOnShelfTask",
+      "all_tasks": [
+        "JugsOnShelfTask",
+        "OneBottleInSquarePailTask",
+        "OneBottleOnShelfTask",
+        "PlasticBottlesInSquarePailTask",
+        "ReorientJugTask"
+      ],
+      "case": "followup_manifold_JugsOnShelfTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 1.2969299808241554,
+      "motion_flags": {
+        "utilityjug_a02": {
+          "tail_xy_span_mm": 1.2969299808241554,
+          "tail_angular_rms": 0.05560913859224039,
+          "max_drop_m": 0.0002743527293205261
+        }
+      }
+    },
+    {
+      "scene": "butter_raisin_box_grey_bin.usda",
+      "task": "LargerObjectRaisinBoxInBinTask",
+      "all_tasks": [
+        "LargerObjectRaisinBoxInBinTask",
+        "SmallerObjectButterInBinTask"
+      ],
+      "case": "followup_manifold_LargerObjectRaisinBoxInBinTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.3859342858624131,
+      "motion_flags": {
+        "butter": {
+          "tail_xy_span_mm": 0.050126610500719,
+          "tail_angular_rms": 0.1051561914061203,
+          "max_drop_m": 0.0014937669038772583
+        },
+        "raisin_box": {
+          "tail_xy_span_mm": 0.3859342858624131,
+          "tail_angular_rms": 0.173029092403815,
+          "max_drop_m": 0.0004124511033296585
+        }
+      }
+    },
+    {
+      "scene": "workdesk.usda",
+      "task": "MarkerInMugTask",
+      "all_tasks": [
+        "MarkerInMugTask",
+        "MouseOnKeyboardTask",
+        "PickGlassesTask"
+      ],
+      "case": "followup_manifold_MarkerInMugTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 1.440244555559126,
+      "motion_flags": {
+        "marker": {
+          "tail_xy_span_mm": 0.0,
+          "tail_angular_rms": 1.0395436219919102e-05,
+          "max_drop_m": 0.6972869019955397
+        },
+        "rubiks_cube": {
+          "tail_xy_span_mm": 9.592622518539429e-05,
+          "tail_angular_rms": 0.005867344819696263,
+          "max_drop_m": 0.030898722354322672
+        },
+        "computer_mouse": {
+          "tail_xy_span_mm": 0.17040512665377266,
+          "tail_angular_rms": 0.2122081674756992,
+          "max_drop_m": 0.0
+        },
+        "granola_bars": {
+          "tail_xy_span_mm": 1.440244555559126,
+          "tail_angular_rms": 0.13769439906945152,
+          "max_drop_m": 0.0
+        }
+      }
+    },
+    {
+      "scene": "mustard_raisin_box.usda",
+      "task": "MustardAboveRaisinTask",
+      "all_tasks": [
+        "MustardAboveRaisinTask"
+      ],
+      "case": "followup_manifold_MustardAboveRaisinTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.346966528030723,
+      "motion_flags": {
+        "raisin_box": {
+          "tail_xy_span_mm": 0.346966528030723,
+          "tail_angular_rms": 0.11866816399328939,
+          "max_drop_m": 0.0003250390291213989
+        }
+      }
+    },
+    {
+      "scene": "two_bin.usda",
+      "task": "MustardInLeftBinTask",
+      "all_tasks": [
+        "MustardInLeftBinTask",
+        "MustardInRightBinTask"
+      ],
+      "case": "followup_manifold_MustardInLeftBinTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.3255118548844753,
+      "motion_flags": {}
+    },
+    {
+      "scene": "mugs4_measuringcup_drill_bowl.usda",
+      "task": "PickDrillTask",
+      "all_tasks": [
+        "PickDrillTask",
+        "ReorientAllMugsTask",
+        "ReorientRedMugTask",
+        "StackWhiteMugsTask"
+      ],
+      "case": "followup_manifold_PickDrillTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.051898859832750076,
+      "motion_flags": {}
+    },
+    {
+      "scene": "blue.usda",
+      "task": "PickUpBluePitcherTask",
+      "all_tasks": [
+        "PickUpBluePitcherTask"
+      ],
+      "case": "followup_manifold_PickUpBluePitcherTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.05037616518240704,
+      "motion_flags": {}
+    },
+    {
+      "scene": "green.usda",
+      "task": "PickUpGreenObjectTask",
+      "all_tasks": [
+        "PickUpGreenObjectTask"
+      ],
+      "case": "followup_manifold_PickUpGreenObjectTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.009226454391376922,
+      "motion_flags": {}
+    },
+    {
+      "scene": "shelf_mugs_jug_bowl.usda",
+      "task": "PutBowlOnShelfTopTask",
+      "all_tasks": [
+        "PutBowlOnShelfTopTask",
+        "PutMugsOnShelfTask"
+      ],
+      "case": "followup_manifold_PutBowlOnShelfTopTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.006581524255730971,
+      "motion_flags": {}
+    },
+    {
+      "scene": "wire_shelf_mugs_plate_spatula.usda",
+      "task": "PutTwoMugsOnShelfTask",
+      "all_tasks": [
+        "PutTwoMugsOnShelfTask",
+        "TakeSpatulaOffShelfTask"
+      ],
+      "case": "followup_manifold_PutTwoMugsOnShelfTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.28023273915646024,
+      "motion_flags": {
+        "fork_small": {
+          "tail_xy_span_mm": 0.2659213548522719,
+          "tail_angular_rms": 0.24792249722740511,
+          "max_drop_m": 0.0007881075143814087
+        }
+      }
+    },
+    {
+      "scene": "cartons_on_box.usda",
+      "task": "RecycleCartonsOnBoxTask",
+      "all_tasks": [
+        "RecycleCartonsOnBoxTask"
+      ],
+      "case": "followup_manifold_RecycleCartonsOnBoxTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.6239183632866754,
+      "motion_flags": {
+        "alphabet_soup_can": {
+          "tail_xy_span_mm": 0.0,
+          "tail_angular_rms": 0.0029617849006526474,
+          "max_drop_m": 0.08281684457324445
+        },
+        "mayonnaise_bottle": {
+          "tail_xy_span_mm": 0.041517587400673045,
+          "tail_angular_rms": 0.07337859375912183,
+          "max_drop_m": 0.06492259912192822
+        }
+      }
+    },
+    {
+      "scene": "cartons_in_vertical_crate.usda",
+      "task": "RecycleCartonsVerticalCrateTask",
+      "all_tasks": [
+        "RecycleCartonsVerticalCrateTask"
+      ],
+      "case": "followup_manifold_RecycleCartonsVerticalCrateTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.6695408652620399,
+      "motion_flags": {
+        "alphabet_soup_can": {
+          "tail_xy_span_mm": 0.0,
+          "tail_angular_rms": 0.0028673753436233972,
+          "max_drop_m": 0.08281684247776866
+        },
+        "mayonnaise_bottle": {
+          "tail_xy_span_mm": 0.03529607953236446,
+          "tail_angular_rms": 0.08238057628296282,
+          "max_drop_m": 0.06492398120462894
+        }
+      }
+    },
+    {
+      "scene": "cartons_in_crate.usda",
+      "task": "RecycleCartonTask",
+      "all_tasks": [
+        "RecycleCartonTask"
+      ],
+      "case": "followup_manifold_RecycleCartonTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.671920477862744,
+      "motion_flags": {
+        "alphabet_soup_can": {
+          "tail_xy_span_mm": 0.0,
+          "tail_angular_rms": 0.002623745810808772,
+          "max_drop_m": 0.08281684224493802
+        },
+        "mayonnaise_bottle": {
+          "tail_xy_span_mm": 0.040733331922210396,
+          "tail_angular_rms": 0.07481142671945246,
+          "max_drop_m": 0.06492404080927372
+        }
+      }
+    },
+    {
+      "scene": "rubiks_cube_banana_bowl_mug_bin.usda",
+      "task": "RedDishesInBinTask",
+      "all_tasks": [
+        "RedDishesInBinTask",
+        "RedItemsInBinTask",
+        "RubiksCubeRightOfBowlTask"
+      ],
+      "case": "followup_manifold_RedDishesInBinTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.862298916901488,
+      "motion_flags": {
+        "banana": {
+          "tail_xy_span_mm": 0.862298916901488,
+          "tail_angular_rms": 0.17455301459320222,
+          "max_drop_m": 0.00045252032577991486
+        }
+      }
+    },
+    {
+      "scene": "mugs4_measuringcup_drill_bowl_v2.usda",
+      "task": "ReorientWhiteMugsTask",
+      "all_tasks": [
+        "ReorientWhiteMugsTask",
+        "TakeMeasuringSpoonOutTask"
+      ],
+      "case": "followup_manifold_ReorientWhiteMugsTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 2.8445015409677707,
+      "motion_flags": {
+        "red_mug": {
+          "tail_xy_span_mm": 2.8445015409677707,
+          "tail_angular_rms": 0.10858673287597705,
+          "max_drop_m": 0.0009906142950057983
+        }
+      }
+    },
+    {
+      "scene": "rubiks_cube_bowl.usda",
+      "task": "RubiksCubeTask",
+      "all_tasks": [
+        "RubiksCubeTask"
+      ],
+      "case": "followup_manifold_RubiksCubeTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.0654036867494829,
+      "motion_flags": {}
+    },
+    {
+      "scene": "bottles_crate.usda",
+      "task": "SauceBottlesCrateTask",
+      "all_tasks": [
+        "SauceBottlesCrateTask"
+      ],
+      "case": "followup_manifold_SauceBottlesCrateTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 1.054925230906393,
+      "motion_flags": {
+        "salad_dressing_bottle": {
+          "tail_xy_span_mm": 1.054925230906393,
+          "tail_angular_rms": 0.33805492032626494,
+          "max_drop_m": 0.0969066396355629
+        }
+      }
+    },
+    {
+      "scene": "rubiks_cube_3.usda",
+      "task": "Stack3RubiksCubeTask",
+      "all_tasks": [
+        "Stack3RubiksCubeTask"
+      ],
+      "case": "followup_manifold_Stack3RubiksCubeTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 5.44787326361984e-06,
+      "motion_flags": {}
+    },
+    {
+      "scene": "mugs_on_shelf.usda",
+      "task": "TakeMugsOffOfShelfTask",
+      "all_tasks": [
+        "TakeMugsOffOfShelfTask"
+      ],
+      "case": "followup_manifold_TakeMugsOffOfShelfTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.03232369627002338,
+      "motion_flags": {}
+    },
+    {
+      "scene": "tools_picking.usda",
+      "task": "ToolsPickingAllHammersTask",
+      "all_tasks": [
+        "ToolsPickingAllHammersTask",
+        "ToolsPickingDrillTask",
+        "ToolsPickingHammerTask"
+      ],
+      "case": "followup_manifold_ToolsPickingAllHammersTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 6.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 2.831353114925979,
+      "motion_flags": {
+        "clamp": {
+          "tail_xy_span_mm": 1.3524278799347103,
+          "tail_angular_rms": 0.07365379140196193,
+          "max_drop_m": 0.03544089198112488
+        },
+        "clamp_01": {
+          "tail_xy_span_mm": 2.831353114925979,
+          "tail_angular_rms": 0.034848137778095305,
+          "max_drop_m": 0.0031727179884910583
+        },
+        "red_hammer": {
+          "tail_xy_span_mm": 1.1028900256631478,
+          "tail_angular_rms": 0.014220046147995739,
+          "max_drop_m": 0.0017079636454582214
+        }
+      }
+    },
+    {
+      "scene": "mug_banana_ketchup_bowl_rubiks3_bin.usda",
+      "task": "UnstackRubiksCubeTask",
+      "all_tasks": [
+        "UnstackRubiksCubeTask",
+        "YellowAndWhiteObjectsInBinTask"
+      ],
+      "case": "followup_manifold_UnstackRubiksCubeTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.9737277668329913,
+      "motion_flags": {
+        "ketchup_bottle": {
+          "tail_xy_span_mm": 0.44990328658078144,
+          "tail_angular_rms": 0.34486480546610027,
+          "max_drop_m": 0.0002615600824356079
+        },
+        "rubiks_cube_middle": {
+          "tail_xy_span_mm": 0.08728761904917261,
+          "tail_angular_rms": 0.100606051185107,
+          "max_drop_m": 0.00021614134311676025
+        },
+        "banana": {
+          "tail_xy_span_mm": 0.9737277668329913,
+          "tail_angular_rms": 0.22772687306973646,
+          "max_drop_m": 0.0004926919937133789
+        }
+      }
+    },
+    {
+      "scene": "objects_around_table.usda",
+      "task": "WhiteMugInCenterOfTableTask",
+      "all_tasks": [
+        "WhiteMugInCenterOfTableTask"
+      ],
+      "case": "followup_manifold_WhiteMugInCenterOfTableTask",
+      "probe_passed": true,
+      "multiccd": true,
+      "seconds": 20.0,
+      "passive_success": null,
+      "max_tail_xy_span_mm": 0.527362907249775,
+      "motion_flags": {
+        "alphabet_soup_can": {
+          "tail_xy_span_mm": 0.0,
+          "tail_angular_rms": 0.0030073421562658914,
+          "max_drop_m": 0.08281683828681707
+        }
+      }
+    }
+  ],
+  "scaling": [
+    {
+      "case": "scale_manifold_RubiksCubeTask_1",
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "task": "RubiksCubeTask",
+      "num_envs": 1,
+      "construction_s": 14.991595638915896,
+      "startup_warmup_s": 21.624867883045226,
+      "peak_RSS_GiB": 7.683544158935547,
+      "peak_GPU_GiB": 4.185546875,
+      "normal_steps_per_s": 3.388794335742683,
+      "state_only_steps_per_s": 3.746401313226501,
+      "model": {
+        "geoms": 657,
+        "bodies": 22,
+        "worlds": 1,
+        "contact_capacity": 65536,
+        "constraint_capacity_per_world": 131072
+      },
+      "checks": {
+        "replicated_poses_match_environment_origins": true,
+        "finite_state_contacts_and_RGB_all_envs": true,
+        "one_env_separation_leaves_other_contacts_unchanged": true,
+        "repeat_reset_all_envs": true
+      },
+      "peak_contacts": 150,
+      "peak_constraints_per_world": 185
+    },
+    {
+      "case": "scale_manifold_RubiksCubeTask_2",
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "task": "RubiksCubeTask",
+      "num_envs": 2,
+      "construction_s": 15.267815686063841,
+      "startup_warmup_s": 22.38766950694844,
+      "peak_RSS_GiB": 7.782558441162109,
+      "peak_GPU_GiB": 5.66796875,
+      "normal_steps_per_s": 6.562542391856561,
+      "state_only_steps_per_s": 7.371909139367265,
+      "model": {
+        "geoms": 657,
+        "bodies": 22,
+        "worlds": 2,
+        "contact_capacity": 131072,
+        "constraint_capacity_per_world": 131072
+      },
+      "checks": {
+        "replicated_poses_match_environment_origins": true,
+        "finite_state_contacts_and_RGB_all_envs": true,
+        "one_env_separation_leaves_other_contacts_unchanged": true,
+        "repeat_reset_all_envs": true
+      },
+      "peak_contacts": 301,
+      "peak_constraints_per_world": 197
+    },
+    {
+      "case": "scale_manifold_RubiksCubeTask_4",
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "task": "RubiksCubeTask",
+      "num_envs": 4,
+      "construction_s": 16.135939934058115,
+      "startup_warmup_s": 23.53291703108698,
+      "peak_RSS_GiB": 7.948329925537109,
+      "peak_GPU_GiB": 8.4404296875,
+      "normal_steps_per_s": 12.193780418328043,
+      "state_only_steps_per_s": 14.588599547931231,
+      "model": {
+        "geoms": 657,
+        "bodies": 22,
+        "worlds": 4,
+        "contact_capacity": 262144,
+        "constraint_capacity_per_world": 131072
+      },
+      "checks": {
+        "replicated_poses_match_environment_origins": true,
+        "finite_state_contacts_and_RGB_all_envs": true,
+        "one_env_separation_leaves_other_contacts_unchanged": true,
+        "repeat_reset_all_envs": true
+      },
+      "peak_contacts": 600,
+      "peak_constraints_per_world": 205
+    },
+    {
+      "case": "scale_manifold_RubiksCubeTask_8",
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "task": "RubiksCubeTask",
+      "num_envs": 8,
+      "construction_s": 17.19259346812032,
+      "startup_warmup_s": 25.395031495019794,
+      "peak_RSS_GiB": 8.41855239868164,
+      "peak_GPU_GiB": 14.7509765625,
+      "normal_steps_per_s": 21.84207685704195,
+      "state_only_steps_per_s": 28.647071672587455,
+      "model": {
+        "geoms": 657,
+        "bodies": 22,
+        "worlds": 8,
+        "contact_capacity": 524288,
+        "constraint_capacity_per_world": 131072
+      },
+      "checks": {
+        "replicated_poses_match_environment_origins": true,
+        "finite_state_contacts_and_RGB_all_envs": true,
+        "one_env_separation_leaves_other_contacts_unchanged": true,
+        "repeat_reset_all_envs": true
+      },
+      "peak_contacts": 1198,
+      "peak_constraints_per_world": 205
+    },
+    {
+      "case": "scale_manifold_RubiksCubeTask_16",
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "task": "RubiksCubeTask",
+      "num_envs": 16,
+      "construction_s": 19.89816759293899,
+      "startup_warmup_s": 29.710500744869933,
+      "peak_RSS_GiB": 9.370380401611328,
+      "peak_GPU_GiB": 24.62890625,
+      "normal_steps_per_s": 37.46888210918182,
+      "state_only_steps_per_s": 56.01193704562333,
+      "model": {
+        "geoms": 657,
+        "bodies": 22,
+        "worlds": 16,
+        "contact_capacity": 1048576,
+        "constraint_capacity_per_world": 131072
+      },
+      "checks": {
+        "replicated_poses_match_environment_origins": true,
+        "finite_state_contacts_and_RGB_all_envs": true,
+        "one_env_separation_leaves_other_contacts_unchanged": true,
+        "double_digit_env_contact_isolation": true,
+        "repeat_reset_all_envs": true
+      },
+      "peak_contacts": 2381,
+      "peak_constraints_per_world": 197
+    },
+    {
+      "case": "scale_manifold_TakeMugsOffOfShelfTask_1",
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "task": "TakeMugsOffOfShelfTask",
+      "num_envs": 1,
+      "construction_s": 16.700076153036207,
+      "startup_warmup_s": 25.038119934964925,
+      "peak_RSS_GiB": 7.8886260986328125,
+      "peak_GPU_GiB": 4.41015625,
+      "normal_steps_per_s": 2.6173285600701193,
+      "state_only_steps_per_s": 2.9213949254977902,
+      "model": {
+        "geoms": 863,
+        "bodies": 25,
+        "worlds": 1,
+        "contact_capacity": 65536,
+        "constraint_capacity_per_world": 131072
+      },
+      "checks": {
+        "replicated_poses_match_environment_origins": true,
+        "finite_state_contacts_and_RGB_all_envs": true,
+        "repeat_reset_all_envs": true
+      },
+      "peak_contacts": 293,
+      "peak_constraints_per_world": 353
+    },
+    {
+      "case": "scale_manifold_TakeMugsOffOfShelfTask_2",
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "task": "TakeMugsOffOfShelfTask",
+      "num_envs": 2,
+      "construction_s": 17.09403112018481,
+      "startup_warmup_s": 26.0237728911452,
+      "peak_RSS_GiB": 8.020854949951172,
+      "peak_GPU_GiB": 5.921875,
+      "normal_steps_per_s": 5.055700685735751,
+      "state_only_steps_per_s": 5.778263237388269,
+      "model": {
+        "geoms": 863,
+        "bodies": 25,
+        "worlds": 2,
+        "contact_capacity": 131072,
+        "constraint_capacity_per_world": 131072
+      },
+      "checks": {
+        "replicated_poses_match_environment_origins": true,
+        "finite_state_contacts_and_RGB_all_envs": true,
+        "repeat_reset_all_envs": true
+      },
+      "peak_contacts": 577,
+      "peak_constraints_per_world": 353
+    },
+    {
+      "case": "scale_manifold_TakeMugsOffOfShelfTask_4",
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "task": "TakeMugsOffOfShelfTask",
+      "num_envs": 4,
+      "construction_s": 17.541507929796353,
+      "startup_warmup_s": 26.837387384846807,
+      "peak_RSS_GiB": 8.205696105957031,
+      "peak_GPU_GiB": 8.7900390625,
+      "normal_steps_per_s": 9.463906141609094,
+      "state_only_steps_per_s": 11.465424328348117,
+      "model": {
+        "geoms": 863,
+        "bodies": 25,
+        "worlds": 4,
+        "contact_capacity": 262144,
+        "constraint_capacity_per_world": 131072
+      },
+      "checks": {
+        "replicated_poses_match_environment_origins": true,
+        "finite_state_contacts_and_RGB_all_envs": true,
+        "repeat_reset_all_envs": true
+      },
+      "peak_contacts": 1151,
+      "peak_constraints_per_world": 369
+    },
+    {
+      "case": "scale_manifold_TakeMugsOffOfShelfTask_8",
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "task": "TakeMugsOffOfShelfTask",
+      "num_envs": 8,
+      "construction_s": 18.89001071592793,
+      "startup_warmup_s": 29.22988448990509,
+      "peak_RSS_GiB": 8.873920440673828,
+      "peak_GPU_GiB": 15.1318359375,
+      "normal_steps_per_s": 16.755065370114295,
+      "state_only_steps_per_s": 22.461050617947723,
+      "model": {
+        "geoms": 863,
+        "bodies": 25,
+        "worlds": 8,
+        "contact_capacity": 524288,
+        "constraint_capacity_per_world": 131072
+      },
+      "checks": {
+        "replicated_poses_match_environment_origins": true,
+        "finite_state_contacts_and_RGB_all_envs": true,
+        "repeat_reset_all_envs": true
+      },
+      "peak_contacts": 2285,
+      "peak_constraints_per_world": 373
+    },
+    {
+      "case": "scale_manifold_TakeMugsOffOfShelfTask_16",
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "task": "TakeMugsOffOfShelfTask",
+      "num_envs": 16,
+      "construction_s": 21.863975905114785,
+      "startup_warmup_s": 34.38121748995036,
+      "peak_RSS_GiB": 10.102184295654297,
+      "peak_GPU_GiB": 25.353515625,
+      "normal_steps_per_s": 28.072914629955765,
+      "state_only_steps_per_s": 44.11992427618079,
+      "model": {
+        "geoms": 863,
+        "bodies": 25,
+        "worlds": 16,
+        "contact_capacity": 1048576,
+        "constraint_capacity_per_world": 131072
+      },
+      "checks": {
+        "replicated_poses_match_environment_origins": true,
+        "finite_state_contacts_and_RGB_all_envs": true,
+        "repeat_reset_all_envs": true
+      },
+      "peak_contacts": 4556,
+      "peak_constraints_per_world": 377
+    }
+  ],
+  "policies": [
+    {
+      "task_name": "BananaOnPlateTask",
+      "success": true,
+      "episode_step": 167,
+      "duration": 11.133333333333333,
+      "events": {
+        "GRIPPER_HIT_TABLE": 1,
+        "OBJECT_GRIPPED": 1,
+        "OBJECT_CARRIED": 1,
+        "OBJECT_GRABBED_SUCCESS": 1,
+        "OBJECT_RELEASED": 1,
+        "SUBTASK_COMPLETED": 1
+      },
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "reason": "Completed subtask 'pick_and_place_on_surface' 1/1",
+      "score": 1.0
+    },
+    {
+      "task_name": "OneBottleInSquarePailTask",
+      "success": true,
+      "episode_step": 686,
+      "duration": 45.733333333333334,
+      "events": {
+        "OBJECT_GRIPPED": 3,
+        "OBJECT_CARRIED": 3,
+        "OBJECT_GRABBED_SUCCESS": 3,
+        "OBJECT_DROPPED": 2,
+        "GRIPPER_FULLY_CLOSED": 3,
+        "GRIPPER_HIT_OBJECT": 1,
+        "GRASP_ATTEMPT_FAILED": 1,
+        "OBJECT_BUMPED": 1,
+        "MULTIPLE_OBJECTS_GRABBED": 1,
+        "TARGET_OBJECT_BUMPED": 2,
+        "GRIPPER_HIT_TABLE": 1,
+        "OBJECT_RELEASED": 1,
+        "SUBTASK_COMPLETED": 1
+      },
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "reason": "Completed subtask 'pick_and_place' 1/1",
+      "score": 1.0
+    },
+    {
+      "task_name": "PutBowlOnShelfTopTask",
+      "success": false,
+      "episode_step": 50,
+      "duration": 3.3333333333333335,
+      "events": {
+        "TARGET_OBJECT_BUMPED": 1,
+        "OBJECT_FELL_OFF_TABLE": 1,
+        "TARGET_LOST": 1
+      },
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "reason": "Condition not satisfied: object_grabbed(object=serving_bowl) (step 1/2)",
+      "score": 0.0
+    },
+    {
+      "task_name": "PutMugsOnShelfTask",
+      "success": false,
+      "episode_step": 327,
+      "duration": 21.8,
+      "events": {
+        "OBJECT_GRIPPED": 2,
+        "OBJECT_CARRIED": 2,
+        "TARGET_OBJECT_BUMPED": 4,
+        "GRIPPER_HIT_OBJECT": 1,
+        "MULTIPLE_OBJECTS_GRABBED": 1,
+        "OBJECT_GRABBED_SUCCESS": 2,
+        "OBJECT_DROPPED": 1,
+        "OBJECT_IN_CONTAINER_SUCCESS": 1,
+        "OBJECT_FELL_OFF_TABLE": 1,
+        "TARGET_LOST": 1
+      },
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "reason": "Condition not satisfied: object_in_container(object=ceramic_mug, container=rack_l04, require_contact_with=False, require_gripper_detached=True) (step 2/2)",
+      "score": 0.0
+    },
+    {
+      "task_name": "RubiksCubeTask",
+      "success": true,
+      "episode_step": 138,
+      "duration": 9.2,
+      "events": {
+        "OBJECT_GRIPPED": 1,
+        "OBJECT_CARRIED": 1,
+        "OBJECT_GRABBED_SUCCESS": 1,
+        "OBJECT_RELEASED": 1,
+        "SUBTASK_COMPLETED": 1
+      },
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "reason": "Completed subtask 'pick_and_place' 1/1",
+      "score": 1.0
+    },
+    {
+      "task_name": "TakeMugsOffOfShelfTask",
+      "success": false,
+      "episode_step": 60,
+      "duration": 4.0,
+      "events": {
+        "GRIPPER_HIT_OBJECT": 1,
+        "OBJECT_FELL_OFF_TABLE": 1,
+        "TARGET_LOST": 1
+      },
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "reason": "Conditions not satisfied: object_grabbed(object=ceramic_mug) (step 1/2); object_grabbed(object=mug) (step 1/2)",
+      "score": 0.0
+    }
+  ],
+  "tests": {
+    "offline-local": {
+      "total": 317,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "newton_tests_multiccd": {
+      "total": 123,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "integration_multiccd": {
+      "total": 241,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "contact_audits": {
+    "4": {
+      "checks": {
+        "table_force_direction_scale_and_env_isolation": true,
+        "both_pad_extra_body_hdf5_matches_50_live_steps_per_env": true,
+        "repeat_reset": true,
+        "pad_and_extra_body_routing_and_force_clearing": true
+      },
+      "support_force_over_weight": [
+        1.0001400709152222,
+        0.9999952912330627,
+        1.0000180006027222,
+        0.9999811053276062
+      ],
+      "tested_channels": 9
+    },
+    "8": {
+      "checks": {
+        "table_force_direction_scale_and_env_isolation": true,
+        "both_pad_extra_body_hdf5_matches_50_live_steps_per_env": true,
+        "repeat_reset": true,
+        "pad_and_extra_body_routing_and_force_clearing": true
+      },
+      "support_force_over_weight": [
+        0.9997564554214478,
+        0.9999706149101257,
+        0.9999778270721436,
+        0.999869704246521,
+        0.9976436495780945,
+        0.9888787865638733,
+        1.000332236289978,
+        0.9991766214370728
+      ],
+      "tested_channels": 9
+    }
+  },
+  "keyboard": [
+    {
+      "task": "AppleAndYogurtInBowlTask",
+      "ready_s": 35.17699035583064,
+      "peak_RSS_GiB": 8.846939086914062,
+      "seconds": 20.0,
+      "max_tail_xy_span_mm": 2.5083681687246653
+    },
+    {
+      "task": "MarkerInMugTask",
+      "ready_s": 29.143685789080337,
+      "peak_RSS_GiB": 8.210197448730469,
+      "seconds": 6.0,
+      "max_tail_xy_span_mm": 0.45183731758068674
+    },
+    {
+      "task": "BlackItemsInBinTask",
+      "ready_s": 28.149631867185235,
+      "peak_RSS_GiB": 8.123287200927734,
+      "seconds": 6.0,
+      "max_tail_xy_span_mm": 2.992662316675024
+    }
+  ],
+  "scaling_failures": [
+    {
+      "case": "scale_manifold_RubiksCubeTask_32",
+      "exit_code": 1,
+      "reason": "GPU allocation failure",
+      "elapsed_s": 33.16398718114942
+    },
+    {
+      "case": "scale_manifold_TakeMugsOffOfShelfTask_32",
+      "exit_code": 1,
+      "reason": "GPU allocation failure",
+      "elapsed_s": 35.188805537996814
+    }
+  ],
+  "sized_scaling": [
+    {
+      "case": "scale_sized_RubiksCubeTask_32",
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 8192,
+        "constraint_capacity": 32768,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "task": "RubiksCubeTask",
+      "num_envs": 32,
+      "construction_s": 26.74011572008021,
+      "startup_warmup_s": 39.636283803964034,
+      "peak_RSS_GiB": 11.296028137207031,
+      "peak_GPU_GiB": 33.2236328125,
+      "normal_steps_per_s": 55.349204130321155,
+      "state_only_steps_per_s": 111.04169898155492,
+      "model": {
+        "geoms": 657,
+        "bodies": 22,
+        "worlds": 32,
+        "contact_capacity": 262144,
+        "constraint_capacity_per_world": 32768,
+        "ccd_capacity": 262144
+      },
+      "checks": {
+        "replicated_poses_match_environment_origins": true,
+        "finite_state_contacts_and_RGB_all_envs": true,
+        "one_env_separation_leaves_other_contacts_unchanged": true,
+        "double_digit_env_contact_isolation": true,
+        "repeat_reset_all_envs": true
+      },
+      "peak_contacts": 4757,
+      "peak_constraints_per_world": 201
+    },
+    {
+      "case": "scale_sized_TakeMugsOffOfShelfTask_32",
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 8192,
+        "constraint_capacity": 32768,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "task": "TakeMugsOffOfShelfTask",
+      "num_envs": 32,
+      "construction_s": 31.645874788984656,
+      "startup_warmup_s": 47.60068689286709,
+      "peak_RSS_GiB": 12.572509765625,
+      "peak_GPU_GiB": 33.7646484375,
+      "normal_steps_per_s": 41.39567546011321,
+      "state_only_steps_per_s": 87.80568526551355,
+      "model": {
+        "geoms": 863,
+        "bodies": 25,
+        "worlds": 32,
+        "contact_capacity": 262144,
+        "constraint_capacity_per_world": 32768,
+        "ccd_capacity": 262144
+      },
+      "checks": {
+        "replicated_poses_match_environment_origins": true,
+        "finite_state_contacts_and_RGB_all_envs": true,
+        "repeat_reset_all_envs": true
+      },
+      "peak_contacts": 9105,
+      "peak_constraints_per_world": 405
+    }
+  ],
+  "parallel_policy": [
+    {
+      "env_id": 0,
+      "task_name": "RubiksCubeTask",
+      "success": true,
+      "episode_step": 167,
+      "duration": 11.133333333333333,
+      "events": {
+        "TARGET_OBJECT_BUMPED": 1,
+        "OBJECT_GRIPPED": 1,
+        "OBJECT_CARRIED": 1,
+        "OBJECT_GRABBED_SUCCESS": 1,
+        "OBJECT_RELEASED": 1,
+        "SUBTASK_COMPLETED": 1
+      },
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "reason": "Completed subtask 'pick_and_place' 1/1",
+      "score": 1.0
+    },
+    {
+      "env_id": 1,
+      "task_name": "RubiksCubeTask",
+      "success": true,
+      "episode_step": 150,
+      "duration": 10.0,
+      "events": {
+        "GRASP_ATTEMPT_FAILED": 1,
+        "OBJECT_GRIPPED": 1,
+        "OBJECT_CARRIED": 1,
+        "OBJECT_GRABBED_SUCCESS": 1,
+        "OBJECT_RELEASED": 1,
+        "SUBTASK_COMPLETED": 1
+      },
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "reason": "Completed subtask 'pick_and_place' 1/1",
+      "score": 1.0
+    },
+    {
+      "env_id": 2,
+      "task_name": "RubiksCubeTask",
+      "success": true,
+      "episode_step": 160,
+      "duration": 10.666666666666666,
+      "events": {
+        "OBJECT_GRIPPED": 1,
+        "OBJECT_CARRIED": 1,
+        "OBJECT_GRABBED_SUCCESS": 1,
+        "OBJECT_RELEASED": 1,
+        "SUBTASK_COMPLETED": 1
+      },
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "reason": "Completed subtask 'pick_and_place' 1/1",
+      "score": 1.0
+    },
+    {
+      "env_id": 3,
+      "task_name": "RubiksCubeTask",
+      "success": true,
+      "episode_step": 146,
+      "duration": 9.733333333333333,
+      "events": {
+        "OBJECT_GRIPPED": 1,
+        "OBJECT_CARRIED": 1,
+        "OBJECT_GRABBED_SUCCESS": 1,
+        "OBJECT_RELEASED": 1,
+        "SUBTASK_COMPLETED": 1
+      },
+      "physics_artifact": false,
+      "pre_satisfied": false,
+      "reason": "Completed subtask 'pick_and_place' 1/1",
+      "score": 1.0
+    }
+  ]
+}

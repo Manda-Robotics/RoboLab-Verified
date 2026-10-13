@@ -131,9 +131,13 @@ per process. They restore patched methods on exit. Eager execution is intentiona
 the capacity guard synchronously checks candidate counts before each CCD launch
 and raises on overflow rather than truncating contacts or risking an illegal
 GPU memory access. Enabling CUDA graphs with this preset is rejected. This costs
-performance, and the larger buffers cost GPU memory; neither multi-environment
-scaling nor a calibrated hardware contact model is established by the three
-single-environment trials. Revalidate the private APIs before upgrading Newton.
+performance, and the larger buffers cost GPU memory. The
+[October 13 Verified audit](verified/newton-wider-2026-10-13.md) measures cube and
+shelf scaling through 16 worlds with these defaults; separate 32-world probes
+pass with explicit smaller buffers after the defaults exhaust GPU memory.
+Those tests exclude policy inference; a separate four-world cube policy run
+passes. They do not establish a calibrated hardware contact model or broad
+policy success rates. Revalidate the private APIs before upgrading Newton.
 
 ## New VAST instance
 
