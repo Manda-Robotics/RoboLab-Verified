@@ -107,7 +107,7 @@ asset fingerprints prevent silent reuse after geometry changes. See the
 [asset build and audit instructions](../assets/objects/vomp/rack_l04/README.md).
 Set `compact_shelf_colliders=False` to restore the expensive original import.
 
-The `compact_keyboard_colliders` option replaces the HOT3D keyboard's 5,504
+The `compact_keyboard_colliders` option replaces the HOT3D keyboard's 5,503
 CoACD pieces with 110 component hulls. The source consists of separate, convex
 keycaps and base pieces; this keeps their exterior surfaces and inter-key gaps,
 closing only open keycap bottoms. Source and compiled geometry fingerprints

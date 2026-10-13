@@ -6,7 +6,7 @@ additional HOT3D Dataset License Agreement non-sale restriction**, as described
 in [LICENSE](LICENSE). The original asset and visuals are unchanged.
 
 The source has 110 connected components: base pieces and individual keycaps.
-Native CoACD generates 5,504 pieces. The compiled library uses one convex hull
+Native CoACD generates 5,503 pieces. The compiled library uses one convex hull
 per component, without bridging gaps between keys. Only open keycap bottoms
 are closed. Original body mass, COM, inertia, materials, transforms and explicit
 collision filters are handled by Newton's native importer.
