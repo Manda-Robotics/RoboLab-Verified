@@ -13,6 +13,9 @@ def configure_physics(cfg, backend="physx"):
     from robolab.core.physics.friction import require_supported_backend
 
     require_supported_backend(backend, (getattr(cfg, "friction", None) or {}).get("mode", "upstream"))
+    substeps = getattr(cfg, "newton_substeps", 4)
+    if isinstance(substeps, bool) or not isinstance(substeps, int) or substeps < 1:
+        raise ValueError("Newton substeps must be a positive integer")
     if not hasattr(cfg.sim, "physics"):
         raise RuntimeError("Newton requires the Isaac Lab 3 source stack; run scripts/install_newton61.py.")
     from isaaclab_newton.physics import MJWarpSolverCfg, NewtonCfg
@@ -39,6 +42,10 @@ def configure_physics(cfg, backend="physx"):
     if set(overrides) - set(settings):
         raise ValueError("Unknown Newton contact setting")
     settings.update(overrides)
+    # Keep the established contact response unless the coarser solver timestep
+    # requires a longer time constant. Explicit unsafe requests still fail.
+    if "timeconst" not in overrides:
+        settings["timeconst"] = max(settings["timeconst"], 2 * cfg.sim.dt / substeps)
     from math import isfinite
     if not isinstance(settings["enable_multiccd"], bool):
         raise ValueError("enable_multiccd must be boolean")
@@ -61,7 +68,7 @@ def configure_physics(cfg, backend="physx"):
     for key in ("timeconst", "gripper_stiffness", "gripper_target_velocity", "gripper_damping"):
         if not isfinite(settings[key]) or settings[key] < 0 or (key != "gripper_damping" and settings[key] == 0):
             raise ValueError(f"Invalid Newton {key}")
-    if settings["timeconst"] < 2 * cfg.sim.dt / 4:
+    if settings["timeconst"] < 2 * cfg.sim.dt / substeps:
         raise ValueError("Newton contact time constant must be at least twice the solver timestep")
     impedance = settings["impedance"]
     if len(impedance) != 2 or not all(isfinite(x) for x in impedance) or not 0 < impedance[0] <= impedance[1] < 1:
@@ -72,7 +79,7 @@ def configure_physics(cfg, backend="physx"):
             njmax=settings["constraint_capacity"], nconmax=settings["contact_capacity"], iterations=100,
             ls_iterations=50, integrator="implicitfast",
         ),
-        num_substeps=4,
+        num_substeps=substeps,
         use_cuda_graph=False,  # The pre-kernel capacity guard requires eager execution.
     )
     if getattr(cfg, "newton_gripper_stabilization", True):
@@ -88,13 +95,16 @@ def configure_physics(cfg, backend="physx"):
             asset_name="robot", joint_names=["finger_joint"],
             open_command_expr={"finger_joint": 0.0}, close_command_expr={"finger_joint": pi / 4},
             max_target_velocity=settings["gripper_target_velocity"])
+    if getattr(cfg, "friction", None) is not None:
+        from robolab.core.physics.newton_friction import configure as configure_friction
+        configure_friction(cfg)
     if getattr(cfg, "contact_extra_bodies", None):
         from robolab.core.sensors.contact_sensor_utils import configure_newton_extra_contacts
 
         configure_newton_extra_contacts(cfg)
 
 
-def ensure_output_backend(output_dir, backend):
+def ensure_output_backend(output_dir, backend, parameters=None):
     """Do not resume another solver's episodes into this experiment."""
     import json
 
@@ -106,8 +116,23 @@ def ensure_output_backend(output_dir, backend):
             raise ValueError(f"Output contains {previous} results; choose a new output folder for {backend}.")
     elif backend != "physx" and directory.exists() and any(directory.iterdir()):
         raise ValueError("Newton requires a fresh output folder or an existing Newton backend marker.")
+    payload = {"physics_backend": backend}
+    if parameters is not None:
+        if marker.exists():
+            saved = json.loads(marker.read_text()).get("parameters")
+            if saved is not None and saved != parameters:
+                raise ValueError("Output contains different physics parameters; choose a new output folder.")
+            if saved is None and any(directory.iterdir()):
+                defaults = (parameters.get("friction", {}).get("mode") == "upstream"
+                            and parameters.get("sim_rate_hz") is None
+                            and parameters.get("newton_substeps") is None)
+                if not defaults:
+                    raise ValueError("Existing output has no physics-parameter provenance; choose a fresh output folder.")
+        payload["parameters"] = parameters
+    elif marker.exists():
+        payload = json.loads(marker.read_text())
     directory.mkdir(parents=True, exist_ok=True)
-    marker.write_text(json.dumps({"physics_backend": backend}, indent=2) + "\n")
+    marker.write_text(json.dumps(payload, indent=2) + "\n")
 
 
 @contextmanager
@@ -190,7 +215,11 @@ def physics_context(cfg, backend="physx", launcher_args=None):
     if native_mesh_import and getattr(cfg, "newton_contact_settings", {}).get("compact_keyboard_colliders", False):
         from robolab.core.environments.newton_keyboard import keyboard_colliders
         keyboard = keyboard_colliders()
-    with storage, manifold, meshes, shelf, keyboard, compatibility, contacts, initialization:
+    friction = nullcontext()
+    if getattr(cfg, "newton_friction_targets", None) is not None:
+        from robolab.core.physics.newton_friction import friction_runtime
+        friction = friction_runtime(cfg.friction, cfg.newton_friction_targets)
+    with storage, manifold, meshes, shelf, keyboard, compatibility, contacts, initialization, friction:
         with launch_simulation(cfg, launch_args):
             yield
 
@@ -211,7 +240,11 @@ def managed_env(scene, *, physics="physx", launcher_args=None, **kwargs):
         raise ValueError("Disabling the Newton CUDA graph requires --physics newton_mjwarp")
     if (mesh_threshold is not None or contact_timeconst is not None) and physics != "newton_mjwarp":
         raise ValueError("Mesh/contact override requires --physics newton_mjwarp")
-    if physics == "physx":
+    sim_rate = getattr(launcher_args, "sim_rate", None)
+    substeps = getattr(launcher_args, "newton_substeps", None)
+    if substeps is not None and physics != "newton_mjwarp":
+        raise ValueError("--newton-substeps requires --physics newton_mjwarp")
+    if physics == "physx" and sim_rate is None:
         env, cfg = create_env(scene, **kwargs)
         cfg.physics_backend = physics
         try:
@@ -223,7 +256,10 @@ def managed_env(scene, *, physics="physx", launcher_args=None, **kwargs):
         k: v for k, v in kwargs.items()
         if k in {"device", "seed", "num_envs", "env_spacing", "eye", "lookat", "use_fabric"}
     }) if isinstance(scene, str) else scene
+    from robolab.core.physics.timing import configure_timing, timing_provenance
+    configure_timing(cfg, physics, sim_rate, substeps)
     configure_physics(cfg, physics)
+    cfg.physics_timing = timing_provenance(cfg, physics, sim_rate, substeps)
     if mesh_threshold is not None:
         cfg.newton_convex_decomposition_threshold = mesh_threshold
     if contact_timeconst is not None:

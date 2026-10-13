@@ -96,6 +96,53 @@ their asset link names but have not yet been read back on a GPU (DROID has).
 target holds the requested coefficient, FAIL on any mismatch, N/A for an `upstream` run
 or a recording that predates P79.
 
+**Newton backend.** The same friction specifications work with
+`--physics newton_mjwarp`. Uniform values set Newton's sliding coefficient; tables
+map each entry's **dynamic** value to sliding friction. The static value stays in
+provenance but is not a separate Newton solver coefficient. The `realistic` preset
+is an engineering sensitivity setting, not a claim of measured real-world materials
+or identical contacts across engines. Native MuJoCo material combination remains
+in effect (higher priority wins; equal-priority geoms use the larger coefficient).
+The PhysX average rule is not emulated.
+
+Overrides reach the same configured rigid objects and finger bodies as PhysX;
+static extras outside those targets retain their material. Newton and CPU/GPU
+MuJoCo arrays are updated before stepping. Explicit contact pairs receive the
+corresponding sliding override. Torsional/rolling friction and contact response
+are preserved, including the separate support rolling-resistance treatment.
+`friction_applied.json` uses named sliding/torsional/rolling fields with world,
+geom and shape indices, CPU and GPU measurements, and `mapping: dynamic_to_sliding`.
+P79 checks this schema as well as PhysX recordings. An override whose readback
+fails aborts initialization. `upstream` remains a no-op for sliding friction.
+
+### Simulation rate and Newton substeps
+
+Shared policy runners accept `--sim-rate HZ` on either backend and
+`--newton-substeps N` on Newton. For DROID, the default remains 120 simulation
+ticks/second, eight ticks/action (15 Hz control/rendering), and four Newton
+substeps (480 internal steps/second). For example:
+
+```bash
+python policies/pi0_family/run.py --policy pi05 --headless \
+  --physics newton_mjwarp --friction 0.5 --sim-rate 240 --newton-substeps 2 \
+  --task RubiksCubeTask --output-folder-name newton_mu05_240x2
+```
+
+This uses 240 simulation ticks/second, 16 ticks/action, and 480 Newton solver
+steps/second. Policy action frequency, render frequency, and episode duration in
+seconds remain unchanged. The requested rate must allow integer decimation and
+render intervals; incompatible values fail rather than rounding time. Changing
+substeps does not change policy frequency. Coarser Newton solver timesteps raise
+the default contact time constant only when necessary to maintain the existing
+`timeconst >= 2 * solver_dt` constraint; explicit unsafe time constants are rejected.
+
+The resolved values are recorded in `env_cfg.json` under `physics_timing` for
+controlled runs, alongside the complete simulator configuration and Newton contact
+settings. `physics_backend.json` records requested controls and resolved friction
+table contents; resuming a parameter-stamped run with a different condition requires a fresh output folder.
+Legacy backend-only folders retain default-run compatibility; controlled runs need
+a fresh folder when that parameter provenance is absent.
+
 **Probe without a policy.** `examples/run_empty.py --task BananaInBowlTask --headless
 --friction 0.5` boots one env, steps it with zero actions and leaves the two files under
 `output/run_empty_env/BananaInBowlTask*/`.

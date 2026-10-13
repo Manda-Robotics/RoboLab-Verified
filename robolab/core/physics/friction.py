@@ -225,12 +225,11 @@ def event_params(material: Material) -> dict:
 
 
 def require_supported_backend(backend: str, mode: str) -> None:
-    """Do not install PhysX material events into a Newton simulation."""
-    if backend == "newton_mjwarp" and mode != UPSTREAM:
-        raise ValueError(
-            "Newton currently supports only --friction upstream; Verified's friction "
-            "overrides use PhysX material APIs. Newton overrides and readback are not validated."
-        )
+    """Both backends support all specs; their runtime adapters differ."""
+    if backend not in {"physx", "newton_mjwarp"}:
+        raise ValueError(f"Unknown friction backend: {backend}")
+    if mode not in {UPSTREAM, "uniform", "table"}:
+        raise ValueError(f"Unknown friction mode: {mode}")
 
 
 def event_terms(materials: dict[str, Material], pad: Material | None,
@@ -322,11 +321,11 @@ def read_applied(env, requested: dict | None = None) -> dict:
     requested = requested if requested is not None else getattr(env.cfg, "friction", None) or {}
     out = {"objects": {}, "gripper": {}, "requested": requested}
     backend = getattr(env.cfg, "physics_backend", "physx")
+    if backend == "newton_mjwarp":
+        from robolab.core.physics.newton_friction import read_applied as read_newton
+        return read_newton(env, requested)
     if backend != "physx":
-        return {**out, "physics_backend": backend, "status": "unsupported",
-                "reason": "PhysX material readback is unavailable for this backend; "
-                          "Newton friction has not been measured by this recorder.",
-                "summary": {"objects": {}, "gripper": {}}}
+        raise ValueError(f"Unknown friction backend: {backend}")
     # Duck-typed on purpose: Isaac Lab 3 instantiates assets through a backend factory, so the
     # runtime objects are isaaclab_physx classes, not instances of the isaaclab.assets facades
     # (an isinstance check returned an empty readback on the 6.0 stack).
@@ -370,6 +369,9 @@ def check_applied(applied: dict, tol: float = 1e-3) -> list[str]:
     ``scripts/verify_patches.py``."""
     if applied.get("status") == "unsupported":
         return [applied["reason"]]
+    if applied.get("physics_backend") == "newton_mjwarp":
+        from robolab.core.physics.newton_friction import check_applied as check_newton
+        return check_newton(applied, tol)
     req = applied.get("requested") or {}
     problems = []
     for name, mat in (req.get("objects") or {}).items():

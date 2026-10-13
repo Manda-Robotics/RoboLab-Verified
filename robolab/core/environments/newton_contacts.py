@@ -97,7 +97,10 @@ def override_contact_response(solver, timeconst, wp):
     if timeconst is None:
         return
     dt = float(solver.mjw_model.opt.timestep.numpy().reshape(-1)[0])
-    if not np.isfinite(timeconst) or timeconst < 2 * dt:
+    # Configuration uses Python doubles; Warp stores the timestep as float32.
+    # Permit only that conversion's roundoff at the exact stability boundary.
+    at_boundary = np.isclose(timeconst, 2 * dt, rtol=2 * np.finfo(np.float32).eps, atol=0)
+    if not np.isfinite(timeconst) or (timeconst < 2 * dt and not at_boundary):
         raise ValueError("Contact time constant must be finite and >= twice the solver timestep")
     solver.mj_model.geom_solref[:] = [timeconst, 1.0]
     solver.mjw_model.geom_solref.fill_(wp.vec2(timeconst, 1.0))

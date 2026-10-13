@@ -127,3 +127,12 @@ def test_runtime_patches_once_and_restores_on_failure(monkeypatch, filter_enable
     assert Solver._mujoco_warp_step is original
     assert sys.modules["warp"].launch is launch
     assert contacts._active is False
+
+
+def test_time_constant_boundary_accepts_only_float32_roundoff():
+    dt = np.float32(1 / 240)
+    solver = NS(mj_model=NS(geom_solref=np.zeros((1, 2))),
+                mjw_model=NS(geom_solref=Array(np.zeros((1, 1, 2))), opt=NS(timestep=Array([dt]))))
+    contacts.override_contact_response(solver, 2 / 240, NS(vec2=lambda *x: x))
+    with pytest.raises(ValueError, match="twice"):
+        contacts.override_contact_response(solver, (2 / 240) * .999, NS())

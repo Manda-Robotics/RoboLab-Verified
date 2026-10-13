@@ -63,6 +63,21 @@ def _decomposition_threshold(s: str) -> float:
     return value
 
 
+def _positive_rate(text: str) -> float:
+    from math import isfinite
+    value = float(text)
+    if not isfinite(value) or value <= 0:
+        raise argparse.ArgumentTypeError("Simulation rate must be finite and positive")
+    return value
+
+
+def _positive_steps(text: str) -> int:
+    value = int(text)
+    if value < 1:
+        raise argparse.ArgumentTypeError("Newton substeps must be a positive integer")
+    return value
+
+
 def add_common_eval_args(parser: argparse.ArgumentParser) -> None:
     """Add the shared eval flags. Call this once per runner script."""
     parser.add_argument("--friction", type=_friction_arg, default="upstream",
@@ -73,6 +88,10 @@ def add_common_eval_args(parser: argparse.ArgumentParser) -> None:
                               "friction_applied.json. See docs/physics.md."))
     parser.add_argument("--physics", choices=["physx", "newton_mjwarp"], default="physx",
                         help="Physics backend; Newton is experimental and requires Isaac Sim 6 + DROID.")
+    parser.add_argument("--sim-rate", type=_positive_rate, default=None, metavar="HZ",
+                        help="Simulation ticks per second; preserve authored policy and render rates (requires integer decimation).")
+    parser.add_argument("--newton-substeps", type=_positive_steps, default=None, metavar="N",
+                        help="Newton solver substeps per simulation tick (default: 4); requires --physics newton_mjwarp.")
     parser.add_argument("--newton-convex-decomposition-threshold", type=_decomposition_threshold, default=None,
                         help="Opt in to authored mesh approximations and cached CoACD with this normalized tolerance (e.g. 0.05).")
     parser.add_argument("--newton-contact-timeconst", type=_decomposition_threshold, default=None,
@@ -229,7 +248,12 @@ def run_evaluation(
             output_folder_name += f"_{args.instruction_type}"
 
     output_dir = os.path.join(PACKAGE_DIR, "output", output_folder_name)
-    ensure_output_backend(output_dir, args.physics)
+    from dataclasses import asdict
+    ensure_output_backend(output_dir, args.physics, parameters={
+        "friction": asdict(parse_friction(robolab.constants.FRICTION)),
+        "sim_rate_hz": getattr(args, "sim_rate", None),
+        "newton_substeps": getattr(args, "newton_substeps", None),
+    })
     os.makedirs(output_dir, exist_ok=True)
 
     if args.task:

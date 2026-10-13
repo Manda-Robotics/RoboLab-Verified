@@ -47,31 +47,13 @@ def test_upstream_is_the_default_and_means_untouched(text):
     assert F.pad_material(spec) is None
 
 
-def test_backend_guard_preserves_physx_overrides_and_newton_authored_materials():
-    for mode in ("upstream", "uniform", "table"):
-        F.require_supported_backend("physx", mode)
-    F.require_supported_backend("newton_mjwarp", "upstream")
-    for mode in ("uniform", "table"):
-        with pytest.raises(ValueError, match="only --friction upstream"):
-            F.require_supported_backend("newton_mjwarp", mode)
+def test_backend_guard_supports_uniform_tables_and_authored_materials():
+    for backend in ("physx", "newton_mjwarp"):
+        for mode in ("upstream", "uniform", "table"):
+            F.require_supported_backend(backend, mode)
+    with pytest.raises(ValueError, match="Unknown"):
+        F.require_supported_backend("typo", "uniform")
 
-
-def test_newton_readback_is_explicitly_unavailable_and_verifies_as_na(tmp_path):
-    from scripts.verify_patches import p79_friction_applied
-
-    # No scene/PhysX view: the readback must not touch either for Newton.
-    env = types.SimpleNamespace(cfg=types.SimpleNamespace(
-        physics_backend="newton_mjwarp", friction={"mode": "upstream"}))
-    task_dir = tmp_path / "RubiksCubeTask"
-    task_dir.mkdir()
-    path = F.write_applied(env, str(task_dir))
-    applied = json.loads(pathlib.Path(path).read_text())
-    assert applied["status"] == "unsupported"
-    assert applied["physics_backend"] == "newton_mjwarp"
-    assert F.check_applied(applied)  # Unsupported must never look like a match.
-    result = p79_friction_applied(str(tmp_path))
-    assert result.verdict == "N/A"
-    assert "Newton friction has not been measured" in result.detail
 
 
 def test_default_constant_is_upstream():

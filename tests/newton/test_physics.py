@@ -17,7 +17,8 @@ spec.loader.exec_module(physics)
 
 def config():
     return SimpleNamespace(
-        sim=SimpleNamespace(physics="original", dt=1 / 120, device="cuda:0"),
+        sim=SimpleNamespace(physics="original", dt=1 / 120, device="cuda:0", render_interval=8),
+        decimation=8,
         actions=SimpleNamespace(finger_joint="original"),
         scene=SimpleNamespace(robot=SimpleNamespace(actuators={"gripper": SimpleNamespace(stiffness=None, damping=None)}, spawn=SimpleNamespace(
             usd_path=str(ROOT / "assets/robots/franka_robotiq_2f_85_isaac60.usd")
@@ -77,13 +78,19 @@ def test_rejects_old_isaaclab_and_unknown_backend():
         physics.configure_physics(cfg, "typo")
 
 
-def test_verified_friction_override_rejected_before_newton_import():
+def test_newton_override_uses_adapter_and_substeps(monkeypatch):
+    install_module(monkeypatch, "isaaclab_newton.physics", NewtonCfg=SimpleNamespace, MJWarpSolverCfg=SimpleNamespace)
+    install_module(monkeypatch, "robolab.constants", ROBOTS_DIR=str(ROOT / "assets/robots"))
+    install_module(monkeypatch, "robolab.robots.newton_gripper", RateLimitedGripperActionCfg=SimpleNamespace)
+    seen = []
+    install_module(monkeypatch, "robolab.core.physics.newton_friction", configure=lambda cfg: seen.append(cfg.friction))
     cfg = config()
     cfg.friction = {"mode": "uniform", "spec": "0.5"}
-    with pytest.raises(ValueError, match="only --friction upstream"):
-        physics.configure_physics(cfg, "newton_mjwarp")
-    # The existing PhysX override path remains supported.
-    physics.configure_physics(cfg, "physx")
+    cfg.newton_substeps = 2
+    physics.configure_physics(cfg, "newton_mjwarp")
+    assert seen == [cfg.friction]
+    assert cfg.sim.physics.num_substeps == 2
+    assert cfg.newton_contact_settings["timeconst"] == pytest.approx(2 / 240)
 
 
 @pytest.mark.parametrize("overrides", [
@@ -229,6 +236,7 @@ def test_legacy_results_are_not_assumed_to_be_newton(tmp_path):
 def test_runtime_encloses_environment_and_closes_on_error(monkeypatch, fail):
     events = []
     cfg = config()
+    cfg.sim.physics = SimpleNamespace(num_substeps=4)
     env = SimpleNamespace(close=lambda: events.append("env_close"))
     install_module(monkeypatch, "robolab.core.environments.config", parse_env_cfg=lambda *a, **k: cfg)
     install_module(monkeypatch, "robolab.core.environments.runtime",

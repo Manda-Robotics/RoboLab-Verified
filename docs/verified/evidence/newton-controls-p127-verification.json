@@ -1,0 +1,992 @@
+{
+  "change": "P127",
+  "base_commit": "b58499a",
+  "validation_utc": "2026-10-13T23:05:37Z",
+  "baseline": {
+    "commit": "b58499a",
+    "friction_guard_sha256": "8036ca86fdac15d9c076c164bccf865be53d8438b0d110268e8475bdfa6bf798",
+    "baseline_mode_checks": {
+      "upstream": "accepted",
+      "uniform": "Newton currently supports only --friction upstream; Verified's friction overrides use PhysX material APIs. Newton overrides and readback are not validated.",
+      "table": "Newton currently supports only --friction upstream; Verified's friction overrides use PhysX material APIs. Newton overrides and readback are not validated."
+    },
+    "recorded_baseline": {
+      "path": "output/newton-all-tasks-20261013/evidence/physics_ReorientAllMugsTask_native/friction_applied.json",
+      "sha256": "a9e08ae60853f65df0aafe965e3d286d61e45a5e9f616824248a65c2e3ce4721",
+      "readback": {
+        "objects": {},
+        "gripper": {},
+        "requested": {
+          "mode": "upstream",
+          "spec": "upstream",
+          "table": null,
+          "objects": {},
+          "gripper": null,
+          "gripper_bodies": [
+            "left_inner_finger",
+            "right_inner_finger"
+          ]
+        },
+        "physics_backend": "newton_mjwarp",
+        "status": "unsupported",
+        "reason": "PhysX material readback is unavailable for this backend; Newton friction has not been measured by this recorder.",
+        "summary": {
+          "objects": {},
+          "gripper": {}
+        }
+      }
+    }
+  },
+  "tests": {
+    "offline": {
+      "tests": 345,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "passed": 345
+    },
+    "newton-cpu": {
+      "tests": 125,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 2,
+      "passed": 123
+    }
+  },
+  "gpu_node": {
+    "instance_id": 55712744,
+    "gpu": "RTX PRO 5000 Blackwell 48 GB"
+  },
+  "archive": {
+    "remote_path": "/workspace/newton-controls-20261014/controls-evidence.tar.gz",
+    "files": 156,
+    "bytes": 32548840,
+    "sha256": "5ca41ef325b5d7309cb86f0cf04f7a73ad26f590776e2339a8715f435696ea8f",
+    "passed_cases": 7
+  },
+  "verification": {
+    "utc": "2026-10-13T23:05:37Z",
+    "cases": [
+      {
+        "case": "newton_custom_table",
+        "checks": {
+          "startup_readback": true,
+          "step_readback_and_finite_states": true,
+          "cameras": true,
+          "reset_readback": true,
+          "native_timestep": true
+        },
+        "timing": {
+          "requested_sim_rate_hz": 240.0,
+          "requested_newton_substeps": 4,
+          "sim_rate_hz": 240.0,
+          "physics_dt_s": 0.004166666666666667,
+          "control_rate_hz": 15.0,
+          "decimation": 16,
+          "render_interval": 16,
+          "render_rate_hz": 15.0,
+          "newton_substeps": 4,
+          "solver_dt_s": 0.0010416666666666667
+        },
+        "native_timestep_s": [
+          0.0010416667209938169
+        ],
+        "num_envs": 1,
+        "friction": "/workspace/newton-controls-20261014/custom-friction.json",
+        "friction_summary": {
+          "objects": {
+            "banana": {
+              "shapes": 7,
+              "worlds": 1,
+              "sliding": [
+                0.30000001192092896
+              ]
+            },
+            "bowl": {
+              "shapes": 93,
+              "worlds": 1,
+              "sliding": [
+                0.20000000298023224
+              ]
+            },
+            "table": {
+              "shapes": 5,
+              "worlds": 1,
+              "sliding": [
+                0.20000000298023224
+              ]
+            }
+          },
+          "gripper": {
+            "left_inner_finger": {
+              "shapes": 155,
+              "worlds": 1,
+              "sliding": [
+                0.6000000238418579
+              ]
+            },
+            "right_inner_finger": {
+              "shapes": 155,
+              "worlds": 1,
+              "sliding": [
+                0.6000000238418579
+              ]
+            }
+          }
+        },
+        "hdf5": [
+          {
+            "file": "newton_custom_table/controls.hdf5",
+            "datasets": 83,
+            "nonfinite": [],
+            "actions": {
+              "data/demo_0/actions": [
+                30,
+                8
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "case": "newton_realistic_120_2_r3",
+        "checks": {
+          "startup_readback": true,
+          "step_readback_and_finite_states": true,
+          "cameras": true,
+          "reset_readback": true,
+          "native_timestep": true
+        },
+        "timing": {
+          "requested_sim_rate_hz": null,
+          "requested_newton_substeps": 2,
+          "sim_rate_hz": 120.0,
+          "physics_dt_s": 0.008333333333333333,
+          "control_rate_hz": 15.0,
+          "decimation": 8,
+          "render_interval": 8,
+          "render_rate_hz": 15.0,
+          "newton_substeps": 2,
+          "solver_dt_s": 0.004166666666666667
+        },
+        "native_timestep_s": [
+          0.004166666883975267
+        ],
+        "num_envs": 1,
+        "friction": "realistic",
+        "friction_summary": {
+          "objects": {
+            "banana": {
+              "shapes": 7,
+              "worlds": 1,
+              "sliding": [
+                0.3499999940395355
+              ]
+            },
+            "bowl": {
+              "shapes": 92,
+              "worlds": 1,
+              "sliding": [
+                0.25
+              ]
+            },
+            "table": {
+              "shapes": 5,
+              "worlds": 1,
+              "sliding": [
+                0.44999998807907104
+              ]
+            }
+          },
+          "gripper": {
+            "left_inner_finger": {
+              "shapes": 155,
+              "worlds": 1,
+              "sliding": [
+                0.699999988079071
+              ]
+            },
+            "right_inner_finger": {
+              "shapes": 155,
+              "worlds": 1,
+              "sliding": [
+                0.699999988079071
+              ]
+            }
+          }
+        },
+        "hdf5": [
+          {
+            "file": "newton_realistic_120_2_r3/controls.hdf5",
+            "datasets": 83,
+            "nonfinite": [],
+            "actions": {
+              "data/demo_0/actions": [
+                30,
+                8
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "case": "newton_uniform_n2_240_2_r4",
+        "checks": {
+          "startup_readback": true,
+          "step_readback_and_finite_states": true,
+          "cameras": true,
+          "reset_readback": true,
+          "native_timestep": true
+        },
+        "timing": {
+          "requested_sim_rate_hz": 240.0,
+          "requested_newton_substeps": 2,
+          "sim_rate_hz": 240.0,
+          "physics_dt_s": 0.004166666666666667,
+          "control_rate_hz": 15.0,
+          "decimation": 16,
+          "render_interval": 16,
+          "render_rate_hz": 15.0,
+          "newton_substeps": 2,
+          "solver_dt_s": 0.0020833333333333333
+        },
+        "native_timestep_s": [
+          0.0020833334419876337
+        ],
+        "num_envs": 2,
+        "friction": "0.5",
+        "friction_summary": {
+          "objects": {
+            "banana": {
+              "shapes": 14,
+              "worlds": 2,
+              "sliding": [
+                0.5
+              ]
+            },
+            "bowl": {
+              "shapes": 186,
+              "worlds": 2,
+              "sliding": [
+                0.5
+              ]
+            },
+            "table": {
+              "shapes": 10,
+              "worlds": 2,
+              "sliding": [
+                0.5
+              ]
+            }
+          },
+          "gripper": {
+            "left_inner_finger": {
+              "shapes": 312,
+              "worlds": 2,
+              "sliding": [
+                0.5
+              ]
+            },
+            "right_inner_finger": {
+              "shapes": 312,
+              "worlds": 2,
+              "sliding": [
+                0.5
+              ]
+            }
+          }
+        },
+        "hdf5": [
+          {
+            "file": "newton_uniform_n2_240_2_r4/controls.hdf5",
+            "datasets": 166,
+            "nonfinite": [],
+            "actions": {
+              "data/demo_0/actions": [
+                30,
+                8
+              ],
+              "data/demo_1/actions": [
+                30,
+                8
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "case": "newton_upstream_60_4",
+        "checks": {
+          "startup_readback": true,
+          "step_readback_and_finite_states": true,
+          "cameras": true,
+          "reset_readback": true,
+          "native_timestep": true
+        },
+        "timing": {
+          "requested_sim_rate_hz": 60.0,
+          "requested_newton_substeps": null,
+          "sim_rate_hz": 60.0,
+          "physics_dt_s": 0.016666666666666666,
+          "control_rate_hz": 15.0,
+          "decimation": 4,
+          "render_interval": 4,
+          "render_rate_hz": 15.0,
+          "newton_substeps": 4,
+          "solver_dt_s": 0.004166666666666667
+        },
+        "native_timestep_s": [
+          0.004166666883975267
+        ],
+        "num_envs": 1,
+        "friction": "upstream",
+        "friction_summary": {
+          "objects": {
+            "table": {
+              "shapes": 5,
+              "worlds": 1,
+              "sliding": [
+                1.0
+              ]
+            },
+            "bowl": {
+              "shapes": 93,
+              "worlds": 1,
+              "sliding": [
+                2.0
+              ]
+            },
+            "banana": {
+              "shapes": 7,
+              "worlds": 1,
+              "sliding": [
+                2.0
+              ]
+            }
+          },
+          "gripper": {
+            "left_inner_finger": {
+              "shapes": 156,
+              "worlds": 1,
+              "sliding": [
+                2.0
+              ]
+            },
+            "right_inner_finger": {
+              "shapes": 156,
+              "worlds": 1,
+              "sliding": [
+                2.0
+              ]
+            }
+          }
+        },
+        "hdf5": [
+          {
+            "file": "newton_upstream_60_4/controls.hdf5",
+            "datasets": 83,
+            "nonfinite": [],
+            "actions": {
+              "data/demo_0/actions": [
+                30,
+                8
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "case": "newton_upstream_default",
+        "checks": {
+          "startup_readback": true,
+          "step_readback_and_finite_states": true,
+          "cameras": true,
+          "reset_readback": true,
+          "native_timestep": true
+        },
+        "timing": {
+          "requested_sim_rate_hz": null,
+          "requested_newton_substeps": null,
+          "sim_rate_hz": 120.0,
+          "physics_dt_s": 0.008333333333333333,
+          "control_rate_hz": 15.0,
+          "decimation": 8,
+          "render_interval": 8,
+          "render_rate_hz": 15.0,
+          "newton_substeps": 4,
+          "solver_dt_s": 0.0020833333333333333
+        },
+        "native_timestep_s": [
+          0.0020833334419876337
+        ],
+        "num_envs": 1,
+        "friction": "upstream",
+        "friction_summary": {
+          "objects": {
+            "table": {
+              "shapes": 5,
+              "worlds": 1,
+              "sliding": [
+                1.0
+              ]
+            },
+            "bowl": {
+              "shapes": 94,
+              "worlds": 1,
+              "sliding": [
+                2.0
+              ]
+            },
+            "banana": {
+              "shapes": 7,
+              "worlds": 1,
+              "sliding": [
+                2.0
+              ]
+            }
+          },
+          "gripper": {
+            "left_inner_finger": {
+              "shapes": 154,
+              "worlds": 1,
+              "sliding": [
+                2.0
+              ]
+            },
+            "right_inner_finger": {
+              "shapes": 154,
+              "worlds": 1,
+              "sliding": [
+                2.0
+              ]
+            }
+          }
+        },
+        "hdf5": [
+          {
+            "file": "newton_upstream_default/controls.hdf5",
+            "datasets": 83,
+            "nonfinite": [],
+            "actions": {
+              "data/demo_0/actions": [
+                30,
+                8
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "case": "physx_uniform_240",
+        "checks": {
+          "startup_readback": true,
+          "step_readback_and_finite_states": true,
+          "cameras": true,
+          "reset_readback": true
+        },
+        "timing": {
+          "requested_sim_rate_hz": 240.0,
+          "requested_newton_substeps": null,
+          "sim_rate_hz": 240.0,
+          "physics_dt_s": 0.004166666666666667,
+          "control_rate_hz": 15.0,
+          "decimation": 16,
+          "render_interval": 16,
+          "render_rate_hz": 15.0,
+          "newton_substeps": null,
+          "solver_dt_s": 0.004166666666666667
+        },
+        "native_timestep_s": null,
+        "num_envs": 1,
+        "friction": "0.5",
+        "friction_summary": {
+          "objects": {
+            "table": {
+              "static": 0.5,
+              "dynamic": 0.5,
+              "restitution": 0.0,
+              "shapes": 5,
+              "uniform": true
+            },
+            "bowl": {
+              "static": 0.5,
+              "dynamic": 0.5,
+              "restitution": 0.1,
+              "shapes": 256,
+              "uniform": true
+            },
+            "banana": {
+              "static": 0.5,
+              "dynamic": 0.5,
+              "restitution": 0.1,
+              "shapes": 256,
+              "uniform": true
+            }
+          },
+          "gripper": {
+            "left_inner_finger": {
+              "static": 0.5,
+              "dynamic": 0.5,
+              "restitution": 0.0,
+              "shapes": 64,
+              "uniform": true
+            },
+            "right_inner_finger": {
+              "static": 0.5,
+              "dynamic": 0.5,
+              "restitution": 0.0,
+              "shapes": 64,
+              "uniform": true
+            }
+          }
+        },
+        "hdf5": [
+          {
+            "file": "physx_uniform_240/controls.hdf5",
+            "datasets": 83,
+            "nonfinite": [],
+            "actions": {
+              "data/demo_0/actions": [
+                30,
+                8
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "case": "physx_upstream_60",
+        "checks": {
+          "startup_readback": true,
+          "step_readback_and_finite_states": true,
+          "cameras": true,
+          "reset_readback": true
+        },
+        "timing": {
+          "requested_sim_rate_hz": 60.0,
+          "requested_newton_substeps": null,
+          "sim_rate_hz": 60.0,
+          "physics_dt_s": 0.016666666666666666,
+          "control_rate_hz": 15.0,
+          "decimation": 4,
+          "render_interval": 4,
+          "render_rate_hz": 15.0,
+          "newton_substeps": null,
+          "solver_dt_s": 0.016666666666666666
+        },
+        "native_timestep_s": null,
+        "num_envs": 1,
+        "friction": "upstream",
+        "friction_summary": {
+          "objects": {
+            "table": {
+              "static": 0.5,
+              "dynamic": 0.5,
+              "restitution": 0.0,
+              "shapes": 5,
+              "uniform": true
+            },
+            "bowl": {
+              "static": 2.0,
+              "dynamic": 2.0,
+              "restitution": 0.1,
+              "shapes": 256,
+              "uniform": true
+            },
+            "banana": {
+              "static": 2.0,
+              "dynamic": 2.0,
+              "restitution": 0.1,
+              "shapes": 256,
+              "uniform": true
+            }
+          },
+          "gripper": {
+            "left_inner_finger": {
+              "static": 2.0,
+              "dynamic": 2.0,
+              "restitution": 0.0,
+              "shapes": 64,
+              "uniform": true
+            },
+            "right_inner_finger": {
+              "static": 2.0,
+              "dynamic": 2.0,
+              "restitution": 0.0,
+              "shapes": 64,
+              "uniform": true
+            }
+          }
+        },
+        "hdf5": [
+          {
+            "file": "physx_upstream_60/controls.hdf5",
+            "datasets": 83,
+            "nonfinite": [],
+            "actions": {
+              "data/demo_0/actions": [
+                30,
+                8
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "source_mismatches": [],
+    "policy_recording_audit": {
+      "kind": "policy",
+      "task": "RubiksCubeTask",
+      "success": false,
+      "steps": 231,
+      "dt": 0.06666666666666667,
+      "checks": {
+        "finite_numeric_data": true,
+        "all_step_lengths_match": true,
+        "unit_quaternions": true,
+        "pad_and_extra_contact_channels": true,
+        "video_lengths_match": true
+      },
+      "review_flags": [],
+      "hdf5": "RubiksCubeTask/run_0.hdf5",
+      "object_motion": {
+        "bowl": {
+          "max_position_norm_m": 0.46140527725219727,
+          "max_pose_difference_speed_m_s": 0.0006092758267186582,
+          "vertical_drop_m": 1.7687678337097168e-05
+        },
+        "rubiks_cube": {
+          "max_position_norm_m": 0.453567236661911,
+          "max_pose_difference_speed_m_s": 2.059962749481201,
+          "vertical_drop_m": 0.16680845618247986
+        },
+        "table": {
+          "max_position_norm_m": 0.19984070956707,
+          "max_pose_difference_speed_m_s": 1.130176315200515e-06,
+          "vertical_drop_m": 0.0
+        }
+      },
+      "pad_objects": [
+        "bowl",
+        "rubiks_cube",
+        "table"
+      ],
+      "numeric_datasets": 83,
+      "extra_channels": 21,
+      "ee_velocity_rms": 0.04111986607313156,
+      "videos": [
+        {
+          "file": "RubiksCubeTask/Put_the_cube_in_the_bowl_0.mp4",
+          "width": 960,
+          "height": 270,
+          "r_frame_rate": "15/1",
+          "nb_frames": "230"
+        }
+      ],
+      "physics_artifact": false,
+      "pre_satisfied": false
+    },
+    "policy": {
+      "code": 0,
+      "elapsed_s": 151.40612971503288,
+      "command": [
+        "/workspace/newton-controls-20261014/repo/.venv/bin/python",
+        "policies/pi0_family/run.py",
+        "--policy",
+        "pi05",
+        "--headless",
+        "--physics",
+        "newton_mjwarp",
+        "--friction",
+        "0.5",
+        "--sim-rate",
+        "240",
+        "--newton-substeps",
+        "2",
+        "--task",
+        "RubiksCubeTask",
+        "--seed",
+        "0",
+        "--num-envs",
+        "1",
+        "--num-runs",
+        "1",
+        "--remote-host",
+        "localhost",
+        "--remote-port",
+        "8000",
+        "--video-mode",
+        "sensor",
+        "--output-folder-name",
+        "/workspace/newton-controls-20261014/policy_uniform_240_2"
+      ],
+      "episodes": [
+        {
+          "env_name": "RubiksCubeTask",
+          "task_name": "RubiksCubeTask",
+          "run_name": "RubiksCubeTask_0",
+          "run": 0,
+          "episode": 0,
+          "env_id": 0,
+          "policy": "pi05",
+          "instruction": "Put the cube in the bowl",
+          "attributes": [
+            "simple"
+          ],
+          "success": false,
+          "episode_step": 231,
+          "duration": 15.4,
+          "early_resets": 0,
+          "pre_satisfied": false,
+          "collateral_placed": 0,
+          "towed_objects": [],
+          "physics_artifact": false,
+          "success_first_hold_s": null,
+          "success_confirmed_s": null,
+          "dt": 0.06666666666666667,
+          "metrics": {
+            "ee_sparc": -3.5191023074930188,
+            "joint_sparc_mean": -5.3902965928905235,
+            "ee_isj": 108.75677414749082,
+            "joint_isj": 2113.272023408508,
+            "ee_path_length": 0.9892231263623632,
+            "joint_rmse_mean": 0.015587398001872279,
+            "ee_speed_max": 0.162613183259964,
+            "ee_speed_mean": 0.05913780629634857
+          },
+          "events": {
+            "GRASP_ATTEMPT_FAILED": 2,
+            "TARGET_OBJECT_BUMPED": 3,
+            "GRIPPER_FULLY_CLOSED": 3,
+            "OBJECT_FELL_OFF_TABLE": 1,
+            "TARGET_LOST": 1
+          },
+          "instruction_type": "default",
+          "timing": {
+            "policy_inference_s": 3.214,
+            "policy_inference_avg_ms": 13.9,
+            "env_step_s": 122.558,
+            "env_step_avg_ms": 530.6,
+            "video_write_s": 0.781,
+            "video_write_avg_ms": 3.4,
+            "wall_total_s": 126.553,
+            "it_per_sec": 1.83
+          },
+          "score": 0.0,
+          "score_peak": 0.0,
+          "reason": "Condition not satisfied: object_grabbed(object=rubiks_cube) (step 1/2)",
+          "phases": {
+            "time_by_family_s": {
+              "motion": 10.0,
+              "grasp": 3.87,
+              "still": 1.2,
+              "settle": 0.33
+            },
+            "n_phases": 19,
+            "n_picks": 3,
+            "n_picks_pass": 0,
+            "n_picks_wrong_object": 0,
+            "n_drops": 0,
+            "n_places_by_cause": {},
+            "n_places_pass": 0,
+            "first_contact_s": 4.2,
+            "time_in_hand_s": 0.13,
+            "time_press_table_s": 0.0,
+            "n_flags": 2
+          },
+          "tows": {
+            "tow_tier": null,
+            "n_tow": 0,
+            "n_drag": 0,
+            "n_press": 0,
+            "n_squeeze": 0,
+            "towed_objects": [],
+            "tow_time_s": 0.0,
+            "first_tow_s": null,
+            "max_depth_mm": 0.0
+          }
+        }
+      ],
+      "complete": true
+    },
+    "slide_gpu": [
+      {
+        "coefficient": 0.1,
+        "final_position": [
+          0.12643413245677948,
+          -4.801887332206434e-09,
+          0.04999943822622299
+        ]
+      },
+      {
+        "coefficient": 0.9,
+        "final_position": [
+          0.013879823498427868,
+          1.1128482579891852e-09,
+          0.04992048442363739
+        ]
+      }
+    ],
+    "source_manifest": {
+      "robolab/core/environments/physics.py": "b4594ba550ab86fab5db4474657802f51a1b659c7ec3d2647e4015c97056775f",
+      "robolab/core/environments/runtime.py": "4f77313f697ed80aae1db211448184453488a0b2d12483117dbf81fe23a495ae",
+      "robolab/core/physics/friction.py": "9d0c85bd96609860125d2f9bb2bc255265722050abbe6eec301a9f48da40af28",
+      "robolab/core/physics/newton_friction.py": "ee04cb84b4380064f879d233522ff3c67d0538d21f1a6280247027c5af27efa4",
+      "robolab/core/physics/timing.py": "8bde44c43e2759bffa8759eff6972eabc80d52b2470edb8dfab9a1d40c4d5f1f",
+      "robolab/core/physics/friction_realistic.json": "833f30780f900cb3af5e6ccb478a9f5871c1fb2498f698e88958dc5620426860",
+      "robolab/eval/runner.py": "1c4fc09ee017b7bd6188c4115aebd42f44fa5c63ca3d755f5d524b538dfa79f3",
+      "scripts/verify_patches.py": "6acefd33f1fc826eee69c33f6a46b5ce0a85d466b93eff2e70886c9817a5b2e2",
+      "scripts/probe_physics_controls.py": "0129e832484f8f35d9e7ad93ffaeee6d8d7607ee0dfc1bc12b1d82e658b954ac",
+      "robolab/core/environments/newton_contacts.py": "0c69d94128250328d272f0c901f42ad262ba7c77c27f275ab78884d94f09c8b7"
+    }
+  },
+  "slide_cpu": [
+    {
+      "coefficient": 0.1,
+      "final_position": [
+        0.12643417716026306,
+        8.527949901804277e-09,
+        0.04999943822622299
+      ]
+    },
+    {
+      "coefficient": 0.9,
+      "final_position": [
+        0.013879824429750443,
+        1.5980538004001232e-09,
+        0.04992048442363739
+      ]
+    }
+  ],
+  "p79_recording_checks": {
+    "newton_custom_table": {
+      "result": {
+        "patch": "P79",
+        "title": "friction override applied",
+        "verdict": "PASS",
+        "detail": "--friction /workspace/newton-controls-20261014/custom-friction.json: 3 objects + 2 pad bodies hold the requested coefficients (objects sliding: banana=0.3, bowl=0.2, table=0.2; gripper sliding: left_inner_finger=0.6, right_inner_finger=0.6)",
+        "evidence": [
+          "banana: 0.7/0.3 (class:fruit)",
+          "bowl: 0.4/0.2 (default(class:kitchenware))",
+          "table: 0.4/0.2 (default(class:fixture))"
+        ],
+        "opportunities": 5
+      },
+      "source_readback_sha256": "6ff578ac3e481b5aaf4e7fe3a88545a4d44bc8ded964b9f2b4b23ed25d68da2d",
+      "layout_note": "Unmodified probe readback copied into the task-directory layout expected by P79."
+    },
+    "newton_realistic_120_2_r3": {
+      "result": {
+        "patch": "P79",
+        "title": "friction override applied",
+        "verdict": "PASS",
+        "detail": "--friction realistic: 3 objects + 2 pad bodies hold the requested coefficients (objects sliding: banana=0.35, bowl=0.25, table=0.45; gripper sliding: left_inner_finger=0.7, right_inner_finger=0.7)",
+        "evidence": [
+          "banana: 0.4/0.35 (class:fruit)",
+          "bowl: 0.3/0.25 (class:kitchenware)",
+          "table: 0.5/0.45 (class:fixture)"
+        ],
+        "opportunities": 5
+      },
+      "source_readback_sha256": "51ac7f4985a08e422c022d823c37834a78aeac56dd7181f6d41a4a781fce7e75",
+      "layout_note": "Unmodified probe readback copied into the task-directory layout expected by P79."
+    },
+    "newton_uniform_n2_240_2_r4": {
+      "result": {
+        "patch": "P79",
+        "title": "friction override applied",
+        "verdict": "PASS",
+        "detail": "--friction 0.5: 3 objects + 2 pad bodies hold the requested coefficients (objects sliding: banana=0.5, bowl=0.5, table=0.5; gripper sliding: left_inner_finger=0.5, right_inner_finger=0.5)",
+        "evidence": [
+          "banana: 0.5/0.5 (uniform)",
+          "bowl: 0.5/0.5 (uniform)",
+          "table: 0.5/0.5 (uniform)"
+        ],
+        "opportunities": 5
+      },
+      "source_readback_sha256": "61b67f2a36767447b7d82412a169b0809b8f2ab6480733289a7402e4939e3271",
+      "layout_note": "Unmodified probe readback copied into the task-directory layout expected by P79."
+    },
+    "newton_upstream_60_4": {
+      "result": {
+        "patch": "P79",
+        "title": "friction override applied",
+        "verdict": "N/A",
+        "detail": "run used the upstream materials; solver readback: objects sliding: table=1, bowl=2, banana=2; gripper sliding: left_inner_finger=2, right_inner_finger=2",
+        "evidence": [],
+        "opportunities": 0
+      },
+      "source_readback_sha256": "631115c6dde9310a5f6a829e92426e7f540dba4864347bb50cf1a386f20a074c",
+      "layout_note": "Unmodified probe readback copied into the task-directory layout expected by P79."
+    },
+    "newton_upstream_default": {
+      "result": {
+        "patch": "P79",
+        "title": "friction override applied",
+        "verdict": "N/A",
+        "detail": "run used the upstream materials; solver readback: objects sliding: table=1, bowl=2, banana=2; gripper sliding: left_inner_finger=2, right_inner_finger=2",
+        "evidence": [],
+        "opportunities": 0
+      },
+      "source_readback_sha256": "f175e1905ea33135eea4ffa9afba378b612bd416e9864322de582e701555ff4f",
+      "layout_note": "Unmodified probe readback copied into the task-directory layout expected by P79."
+    },
+    "physx_uniform_240": {
+      "result": {
+        "patch": "P79",
+        "title": "friction override applied",
+        "verdict": "PASS",
+        "detail": "--friction 0.5: 3 objects + 2 pad bodies hold the requested coefficients (objects static/dynamic: 0.5/0.5 x3; pads: 0.5/0.5 x2)",
+        "evidence": [
+          "banana: 0.5/0.5 (uniform)",
+          "bowl: 0.5/0.5 (uniform)",
+          "table: 0.5/0.5 (uniform)"
+        ],
+        "opportunities": 5
+      },
+      "source_readback_sha256": "d447f196a3237e4c271d56a561257144cfaeaa0fad611d44e73cb140df981e9b",
+      "layout_note": "Unmodified probe readback copied into the task-directory layout expected by P79."
+    },
+    "physx_upstream_60": {
+      "result": {
+        "patch": "P79",
+        "title": "friction override applied",
+        "verdict": "N/A",
+        "detail": "run used the upstream materials; solver readback: objects static/dynamic: 0.5/0.5 x1, 2/2 x2; pads: 2/2 x2",
+        "evidence": [],
+        "opportunities": 0
+      },
+      "source_readback_sha256": "964047392a7af1e8f58294d0a99e3300cca51bb265e07a7033b40395fc730d56",
+      "layout_note": "Unmodified probe readback copied into the task-directory layout expected by P79."
+    },
+    "policy_uniform_240_2": {
+      "result": {
+        "patch": "P79",
+        "title": "friction override applied",
+        "verdict": "PASS",
+        "detail": "--friction 0.5: 3 objects + 2 pad bodies hold the requested coefficients (objects sliding: bowl=0.5, rubiks_cube=0.5, table=0.5; gripper sliding: left_inner_finger=0.5, right_inner_finger=0.5)",
+        "evidence": [
+          "bowl: 0.5/0.5 (uniform)",
+          "rubiks_cube: 0.5/0.5 (uniform)",
+          "table: 0.5/0.5 (uniform)"
+        ],
+        "opportunities": 5
+      }
+    }
+  },
+  "limitations": [
+    "GPU matrix uses DROID BananaInBowlTask, 30 control steps per environment; this is not a 120-task parameter sweep.",
+    "Fresh pi0.5 RubiksCubeTask completed as integration but failed the task with TARGET_LOST; no score improvement claimed.",
+    "Newton maps requested dynamic friction to native sliding friction. Static/dynamic separation and PhysX averaging are not emulated.",
+    "Parallel coverage is two environments; alternative robots and non-native contact backends are not validated.",
+    "Five policy video frames were sampled; full video was not manually reviewed.",
+    "Superseded N2 r3 probe reused demo_0 and overwrote one trajectory; N2 r4 verifies both recordings. Production episode indexing was already correct."
+  ],
+  "sweep_isolation": {
+    "utc": "2026-10-13T22:30:50Z",
+    "incident": "Controls manifest briefly uploaded over sweep metadata manifest; original exact bytes restored. Runtime files unchanged.",
+    "restored_sha256": "ac8d6f18d6ffa045d0a2055cee1b2ccf56ecb47a18795d2ab9ec3a9b0dab799c",
+    "affected_monitors": [],
+    "runtime_hash_mismatches": []
+  }
+}

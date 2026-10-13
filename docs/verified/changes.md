@@ -209,6 +209,12 @@ R1 to R6 of the plan are not started).
 |---|---|---|---|---|---|
 | P126 | HDF5 recording uses `RobolabEnv._success_of` before export, matching the canonical JSON result for named success and per-object success terms. `target_lost` is no longer exported as a success. | HDF5 success labels corrected; JSON scores, termination timing and physics unchanged. | OFFLINE + GPU recorded controls | D8 | The retained 780-step jug failure has JSON false / HDF5 true. Four regressions cover success, target loss, timeout, per-object terms, reordered IDs and frozen episodes (two fail on the old hook). A controlled GPU target loss now exports false at step 11; the successful banana replay exports true at step 480. The original jug replay did not reproduce termination within its saved actions and is not counted as verification. [Recorded evidence and limitations](evidence/newton-all-tasks-p126-verification.json). |
 
+## Physics controls (2026-10-14)
+
+| ID | Change | Scores | Level | Finding | Evidence |
+|---|---|---|---|---|---|
+| P127 | Newton supports uniform/table friction through native sliding coefficients with verified CPU/GPU readback; both backends expose simulation rate, Newton exposes substeps, and output provenance guards parameter changes. | Defaults unchanged; requested material/resolution changes can change scores. | OFFLINE + CPU dynamics + recorded GPU integration | D9, C1 | 345 offline and 123 Newton CPU tests pass (2 GPU-only skips); seven GPU conditions cover both backends, all friction modes and two environments. A sliding test demonstrates the effect on motion. A fresh public-runner policy episode completes recording but fails the task; no score improvement claimed. [Report](newton-controls-2026-10-14.md), [baseline and verification](evidence/newton-controls-p127-verification.json). |
+
 ## Withdrawn, reverted, rejected
 
 Kept with the reason for each.

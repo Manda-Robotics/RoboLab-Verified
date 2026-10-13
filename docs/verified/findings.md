@@ -60,6 +60,7 @@ upstream v0.3.1, plus nine human review sessions whose episode-level verdicts ar
 | D6 | The VRAM-bound env count is undocumented. | Cosmos3-Nano: 4 envs max on 48 GB. | [env_vram_size_guide.md](../env_vram_size_guide.md). |
 | D7 | A cut-short run leaves HDF5 trajectories with no results row. | — | P10's marker lets tooling tell a partial run from a finished one; rows are not fabricated. |
 | D8 | The recorder labels `target_lost` failures as successes in HDF5 by copying the OR of non-timeout termination terms. JSON correctly uses the named success term. | Newton `ReorientJugTask`, seed 0: target lost at step 780 (52 s), JSON `success=false`, HDF5 `success=true`; [retained baseline and hashes](evidence/newton-all-tasks-p126-baseline.json). | P126: offline regressions and recorded GPU target-loss/success controls; [verification and replay limitations](evidence/newton-all-tasks-p126-verification.json). |
+| D9 | Newton rejects the existing friction parameter and records no solver coefficients; evaluation runners lack simulation-rate and Newton-substep controls. | Baseline `b58499a` rejects uniform/table requests; retained `ReorientAllMugsTask` readback says `unsupported`. [Baseline and GPU recordings](evidence/newton-controls-p127-verification.json). | P127: Newton material adapter/readback, shared timing controls, and parameter provenance; [verification and limitations](newton-controls-2026-10-14.md). |
 
 ## E. Dashboard
 

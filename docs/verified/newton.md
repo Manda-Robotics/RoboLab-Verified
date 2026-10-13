@@ -57,10 +57,17 @@ does not transfer to Newton. PhysX is still the default. Select Newton with
   magnitudes are summed over that object's resolved filter bodies, retaining the
   `contact_body/<body>__<object>` recording keys. PhysX keeps batch sensors.
   Force arrays are converted through the existing tensor compatibility helper.
-- Verified's `--friction` overrides use PhysX material events. Newton accepts
-  only `--friction upstream`, with explicit rejection of uniform/table overrides.
-  Its `friction_applied.json` records `status: unsupported` and the backend;
-  verification P79 returns N/A. This is not a Newton coefficient measurement.
+- Both backends accept `--friction upstream`, a uniform coefficient, `realistic`,
+  or a JSON table. Newton maps the requested **dynamic** coefficient to native
+  sliding friction, independently reads CPU/GPU solver arrays for every environment,
+  and writes `friction_applied.json` with `mapping: dynamic_to_sliding`. PhysX
+  retains separate static/dynamic coefficients and its material event implementation.
+  See [physics controls](../physics.md#simulation-rate-and-newton-substeps).
+- `--sim-rate HZ` changes physics resolution while preserving the authored control
+  and rendering periods. `--newton-substeps N` changes Newton's internal substeps.
+  Defaults remain authored timing and four Newton substeps.
+  [P127 validation](newton-controls-2026-10-14.md) covers solver readback, timing,
+  parallel recordings, physical sliding response and a fresh policy episode.
 - `ROBOLAB_ROBOT_USD` variants, including Verified's solid-pad asset, are rejected
   by the Newton preset. Newton's single-hull fingertip setting is a separate
   experimental treatment; the PhysX towing-fix evidence does not validate it.

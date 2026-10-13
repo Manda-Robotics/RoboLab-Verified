@@ -349,6 +349,9 @@ def _check_applied(applied: dict, tol: float = 1e-3) -> list[str]:
     """Requested-vs-PhysX comparison for one friction_applied.json (a copy of
     robolab.core.physics.friction.check_applied, kept here so this script can judge a
     recording without importing the build that made it)."""
+    if applied.get("physics_backend") == "newton_mjwarp":
+        from robolab.core.physics.newton_friction import check_applied
+        return check_applied(applied, tol)
     req = applied.get("requested") or {}
     problems = []
     for name, mat in (req.get("objects") or {}).items():
@@ -375,6 +378,10 @@ def _check_applied(applied: dict, tol: float = 1e-3) -> list[str]:
 
 
 def _coeff_summary(applied: dict) -> str:
+    if applied.get("physics_backend") == "newton_mjwarp":
+        return "; ".join(f"{group} sliding: " + ", ".join(
+            f"{name}={rows[0]['sliding']:g}" for name, rows in applied.get(group, {}).items() if rows)
+            for group in ("objects", "gripper"))
     objs = Counter(f"{row[0]:g}/{row[1]:g}" for rows in applied.get("objects", {}).values() for row in rows[:1])
     pads = Counter(f"{row[0]:g}/{row[1]:g}" for rows in applied.get("gripper", {}).values()
                    if isinstance(rows, list) for row in rows[:1])
@@ -395,7 +402,7 @@ def p79_friction_applied(run_dir: str) -> Result:
     req = applied.get("requested") or {}
     if req.get("mode", "upstream") == "upstream":
         return Result("P79", "friction override applied", "N/A",
-                      f"run used the upstream materials; PhysX readback: {_coeff_summary(applied)}")
+                      f"run used the upstream materials; solver readback: {_coeff_summary(applied)}")
     problems = _check_applied(applied)
     n_obj = len(req.get("objects") or {})
     n_pad = len(req.get("gripper_bodies") or [])

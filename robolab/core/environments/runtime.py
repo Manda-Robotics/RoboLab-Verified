@@ -218,13 +218,21 @@ def create_env(scene: str | ManagerBasedEnvCfg,
         attributes=getattr(env_cfg, '_task_attributes', None),
     )
 
-    # P79: record PhysX materials after startup, including authored defaults.
-    # Other backends write explicit unsupported provenance, not a measurement.
-    from robolab.core.physics.friction import write_applied
+    # P79: record actual solver materials after startup, including authored defaults.
+    # An override must fail closed when its readback cannot be verified.
+    from robolab.core.physics.friction import write_applied, check_applied
     try:
-        write_applied(env, env.output_dir)
+        applied_path = write_applied(env, env.output_dir)
+        if (getattr(env_cfg, "friction", None) or {}).get("mode", "upstream") != "upstream":
+            with open(applied_path) as stream:
+                problems = check_applied(json.load(stream))
+            if problems:
+                raise RuntimeError("Friction override verification failed: " + "; ".join(problems))
     except Exception:
         logger.exception("friction readback failed; env_cfg.friction still records the request")
+        if (getattr(env_cfg, "friction", None) or {}).get("mode", "upstream") != "upstream":
+            env.close()
+            raise
 
     # R1 (dense_annotations.md §5): the articulation's joint and body order, so an
     # offline reader finds `finger_joint` by name instead of hard-coding column 7.
