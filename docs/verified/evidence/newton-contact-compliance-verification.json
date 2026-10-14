@@ -1,0 +1,3706 @@
+{
+  "purpose": "controlled contact unloading; not policy episodes or material calibration",
+  "cases": {
+    "bagel_saved_v3": {
+      "task": "BagelsOnPlateTask",
+      "object": "bagel_06",
+      "source_state_index": 78,
+      "source_state_time_s": 5.266666666666667,
+      "from_start": false,
+      "withdraw_direction": [
+        -0.40846177580522963,
+        -0.628788030467556,
+        0.66165292294886
+      ],
+      "resolved_settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "physics_timing": {
+        "requested_sim_rate_hz": null,
+        "requested_newton_substeps": null,
+        "sim_rate_hz": 120.0,
+        "physics_dt_s": 0.008333333333333333,
+        "control_rate_hz": 15.0,
+        "decimation": 8,
+        "render_interval": 8,
+        "render_rate_hz": 15.0,
+        "newton_substeps": 4,
+        "solver_dt_s": 0.0020833333333333333
+      },
+      "object_mass_kg": 0.24769140779972076,
+      "direction_mode": "contact-normal",
+      "commanded_withdrawal_mm": 80,
+      "final_robot_contact_free": false,
+      "phase_stats": {
+        "hold": {
+          "robot_depth_mm": {
+            "min": 11.46010309457779,
+            "median": 13.745587784796953,
+            "max": 16.40995964407921,
+            "last": 13.881458900868893
+          },
+          "robot_normal_N": {
+            "min": 14.204959236085415,
+            "median": 14.35184921324253,
+            "max": 20.744455348700285,
+            "last": 14.348737820982933
+          },
+          "robot_contact_count": {
+            "min": 6.0,
+            "median": 6.0,
+            "max": 9.0,
+            "last": 6.0
+          },
+          "pad_depth_mm": {
+            "min": 11.46010309457779,
+            "median": 13.745587784796953,
+            "max": 16.40995964407921,
+            "last": 13.881458900868893
+          },
+          "pad_normal_N": {
+            "min": 14.204959236085415,
+            "median": 14.35184921324253,
+            "max": 20.744455348700285,
+            "last": 14.348737820982933
+          },
+          "pad_contact_count": {
+            "min": 6.0,
+            "median": 6.0,
+            "max": 9.0,
+            "last": 6.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0008197850458289101,
+            "median": 0.00197531818699202,
+            "max": 0.005801429046763403,
+            "last": 0.0012996148054596282
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.017070831976509042,
+            "median": 0.04099312210860144,
+            "max": 0.18451282027544383,
+            "last": 0.02273265672864855
+          },
+          "finger_q": {
+            "min": -0.010970684699714184,
+            "median": -0.007557903183624148,
+            "max": -0.0067471349611878395,
+            "last": -0.0067471349611878395
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 4.0,
+            "last": 2.0
+          }
+        },
+        "open": {
+          "robot_depth_mm": {
+            "min": 13.455407693982124,
+            "median": 13.709275051951408,
+            "max": 13.870427384972572,
+            "last": 13.455407693982124
+          },
+          "robot_normal_N": {
+            "min": 14.34989395365119,
+            "median": 17.020003236830235,
+            "max": 17.159158550202847,
+            "last": 17.020003236830235
+          },
+          "robot_contact_count": {
+            "min": 6.0,
+            "median": 7.0,
+            "max": 7.0,
+            "last": 7.0
+          },
+          "pad_depth_mm": {
+            "min": 13.455407693982124,
+            "median": 13.709275051951408,
+            "max": 13.870427384972572,
+            "last": 13.455407693982124
+          },
+          "pad_normal_N": {
+            "min": 14.34989395365119,
+            "median": 17.020003236830235,
+            "max": 17.159158550202847,
+            "last": 17.020003236830235
+          },
+          "pad_contact_count": {
+            "min": 6.0,
+            "median": 7.0,
+            "max": 7.0,
+            "last": 7.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0010248159747037588,
+            "median": 0.0014202562123788664,
+            "max": 0.00276673089451888,
+            "last": 0.002062593087242945
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.017403956475357942,
+            "median": 0.022651212057673165,
+            "max": 0.06287465957255595,
+            "last": 0.04080520518061589
+          },
+          "finger_q": {
+            "min": -0.0067353565245866776,
+            "median": -0.006594253238290548,
+            "max": -0.006538601592183113,
+            "last": -0.006538601592183113
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 3.0,
+            "last": 1.0
+          }
+        },
+        "withdraw": {
+          "robot_depth_mm": {
+            "min": 9.766548871994019,
+            "median": 14.393998309969902,
+            "max": 15.769077464938164,
+            "last": 13.503323309123516
+          },
+          "robot_normal_N": {
+            "min": 13.647162668406963,
+            "median": 17.36031574010849,
+            "max": 25.260054411366582,
+            "last": 16.486772641539574
+          },
+          "robot_contact_count": {
+            "min": 5.0,
+            "median": 7.0,
+            "max": 10.0,
+            "last": 8.0
+          },
+          "pad_depth_mm": {
+            "min": 9.766548871994019,
+            "median": 14.393998309969902,
+            "max": 15.769077464938164,
+            "last": 13.503323309123516
+          },
+          "pad_normal_N": {
+            "min": 13.647162668406963,
+            "median": 17.36031574010849,
+            "max": 25.260054411366582,
+            "last": 16.486772641539574
+          },
+          "pad_contact_count": {
+            "min": 5.0,
+            "median": 7.0,
+            "max": 10.0,
+            "last": 8.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0024631616714550974,
+            "median": 0.013991251698332591,
+            "max": 0.02136677043421445,
+            "last": 0.013991251698332591
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.03327312829249296,
+            "median": 0.341599590535036,
+            "max": 0.7494009043813762,
+            "last": 0.27664667337762927
+          },
+          "finger_q": {
+            "min": -0.0055639613419771194,
+            "median": 0.001105989096686244,
+            "max": 0.016482751816511154,
+            "last": -8.185656042769551e-06
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 5.0,
+            "last": 2.0
+          }
+        },
+        "released_hold": {
+          "robot_depth_mm": {
+            "min": 7.354992441833019,
+            "median": 9.448405355215073,
+            "max": 13.152453117072582,
+            "last": 7.354992441833019
+          },
+          "robot_normal_N": {
+            "min": 8.612505674362183,
+            "median": 11.124819874763489,
+            "max": 20.15337498486042,
+            "last": 8.612505674362183
+          },
+          "robot_contact_count": {
+            "min": 4.0,
+            "median": 6.0,
+            "max": 9.0,
+            "last": 4.0
+          },
+          "pad_depth_mm": {
+            "min": 7.354992441833019,
+            "median": 9.448405355215073,
+            "max": 13.152453117072582,
+            "last": 7.354992441833019
+          },
+          "pad_normal_N": {
+            "min": 8.612505674362183,
+            "median": 11.124819874763489,
+            "max": 20.15337498486042,
+            "last": 8.612505674362183
+          },
+          "pad_contact_count": {
+            "min": 4.0,
+            "median": 6.0,
+            "max": 9.0,
+            "last": 4.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0015206771298610692,
+            "median": 0.0036543058822362984,
+            "max": 0.00876145402014583,
+            "last": 0.004351311742854037
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.029482924480174456,
+            "median": 0.1219244495831791,
+            "max": 0.3332413369844164,
+            "last": 0.11464287248243328
+          },
+          "finger_q": {
+            "min": -0.0008438296499662101,
+            "median": -0.0007242307183332741,
+            "max": -0.00033172141411341727,
+            "last": -0.0007149110897444189
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 5.0,
+            "last": 1.0
+          }
+        }
+      },
+      "actual_base_withdrawal_m": [
+        -0.039567714504983864,
+        -0.045202873482858986,
+        0.03867592727838909
+      ],
+      "actual_base_withdrawal_length_mm": 71.4474013040258,
+      "object_displacement_during_withdrawal_m": [
+        -0.01701533794403076,
+        -0.02657342329621315,
+        0.022158203646540642
+      ],
+      "last_active_robot_contact_time_s": 9.0,
+      "final_hold_all_robot_contact_free": false,
+      "contact_laws": {
+        "includemargin": [
+          "0.0"
+        ],
+        "solref": [
+          "[0.0044999998062849045, 1.0]"
+        ],
+        "solimp": [
+          "[0.9900000095367432, 0.9990000128746033, 0.0010000000474974513, 0.5, 2.0]"
+        ]
+      },
+      "audit": {
+        "expected_steps": 135,
+        "restore_max_error": 0.0,
+        "hdf5_finite": true,
+        "video_frames": {
+          "over_shoulder_left_camera.mp4": 135,
+          "wrist_cam.mp4": 135
+        },
+        "hdf5_actions": 135
+      }
+    },
+    "pomegranate_saved_v3": {
+      "task": "FruitsOnPlateTask",
+      "object": "pomegranate01",
+      "source_state_index": 464,
+      "source_state_time_s": 31.0,
+      "from_start": false,
+      "withdraw_direction": [
+        -0.17272356746341483,
+        0.5244862495151598,
+        0.8337150252407789
+      ],
+      "resolved_settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "physics_timing": {
+        "requested_sim_rate_hz": null,
+        "requested_newton_substeps": null,
+        "sim_rate_hz": 120.0,
+        "physics_dt_s": 0.008333333333333333,
+        "control_rate_hz": 15.0,
+        "decimation": 8,
+        "render_interval": 8,
+        "render_rate_hz": 15.0,
+        "newton_substeps": 4,
+        "solver_dt_s": 0.0020833333333333333
+      },
+      "object_mass_kg": 0.7447733879089355,
+      "direction_mode": "contact-normal",
+      "commanded_withdrawal_mm": 80,
+      "final_robot_contact_free": true,
+      "phase_stats": {
+        "hold": {
+          "robot_depth_mm": {
+            "min": 1.4468035660684109,
+            "median": 1.6445137443952262,
+            "max": 4.525185562670231,
+            "last": 1.4468035660684109
+          },
+          "robot_normal_N": {
+            "min": 15.787223815917969,
+            "median": 19.33776092529297,
+            "max": 31.03835678100586,
+            "last": 15.787223815917969
+          },
+          "robot_contact_count": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 3.0,
+            "last": 2.0
+          },
+          "pad_depth_mm": {
+            "min": 1.4468035660684109,
+            "median": 1.6445137443952262,
+            "max": 4.525185562670231,
+            "last": 1.4468035660684109
+          },
+          "pad_normal_N": {
+            "min": 15.787223815917969,
+            "median": 19.33776092529297,
+            "max": 31.03835678100586,
+            "last": 15.787223815917969
+          },
+          "pad_contact_count": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 3.0,
+            "last": 2.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0009317477399057174,
+            "median": 0.0029711104458382863,
+            "max": 0.06194196031721553,
+            "last": 0.005823095331689896
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.017476290699222012,
+            "median": 0.0993995981870126,
+            "max": 3.044765976603404,
+            "last": 0.03953060879576466
+          },
+          "finger_q": {
+            "min": -0.006875529419630766,
+            "median": -0.005397883243858814,
+            "max": -0.004782764241099358,
+            "last": -0.004782764241099358
+          },
+          "solver_iterations": {
+            "min": 2.0,
+            "median": 3.0,
+            "max": 4.0,
+            "last": 2.0
+          }
+        },
+        "open": {
+          "robot_depth_mm": {
+            "min": 1.380374189466238,
+            "median": 1.4009892474859953,
+            "max": 1.4370306162163615,
+            "last": 1.3917934847995639
+          },
+          "robot_normal_N": {
+            "min": 15.041869163513184,
+            "median": 15.530978202819824,
+            "max": 16.551188468933105,
+            "last": 15.148724555969238
+          },
+          "robot_contact_count": {
+            "min": 2.0,
+            "median": 2.0,
+            "max": 2.0,
+            "last": 2.0
+          },
+          "pad_depth_mm": {
+            "min": 1.380374189466238,
+            "median": 1.4009892474859953,
+            "max": 1.4370306162163615,
+            "last": 1.3917934847995639
+          },
+          "pad_normal_N": {
+            "min": 15.041869163513184,
+            "median": 15.530978202819824,
+            "max": 16.551188468933105,
+            "last": 15.148724555969238
+          },
+          "pad_contact_count": {
+            "min": 2.0,
+            "median": 2.0,
+            "max": 2.0,
+            "last": 2.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0010024683400481312,
+            "median": 0.004476126071825675,
+            "max": 0.007017113556268416,
+            "last": 0.0036571088352593036
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.01130440470376602,
+            "median": 0.023524082646836232,
+            "max": 0.0445668683025741,
+            "last": 0.01655601929954469
+          },
+          "finger_q": {
+            "min": -0.0047635226510465145,
+            "median": -0.004639083985239267,
+            "max": -0.004557260777801275,
+            "last": -0.004557260777801275
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 3.0,
+            "max": 3.0,
+            "last": 2.0
+          }
+        },
+        "withdraw": {
+          "robot_depth_mm": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 1.3134318869560957,
+            "last": 0.0
+          },
+          "robot_normal_N": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 9.582260370254517,
+            "last": 0.0
+          },
+          "robot_contact_count": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 2.0,
+            "last": 0.0
+          },
+          "pad_depth_mm": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 1.3134318869560957,
+            "last": 0.0
+          },
+          "pad_normal_N": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 9.582260370254517,
+            "last": 0.0
+          },
+          "pad_contact_count": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 2.0,
+            "last": 0.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0016419738246908511,
+            "median": 0.008279221143272607,
+            "max": 0.08688658455359313,
+            "last": 0.002074573668718204
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.022119341742864146,
+            "median": 0.29112011770622365,
+            "max": 1.6533120008647233,
+            "last": 0.03973355091551981
+          },
+          "finger_q": {
+            "min": -0.0048018451780080795,
+            "median": -3.626752004493028e-05,
+            "max": -1.544485530757811e-05,
+            "last": -3.674551044241525e-05
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 3.0,
+            "max": 5.0,
+            "last": 3.0
+          }
+        },
+        "released_hold": {
+          "robot_depth_mm": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0,
+            "last": 0.0
+          },
+          "robot_normal_N": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0,
+            "last": 0.0
+          },
+          "robot_contact_count": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0,
+            "last": 0.0
+          },
+          "pad_depth_mm": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0,
+            "last": 0.0
+          },
+          "pad_normal_N": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0,
+            "last": 0.0
+          },
+          "pad_contact_count": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0,
+            "last": 0.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0013073373141895212,
+            "median": 0.003598254074796709,
+            "max": 0.006698136657019122,
+            "last": 0.003865476974613824
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.004728380273764865,
+            "median": 0.03413261537870164,
+            "max": 0.08426279315784059,
+            "last": 0.06139234134443903
+          },
+          "finger_q": {
+            "min": -4.81534079881385e-05,
+            "median": -3.156941966153681e-05,
+            "max": -3.156258389935829e-05,
+            "last": -3.156307866447605e-05
+          },
+          "solver_iterations": {
+            "min": 2.0,
+            "median": 3.0,
+            "max": 6.0,
+            "last": 2.0
+          }
+        }
+      },
+      "actual_base_withdrawal_m": [
+        -0.020252470250709975,
+        0.030927888399618915,
+        0.05130552423167295
+      ],
+      "actual_base_withdrawal_length_mm": 63.23728052977891,
+      "object_displacement_during_withdrawal_m": [
+        -0.008854806423187256,
+        -0.0004942198283970356,
+        -0.01586011378094554
+      ],
+      "last_active_robot_contact_time_s": 3.8666666666666667,
+      "final_hold_all_robot_contact_free": true,
+      "contact_laws": {
+        "includemargin": [
+          "0.0"
+        ],
+        "solref": [
+          "[0.0044999998062849045, 1.0]"
+        ],
+        "solimp": [
+          "[0.9900000095367432, 0.9990000128746033, 0.0010000000474974513, 0.5, 2.0]"
+        ]
+      },
+      "audit": {
+        "expected_steps": 135,
+        "restore_max_error": 0.0,
+        "hdf5_finite": true,
+        "video_frames": {
+          "over_shoulder_left_camera.mp4": 135,
+          "wrist_cam.mp4": 135
+        },
+        "hdf5_actions": 135
+      }
+    },
+    "lemon_saved_v3": {
+      "task": "FruitsOrangesOnPlateTask",
+      "object": "lemon_01",
+      "source_state_index": 1153,
+      "source_state_time_s": 76.93333333333334,
+      "from_start": false,
+      "withdraw_direction": [
+        -0.10216089413799019,
+        0.051138599127388745,
+        0.9934525632299785
+      ],
+      "resolved_settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "physics_timing": {
+        "requested_sim_rate_hz": null,
+        "requested_newton_substeps": null,
+        "sim_rate_hz": 120.0,
+        "physics_dt_s": 0.008333333333333333,
+        "control_rate_hz": 15.0,
+        "decimation": 8,
+        "render_interval": 8,
+        "render_rate_hz": 15.0,
+        "newton_substeps": 4,
+        "solver_dt_s": 0.0020833333333333333
+      },
+      "object_mass_kg": 0.09218249469995499,
+      "direction_mode": "contact-normal",
+      "commanded_withdrawal_mm": 80,
+      "final_robot_contact_free": true,
+      "phase_stats": {
+        "hold": {
+          "robot_depth_mm": {
+            "min": 4.807521589100361,
+            "median": 4.9244852270931005,
+            "max": 6.319423206150532,
+            "last": 4.918308462947607
+          },
+          "robot_normal_N": {
+            "min": 26.50783109664917,
+            "median": 30.354581594467163,
+            "max": 33.73101329803467,
+            "last": 31.153563499450684
+          },
+          "robot_contact_count": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 3.0,
+            "last": 3.0
+          },
+          "pad_depth_mm": {
+            "min": 4.807521589100361,
+            "median": 4.9244852270931005,
+            "max": 6.319423206150532,
+            "last": 4.918308462947607
+          },
+          "pad_normal_N": {
+            "min": 26.50783109664917,
+            "median": 30.354581594467163,
+            "max": 33.73101329803467,
+            "last": 31.153563499450684
+          },
+          "pad_contact_count": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 3.0,
+            "last": 3.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0006549735105523284,
+            "median": 0.003629993990210024,
+            "max": 0.05683165107757864,
+            "last": 0.004202107604230523
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.04899135351151438,
+            "median": 0.16946872278933334,
+            "max": 3.2060238817752498,
+            "last": 0.1698135416424438
+          },
+          "finger_q": {
+            "min": -0.008827075362205505,
+            "median": -0.0055115725845098495,
+            "max": -0.005269578192383051,
+            "last": -0.005719642620533705
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 3.0,
+            "max": 4.0,
+            "last": 4.0
+          }
+        },
+        "open": {
+          "robot_depth_mm": {
+            "min": 4.9401684664189816,
+            "median": 4.9967048689723015,
+            "max": 5.168975330889225,
+            "last": 4.954829346388578
+          },
+          "robot_normal_N": {
+            "min": 27.48019313812256,
+            "median": 28.950663566589355,
+            "max": 56.468801498413086,
+            "last": 28.437296867370605
+          },
+          "robot_contact_count": {
+            "min": 2.0,
+            "median": 2.0,
+            "max": 4.0,
+            "last": 2.0
+          },
+          "pad_depth_mm": {
+            "min": 4.9401684664189816,
+            "median": 4.9967048689723015,
+            "max": 5.168975330889225,
+            "last": 4.954829346388578
+          },
+          "pad_normal_N": {
+            "min": 27.48019313812256,
+            "median": 28.950663566589355,
+            "max": 56.468801498413086,
+            "last": 28.437296867370605
+          },
+          "pad_contact_count": {
+            "min": 2.0,
+            "median": 2.0,
+            "max": 4.0,
+            "last": 2.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0017200495174911233,
+            "median": 0.003984474609566597,
+            "max": 0.029495220030270684,
+            "last": 0.004132875550590569
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.10783683308416937,
+            "median": 0.19100318565552613,
+            "max": 0.9686358774301823,
+            "last": 0.32143284777514447
+          },
+          "finger_q": {
+            "min": -0.0058545274659991264,
+            "median": -0.00565068144351244,
+            "max": -0.005370756611227989,
+            "last": -0.005649121943861246
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 3.0,
+            "max": 4.0,
+            "last": 4.0
+          }
+        },
+        "withdraw": {
+          "robot_depth_mm": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 4.75862342864275,
+            "last": 0.0
+          },
+          "robot_normal_N": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 35.85639810562134,
+            "last": 0.0
+          },
+          "robot_contact_count": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 3.0,
+            "last": 0.0
+          },
+          "pad_depth_mm": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 4.75862342864275,
+            "last": 0.0
+          },
+          "pad_normal_N": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 35.85639810562134,
+            "last": 0.0
+          },
+          "pad_contact_count": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 3.0,
+            "last": 0.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0028961978111519417,
+            "median": 0.02113177783305874,
+            "max": 0.15522547532184894,
+            "last": 0.012208865369441348
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.07709687893944854,
+            "median": 0.5980621179094532,
+            "max": 6.2561399718444,
+            "last": 0.34987180171726406
+          },
+          "finger_q": {
+            "min": -0.004784691613167524,
+            "median": 0.0003026470949407667,
+            "max": 0.0003154073201585561,
+            "last": 0.00031279760878533125
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 3.0,
+            "max": 5.0,
+            "last": 3.0
+          }
+        },
+        "released_hold": {
+          "robot_depth_mm": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0,
+            "last": 0.0
+          },
+          "robot_normal_N": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0,
+            "last": 0.0
+          },
+          "robot_contact_count": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0,
+            "last": 0.0
+          },
+          "pad_depth_mm": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0,
+            "last": 0.0
+          },
+          "pad_normal_N": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0,
+            "last": 0.0
+          },
+          "pad_contact_count": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0,
+            "last": 0.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0009621801126892123,
+            "median": 0.0065096783856534515,
+            "max": 0.02324493762950841,
+            "last": 0.0027012463677813787
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.044360892986539835,
+            "median": 0.1713855973649372,
+            "max": 0.7368453212793286,
+            "last": 0.10256527061362472
+          },
+          "finger_q": {
+            "min": -3.162167195114307e-05,
+            "median": -3.160565029247664e-05,
+            "max": 0.00010646073496900499,
+            "last": -3.1606243283022195e-05
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 4.0,
+            "last": 3.0
+          }
+        }
+      },
+      "actual_base_withdrawal_m": [
+        -0.017678938280985768,
+        0.004363147496249442,
+        0.05976837989860373
+      ],
+      "actual_base_withdrawal_length_mm": 62.48072623234104,
+      "object_displacement_during_withdrawal_m": [
+        0.008554458618164062,
+        0.0033118948340415955,
+        -0.008744696155190468
+      ],
+      "last_active_robot_contact_time_s": 3.6666666666666665,
+      "final_hold_all_robot_contact_free": true,
+      "contact_laws": {
+        "includemargin": [
+          "0.0"
+        ],
+        "solref": [
+          "[0.0044999998062849045, 1.0]"
+        ],
+        "solimp": [
+          "[0.9900000095367432, 0.9990000128746033, 0.0010000000474974513, 0.5, 2.0]"
+        ]
+      },
+      "audit": {
+        "expected_steps": 135,
+        "restore_max_error": 0.0,
+        "hdf5_finite": true,
+        "video_frames": {
+          "over_shoulder_left_camera.mp4": 135,
+          "wrist_cam.mp4": 135
+        },
+        "hdf5_actions": 135
+      }
+    },
+    "bagel_prefix_v3": {
+      "task": "BagelsOnPlateTask",
+      "object": "bagel_06",
+      "source_state_index": 78,
+      "source_state_time_s": 5.266666666666667,
+      "from_start": true,
+      "withdraw_direction": [
+        -0.06765616185557388,
+        -0.571868329095963,
+        0.8175507678058677
+      ],
+      "resolved_settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "physics_timing": {
+        "requested_sim_rate_hz": null,
+        "requested_newton_substeps": null,
+        "sim_rate_hz": 120.0,
+        "physics_dt_s": 0.008333333333333333,
+        "control_rate_hz": 15.0,
+        "decimation": 8,
+        "render_interval": 8,
+        "render_rate_hz": 15.0,
+        "newton_substeps": 4,
+        "solver_dt_s": 0.0020833333333333333
+      },
+      "object_mass_kg": 0.24769140779972076,
+      "direction_mode": "contact-normal",
+      "commanded_withdrawal_mm": 80,
+      "final_robot_contact_free": true,
+      "phase_stats": {
+        "hold": {
+          "robot_depth_mm": {
+            "min": 11.351872235536575,
+            "median": 12.4874715693295,
+            "max": 16.4182111620903,
+            "last": 12.581070885062218
+          },
+          "robot_normal_N": {
+            "min": 13.750488079153001,
+            "median": 13.813669162802398,
+            "max": 18.42543053627014,
+            "last": 13.820182800292969
+          },
+          "robot_contact_count": {
+            "min": 5.0,
+            "median": 6.0,
+            "max": 8.0,
+            "last": 5.0
+          },
+          "pad_depth_mm": {
+            "min": 11.351872235536575,
+            "median": 12.4874715693295,
+            "max": 16.4182111620903,
+            "last": 12.581070885062218
+          },
+          "pad_normal_N": {
+            "min": 13.750488079153001,
+            "median": 13.813669162802398,
+            "max": 18.42543053627014,
+            "last": 13.820182800292969
+          },
+          "pad_contact_count": {
+            "min": 5.0,
+            "median": 6.0,
+            "max": 8.0,
+            "last": 5.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.00032153052375731486,
+            "median": 0.0007585967894920462,
+            "max": 0.006064638206410852,
+            "last": 0.0006974454161248638
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.002524366132161695,
+            "median": 0.018582018024754093,
+            "max": 0.13318606337052535,
+            "last": 0.005480706370539463
+          },
+          "finger_q": {
+            "min": -0.007450257893651724,
+            "median": -0.005728424992412329,
+            "max": -0.005258352030068636,
+            "last": -0.005258352030068636
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.5,
+            "max": 5.0,
+            "last": 3.0
+          }
+        },
+        "open": {
+          "robot_depth_mm": {
+            "min": 12.345765717327595,
+            "median": 12.473275884985924,
+            "max": 12.576223351061344,
+            "last": 12.345765717327595
+          },
+          "robot_normal_N": {
+            "min": 13.805395126342773,
+            "median": 13.814592599868774,
+            "max": 13.821381688117981,
+            "last": 13.805395126342773
+          },
+          "robot_contact_count": {
+            "min": 5.0,
+            "median": 5.0,
+            "max": 5.0,
+            "last": 5.0
+          },
+          "pad_depth_mm": {
+            "min": 12.345765717327595,
+            "median": 12.473275884985924,
+            "max": 12.576223351061344,
+            "last": 12.345765717327595
+          },
+          "pad_normal_N": {
+            "min": 13.805395126342773,
+            "median": 13.814592599868774,
+            "max": 13.821381688117981,
+            "last": 13.805395126342773
+          },
+          "pad_contact_count": {
+            "min": 5.0,
+            "median": 5.0,
+            "max": 5.0,
+            "last": 5.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0006238817806916671,
+            "median": 0.0006364639487724508,
+            "max": 0.0007463256393579987,
+            "last": 0.000624704163472193
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.0036076400129067534,
+            "median": 0.004311924741522496,
+            "max": 0.008031370429768077,
+            "last": 0.004687504157194036
+          },
+          "finger_q": {
+            "min": -0.005244828294962645,
+            "median": -0.0051835039630532265,
+            "max": -0.005145082715898752,
+            "last": -0.005145082715898752
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 4.0,
+            "last": 3.0
+          }
+        },
+        "withdraw": {
+          "robot_depth_mm": {
+            "min": 7.066941820085049,
+            "median": 10.23887936025858,
+            "max": 12.232404202222824,
+            "last": 7.066941820085049
+          },
+          "robot_normal_N": {
+            "min": 9.081920385360718,
+            "median": 13.541986227035522,
+            "max": 18.051096323877573,
+            "last": 9.742865324020386
+          },
+          "robot_contact_count": {
+            "min": 4.0,
+            "median": 6.0,
+            "max": 9.0,
+            "last": 5.0
+          },
+          "pad_depth_mm": {
+            "min": 7.066941820085049,
+            "median": 10.23887936025858,
+            "max": 12.232404202222824,
+            "last": 7.066941820085049
+          },
+          "pad_normal_N": {
+            "min": 9.081920385360718,
+            "median": 13.541986227035522,
+            "max": 18.051096323877573,
+            "last": 9.742865324020386
+          },
+          "pad_contact_count": {
+            "min": 4.0,
+            "median": 6.0,
+            "max": 9.0,
+            "last": 5.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0015437321481546937,
+            "median": 0.012774632335009061,
+            "max": 0.020836376408400484,
+            "last": 0.014926051572373089
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.018492062249690147,
+            "median": 0.258757495930524,
+            "max": 0.562698405677851,
+            "last": 0.2734759497426963
+          },
+          "finger_q": {
+            "min": -0.004158004652708769,
+            "median": 0.01042694691568613,
+            "max": 0.015852542594075203,
+            "last": 0.010355327278375626
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 4.0,
+            "last": 1.0
+          }
+        },
+        "released_hold": {
+          "robot_depth_mm": {
+            "min": 0.0,
+            "median": 1.4257736038416624,
+            "max": 7.746526505798101,
+            "last": 0.0
+          },
+          "robot_normal_N": {
+            "min": 0.0,
+            "median": 0.49496039748191833,
+            "max": 9.264367580413818,
+            "last": 0.0
+          },
+          "robot_contact_count": {
+            "min": 0.0,
+            "median": 1.0,
+            "max": 5.0,
+            "last": 0.0
+          },
+          "pad_depth_mm": {
+            "min": 0.0,
+            "median": 1.4257736038416624,
+            "max": 7.746526505798101,
+            "last": 0.0
+          },
+          "pad_normal_N": {
+            "min": 0.0,
+            "median": 0.49496039748191833,
+            "max": 9.264367580413818,
+            "last": 0.0
+          },
+          "pad_contact_count": {
+            "min": 0.0,
+            "median": 1.0,
+            "max": 5.0,
+            "last": 0.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 6.42285115509164e-06,
+            "median": 0.00177189000323192,
+            "max": 0.4245698589820023,
+            "last": 0.00021872923160713308
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.00047320602238436026,
+            "median": 0.042671672891492485,
+            "max": 12.55031285380572,
+            "last": 0.005682536854157317
+          },
+          "finger_q": {
+            "min": -0.00031098429462872446,
+            "median": 4.915131739835488e-06,
+            "max": 0.01069414708763361,
+            "last": 1.7203003466192968e-09
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 5.0,
+            "last": 1.0
+          }
+        }
+      },
+      "actual_base_withdrawal_m": [
+        -0.01900967402895143,
+        -0.04094100548485533,
+        0.04727521498709972
+      ],
+      "actual_base_withdrawal_length_mm": 65.3642072458195,
+      "object_displacement_during_withdrawal_m": [
+        -0.011047959327697754,
+        -0.024508044123649597,
+        0.019599052146077156
+      ],
+      "last_active_robot_contact_time_s": 7.533333333333334,
+      "final_hold_all_robot_contact_free": false,
+      "contact_laws": {
+        "includemargin": [
+          "0.0"
+        ],
+        "solref": [
+          "[0.0044999998062849045, 1.0]"
+        ],
+        "solimp": [
+          "[0.9900000095367432, 0.9990000128746033, 0.0010000000474974513, 0.5, 2.0]"
+        ]
+      },
+      "audit": {
+        "expected_steps": 214,
+        "restore_max_error": null,
+        "hdf5_finite": true,
+        "video_frames": {
+          "over_shoulder_left_camera.mp4": 214,
+          "wrist_cam.mp4": 214
+        },
+        "hdf5_actions": 214
+      }
+    },
+    "bagel_axis_saved_v4": {
+      "task": "BagelsOnPlateTask",
+      "object": "bagel_06",
+      "source_state_index": 78,
+      "source_state_time_s": 5.266666666666667,
+      "from_start": false,
+      "withdraw_direction": [
+        0.10284410808094971,
+        0.011166565559388358,
+        0.9946348059698293
+      ],
+      "resolved_settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "physics_timing": {
+        "requested_sim_rate_hz": null,
+        "requested_newton_substeps": null,
+        "sim_rate_hz": 120.0,
+        "physics_dt_s": 0.008333333333333333,
+        "control_rate_hz": 15.0,
+        "decimation": 8,
+        "render_interval": 8,
+        "render_rate_hz": 15.0,
+        "newton_substeps": 4,
+        "solver_dt_s": 0.0020833333333333333
+      },
+      "object_mass_kg": 0.24769140779972076,
+      "direction_mode": "finger-axis",
+      "commanded_withdrawal_mm": 120.0,
+      "final_robot_contact_free": true,
+      "phase_stats": {
+        "hold": {
+          "robot_depth_mm": {
+            "min": 11.45229022949934,
+            "median": 13.745718635618687,
+            "max": 16.410138458013535,
+            "last": 13.898439705371857
+          },
+          "robot_normal_N": {
+            "min": 14.204711943864822,
+            "median": 14.356634736061096,
+            "max": 20.740444842725992,
+            "last": 17.155740775167942
+          },
+          "robot_contact_count": {
+            "min": 6.0,
+            "median": 6.0,
+            "max": 9.0,
+            "last": 7.0
+          },
+          "pad_depth_mm": {
+            "min": 11.45229022949934,
+            "median": 13.745718635618687,
+            "max": 16.410138458013535,
+            "last": 13.898439705371857
+          },
+          "pad_normal_N": {
+            "min": 14.204711943864822,
+            "median": 14.356634736061096,
+            "max": 20.740444842725992,
+            "last": 17.155740775167942
+          },
+          "pad_contact_count": {
+            "min": 6.0,
+            "median": 6.0,
+            "max": 9.0,
+            "last": 7.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0006578378953247238,
+            "median": 0.0017216297906397053,
+            "max": 0.005820802239732955,
+            "last": 0.0017513117330199928
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.017345472853080482,
+            "median": 0.039157981915356396,
+            "max": 0.2419007689141595,
+            "last": 0.030842754053905522
+          },
+          "finger_q": {
+            "min": -0.01097089797258377,
+            "median": -0.007556987693533301,
+            "max": -0.006746398750692606,
+            "last": -0.006746398750692606
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 4.0,
+            "last": 1.0
+          }
+        },
+        "open": {
+          "robot_depth_mm": {
+            "min": 13.456732034683228,
+            "median": 13.716869987547398,
+            "max": 13.883859850466251,
+            "last": 13.456732034683228
+          },
+          "robot_normal_N": {
+            "min": 14.350218391045928,
+            "median": 14.371696080081165,
+            "max": 17.16134401038289,
+            "last": 14.371696080081165
+          },
+          "robot_contact_count": {
+            "min": 6.0,
+            "median": 6.0,
+            "max": 7.0,
+            "last": 6.0
+          },
+          "pad_depth_mm": {
+            "min": 13.456732034683228,
+            "median": 13.716869987547398,
+            "max": 13.883859850466251,
+            "last": 13.456732034683228
+          },
+          "pad_normal_N": {
+            "min": 14.350218391045928,
+            "median": 14.371696080081165,
+            "max": 17.16134401038289,
+            "last": 14.371696080081165
+          },
+          "pad_contact_count": {
+            "min": 6.0,
+            "median": 6.0,
+            "max": 7.0,
+            "last": 6.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0008921227966838059,
+            "median": 0.0015454693672421551,
+            "max": 0.003577764004558953,
+            "last": 0.0017013534628389849
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.02020328244186663,
+            "median": 0.05251767249049974,
+            "max": 0.08251843057694741,
+            "last": 0.07342303510214629
+          },
+          "finger_q": {
+            "min": -0.006740692537277937,
+            "median": -0.006595183163881302,
+            "max": -0.006540665403008461,
+            "last": -0.006540665403008461
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 4.0,
+            "last": 3.0
+          }
+        },
+        "withdraw": {
+          "robot_depth_mm": {
+            "min": 7.501395419239998,
+            "median": 9.229362942278385,
+            "max": 13.369683176279068,
+            "last": 7.760783191770315
+          },
+          "robot_normal_N": {
+            "min": 6.36940336227417,
+            "median": 12.306179698556662,
+            "max": 17.719877302646637,
+            "last": 7.285917162895203
+          },
+          "robot_contact_count": {
+            "min": 3.0,
+            "median": 6.0,
+            "max": 7.0,
+            "last": 4.0
+          },
+          "pad_depth_mm": {
+            "min": 7.501395419239998,
+            "median": 9.229362942278385,
+            "max": 13.369683176279068,
+            "last": 7.760783191770315
+          },
+          "pad_normal_N": {
+            "min": 6.36940336227417,
+            "median": 12.306179698556662,
+            "max": 17.719877302646637,
+            "last": 7.285917162895203
+          },
+          "pad_contact_count": {
+            "min": 3.0,
+            "median": 6.0,
+            "max": 7.0,
+            "last": 4.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.005583414010293525,
+            "median": 0.028155623324263555,
+            "max": 0.0467811035732692,
+            "last": 0.038440970922088126
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.16868502827961643,
+            "median": 0.5321111908461535,
+            "max": 1.7819686039511167,
+            "last": 0.7448445107297352
+          },
+          "finger_q": {
+            "min": -0.004533708095550537,
+            "median": 0.005340765230357647,
+            "max": 0.005725453607738018,
+            "last": 0.005367427133023739
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 4.0,
+            "last": 3.0
+          }
+        },
+        "released_hold": {
+          "robot_depth_mm": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 7.701709400862455,
+            "last": 0.0
+          },
+          "robot_normal_N": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 5.950811862945557,
+            "last": 0.0
+          },
+          "robot_contact_count": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 3.0,
+            "last": 0.0
+          },
+          "pad_depth_mm": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 7.701709400862455,
+            "last": 0.0
+          },
+          "pad_normal_N": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 5.950811862945557,
+            "last": 0.0
+          },
+          "pad_contact_count": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 3.0,
+            "last": 0.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0003909797809374916,
+            "median": 0.001992472388155514,
+            "max": 0.3253492303336552,
+            "last": 0.0013956275873876919
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.006674029226657694,
+            "median": 0.051632337396352306,
+            "max": 6.490526268252939,
+            "last": 0.0393286616650008
+          },
+          "finger_q": {
+            "min": -0.0005290887784212828,
+            "median": -0.0003704165283124894,
+            "max": 0.005516848061233759,
+            "last": -0.0003704164701048285
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 4.0,
+            "last": 2.0
+          }
+        }
+      },
+      "actual_base_withdrawal_m": [
+        -0.0012764699664559176,
+        0.0036279407573244736,
+        0.09633414408698915
+      ],
+      "actual_base_withdrawal_length_mm": 96.41088448244165,
+      "object_displacement_during_withdrawal_m": [
+        0.029771506786346436,
+        0.004404667764902115,
+        0.047629060223698616
+      ],
+      "last_active_robot_contact_time_s": 6.266666666666667,
+      "final_hold_all_robot_contact_free": false,
+      "contact_laws": {
+        "includemargin": [
+          "0.0"
+        ],
+        "solref": [
+          "[0.0044999998062849045, 1.0]"
+        ],
+        "solimp": [
+          "[0.9900000095367432, 0.9990000128746033, 0.0010000000474974513, 0.5, 2.0]"
+        ]
+      },
+      "audit": {
+        "expected_steps": 135,
+        "restore_max_error": 0.0,
+        "hdf5_finite": true,
+        "video_frames": {
+          "over_shoulder_left_camera.mp4": 135,
+          "wrist_cam.mp4": 135
+        },
+        "hdf5_actions": 135
+      }
+    },
+    "bagel_axis_prefix_v4": {
+      "task": "BagelsOnPlateTask",
+      "object": "bagel_06",
+      "source_state_index": 78,
+      "source_state_time_s": 5.266666666666667,
+      "from_start": true,
+      "withdraw_direction": [
+        0.10284410808094971,
+        0.011166565559388358,
+        0.9946348059698293
+      ],
+      "resolved_settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      },
+      "physics_timing": {
+        "requested_sim_rate_hz": null,
+        "requested_newton_substeps": null,
+        "sim_rate_hz": 120.0,
+        "physics_dt_s": 0.008333333333333333,
+        "control_rate_hz": 15.0,
+        "decimation": 8,
+        "render_interval": 8,
+        "render_rate_hz": 15.0,
+        "newton_substeps": 4,
+        "solver_dt_s": 0.0020833333333333333
+      },
+      "object_mass_kg": 0.24769140779972076,
+      "direction_mode": "finger-axis",
+      "commanded_withdrawal_mm": 120.0,
+      "final_robot_contact_free": true,
+      "phase_stats": {
+        "hold": {
+          "robot_depth_mm": {
+            "min": 11.35459914803505,
+            "median": 12.486127205193043,
+            "max": 16.413716599345207,
+            "last": 12.579450383782387
+          },
+          "robot_normal_N": {
+            "min": 13.745993963442743,
+            "median": 13.813334977894556,
+            "max": 18.423089504241943,
+            "last": 13.819945573806763
+          },
+          "robot_contact_count": {
+            "min": 5.0,
+            "median": 6.0,
+            "max": 8.0,
+            "last": 5.0
+          },
+          "pad_depth_mm": {
+            "min": 11.35459914803505,
+            "median": 12.486127205193043,
+            "max": 16.413716599345207,
+            "last": 12.579450383782387
+          },
+          "pad_normal_N": {
+            "min": 13.745993963442743,
+            "median": 13.813334977894556,
+            "max": 18.423089504241943,
+            "last": 13.819945573806763
+          },
+          "pad_contact_count": {
+            "min": 5.0,
+            "median": 6.0,
+            "max": 8.0,
+            "last": 5.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0003076512906604668,
+            "median": 0.0007372425399640092,
+            "max": 0.006072746772886705,
+            "last": 0.0006986242571141448
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.002626503689682001,
+            "median": 0.018801863380517043,
+            "max": 0.13349921133217516,
+            "last": 0.00565576547983426
+          },
+          "finger_q": {
+            "min": -0.00745827192440629,
+            "median": -0.005725298076868057,
+            "max": -0.005258137360215187,
+            "last": -0.005258137360215187
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 4.0,
+            "last": 4.0
+          }
+        },
+        "open": {
+          "robot_depth_mm": {
+            "min": 12.344200164079666,
+            "median": 12.471623718738556,
+            "max": 12.574815191328526,
+            "last": 12.344200164079666
+          },
+          "robot_normal_N": {
+            "min": 13.804919242858887,
+            "median": 13.81412672996521,
+            "max": 16.256253242492676,
+            "last": 13.804919242858887
+          },
+          "robot_contact_count": {
+            "min": 5.0,
+            "median": 5.0,
+            "max": 6.0,
+            "last": 5.0
+          },
+          "pad_depth_mm": {
+            "min": 12.344200164079666,
+            "median": 12.471623718738556,
+            "max": 12.574815191328526,
+            "last": 12.344200164079666
+          },
+          "pad_normal_N": {
+            "min": 13.804919242858887,
+            "median": 13.81412672996521,
+            "max": 16.256253242492676,
+            "last": 13.804919242858887
+          },
+          "pad_contact_count": {
+            "min": 5.0,
+            "median": 5.0,
+            "max": 6.0,
+            "last": 5.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0006240521530125206,
+            "median": 0.0006384649472644855,
+            "max": 0.0024856242969876477,
+            "last": 0.0006249888553137284
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.0036711148448782247,
+            "median": 0.0043871219267529035,
+            "max": 0.09746211000612076,
+            "last": 0.004698095720184616
+          },
+          "finger_q": {
+            "min": -0.00524484645575285,
+            "median": -0.005183646455407143,
+            "max": -0.005145520903170109,
+            "last": -0.005145520903170109
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 3.0,
+            "last": 3.0
+          }
+        },
+        "withdraw": {
+          "robot_depth_mm": {
+            "min": 4.663584753870964,
+            "median": 9.433552622795105,
+            "max": 12.270843610167503,
+            "last": 4.663584753870964
+          },
+          "robot_normal_N": {
+            "min": 2.8530407547950745,
+            "median": 12.827790341340005,
+            "max": 17.97034520888701,
+            "last": 2.8530407547950745
+          },
+          "robot_contact_count": {
+            "min": 3.0,
+            "median": 5.0,
+            "max": 9.0,
+            "last": 3.0
+          },
+          "pad_depth_mm": {
+            "min": 4.663584753870964,
+            "median": 9.433552622795105,
+            "max": 12.270843610167503,
+            "last": 4.663584753870964
+          },
+          "pad_normal_N": {
+            "min": 2.8530407547950745,
+            "median": 12.827790341340005,
+            "max": 17.97034520888701,
+            "last": 2.8530407547950745
+          },
+          "pad_contact_count": {
+            "min": 3.0,
+            "median": 5.0,
+            "max": 9.0,
+            "last": 3.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.0011165434342174608,
+            "median": 0.026393379847594746,
+            "max": 0.07916264894222423,
+            "last": 0.025031918569559226
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.05443767141503411,
+            "median": 0.6941732907838761,
+            "max": 2.2479240956089614,
+            "last": 0.44373102555516014
+          },
+          "finger_q": {
+            "min": -0.0032272839453071356,
+            "median": 0.009180575609207153,
+            "max": 0.009781301021575928,
+            "last": 0.009352014400064945
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 5.0,
+            "last": 2.0
+          }
+        },
+        "released_hold": {
+          "robot_depth_mm": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 2.75831064209342,
+            "last": 0.0
+          },
+          "robot_normal_N": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 1.2488350048661232,
+            "last": 0.0
+          },
+          "robot_contact_count": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 3.0,
+            "last": 0.0
+          },
+          "pad_depth_mm": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 2.75831064209342,
+            "last": 0.0
+          },
+          "pad_normal_N": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 1.2488350048661232,
+            "last": 0.0
+          },
+          "pad_contact_count": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 3.0,
+            "last": 0.0
+          },
+          "object_linear_speed_m_s": {
+            "min": 0.00028460981432182765,
+            "median": 0.0014196181564050305,
+            "max": 0.5723158339996665,
+            "last": 0.0014196181564050305
+          },
+          "object_angular_speed_rad_s": {
+            "min": 0.003997185911824937,
+            "median": 0.0339930362668565,
+            "max": 10.850835060431171,
+            "last": 0.04970866147950254
+          },
+          "finger_q": {
+            "min": -8.389733352487383e-07,
+            "median": 3.6403469128032384e-10,
+            "max": 0.009116665460169315,
+            "last": 3.780361024219303e-10
+          },
+          "solver_iterations": {
+            "min": 1.0,
+            "median": 2.0,
+            "max": 3.0,
+            "last": 2.0
+          }
+        }
+      },
+      "actual_base_withdrawal_m": [
+        -0.0017799300494875103,
+        0.0032009458927735324,
+        0.09827573627948302
+      ],
+      "actual_base_withdrawal_length_mm": 98.34396039851167,
+      "object_displacement_during_withdrawal_m": [
+        0.028770625591278076,
+        0.00023406371474266052,
+        0.0476056057959795
+      ],
+      "last_active_robot_contact_time_s": 6.066666666666667,
+      "final_hold_all_robot_contact_free": false,
+      "contact_laws": {
+        "includemargin": [
+          "0.0"
+        ],
+        "solref": [
+          "[0.0044999998062849045, 1.0]"
+        ],
+        "solimp": [
+          "[0.9900000095367432, 0.9990000128746033, 0.0010000000474974513, 0.5, 2.0]"
+        ]
+      },
+      "audit": {
+        "expected_steps": 214,
+        "restore_max_error": null,
+        "hdf5_finite": true,
+        "video_frames": {
+          "over_shoulder_left_camera.mp4": 214,
+          "wrist_cam.mp4": 214
+        },
+        "hdf5_actions": 214
+      }
+    }
+  },
+  "date": "2026-10-14",
+  "runtime_commit": "7a2a72272df3cb711b15333e7e8b4aea6b1523a8",
+  "production_changes": false,
+  "baseline_flags_preserved": true,
+  "policy_rescoring": false,
+  "source_integrity": {
+    "runtime_commit": "7a2a72272df3cb711b15333e7e8b4aea6b1523a8",
+    "runtime_files": {
+      "robolab/__init__.py": "9015cf48fbc1e3bb534ff6d74e1350b2358e1cbc50b56848921cad69e311fe19",
+      "robolab/constants.py": "69497774e55c263edd514b1c190eb6812e2fc4b3ac1738706ef2472e03bcb825",
+      "robolab/core/__init__.py": "39b67a3543de12fbe919327958818a53222b223688ef8ece33a12bc1e46d1f14",
+      "robolab/core/actions/__init__.py": "f0a4efc8b92b78c6e4c759e93b7e4964af1ed53526031db985d4b727ce9568a3",
+      "robolab/core/actions/isaaclab_compat.py": "7875b66e144f0e13102b904856bd217c61e695f376ce5c975ab73ca666d91d52",
+      "robolab/core/environments/__init__.py": "7b49a044cd889dbab9f12671d6895f472cf16cf5b5518152de58e2c0c44d9b41",
+      "robolab/core/environments/base.py": "75dc0161c15cd6d80ad7ba38f772fa9f84e9cfe7ecf76435fc70f73bfc639297",
+      "robolab/core/environments/config.py": "6cc76679615d45c725362e204d2d56fe9930d21812e76d6ef68b7007a9417088",
+      "robolab/core/environments/env.py": "0b8a84ed35450dee7a0f867ffeff277d1fc02388a90e7719e3ea02a8268d7bec",
+      "robolab/core/environments/factory.py": "bbbc3347380557d1f3fd735d6fa49a643d3f4c9af94875e9b64ccf64e84c1460",
+      "robolab/core/environments/newton_candidates.py": "6c69ad00a151bc52ce1c3a871b93d0c7caa31fec6a5fa85034bca9f1718bd3eb",
+      "robolab/core/environments/newton_collision_filter.py": "5bae5e27a08d647b22a1a8cc5871494fd6853589044976cecff0cadbdb4cbb83",
+      "robolab/core/environments/newton_contacts.py": "d94da8ca29991de2e7a2ae1c5b8c5db97a145445c1157b6db9bfc1ecbb95562c",
+      "robolab/core/environments/newton_initialization.py": "a043212603ae95dc53183b2eac07904b19ed4aa8bfc14e8060f272ef8b6ca8bd",
+      "robolab/core/environments/newton_keyboard.py": "0a80b23896d091d89d62c3eb4de7b4a7fe477e5bf96121fba16da7ba334757a0",
+      "robolab/core/environments/newton_mesh_compat.py": "a124e03f1ef0466b67f14c434650271ea192e106e930989dade0808239389b0e",
+      "robolab/core/environments/newton_meshes.py": "9322668260750d1cc4638e7e171eccbe426ec6eb3b4575cc2b8167d0f71fdc39",
+      "robolab/core/environments/newton_multiccd.py": "b23d6b46eb61467da3ae535b8072e75e99a26f2229f19f77817bd0425690e010",
+      "robolab/core/environments/newton_native_contacts.py": "19b85e1735a88c887d66344de3b877dbac837e74ccc5096d72e027f1abc1d2fe",
+      "robolab/core/environments/newton_shelf.py": "a82757ef0c168fb517759673aafc3a8c3857c11f88dbf8f9a08c89dc1e276fa5",
+      "robolab/core/environments/physics.py": "b4594ba550ab86fab5db4474657802f51a1b659c7ec3d2647e4015c97056775f",
+      "robolab/core/environments/render_settings.py": "194fe2794699402d551f9f6f98ba2a352b1f6d3c88a9c19aa768d8e6e026e415",
+      "robolab/core/environments/runtime.py": "4f77313f697ed80aae1db211448184453488a0b2d12483117dbf81fe23a495ae",
+      "robolab/core/environments/scene_fixture.py": "ba08a3c8b823cf4cc7b0fb888ae4389eb6d2afbae14ddef93e924a20ad62c594",
+      "robolab/core/events/basic_recorders.py": "163d95c90bf284acaa02280a7bee3365c097ce2dc4e2d773b9896584b2d7c675",
+      "robolab/core/events/dense_recorders.py": "54b706ae7cd987509aa409307fbeb09ba66720efe28626bef4c51077e1e85876",
+      "robolab/core/events/event_lines.py": "3f85eb4baa747be3ecf6420d7169b5d1c1db1a1abe79aba0041c428d8debc70d",
+      "robolab/core/events/reset_camera.py": "880e202d52879511709069d54aee7bda83355d0a8841b5deba93434a1c59feb1",
+      "robolab/core/events/reset_pose.py": "7ee666c635e1b5e154c6c98cf0f865cd0103ad68e2763efa28948786dccc20d4",
+      "robolab/core/events/subtask_recorder.py": "cf10e3f3d963f1eb06bc1e908c1e4f8f8795e823e6329661b0880f9b26dd05d8",
+      "robolab/core/events/utils.py": "a5b0e2573a81dcbacb473a416891bc95cba583ed1bc331eaaee20cde8736c83a",
+      "robolab/core/export/__init__.py": "ac6229264a25d197c830ec2d042a544b2ab2a9b63ac9eabc9feac4594bdabbe8",
+      "robolab/core/export/lerobot_exporter.py": "6fd16017b092682e46d3392d89e6efa3e28cf1d86d6149d33ba650190a35fcfd",
+      "robolab/core/logging/frame_compat.py": "42af2a3654984f955b4a6aef14ead7ce702e0eb00e0d7b26cef23db84fdffd78",
+      "robolab/core/logging/recorder_manager.py": "b904d3472eb60bfd1d68cbc5c254c90c203b6425c8aad1bfd8cbf4525cd73d9d",
+      "robolab/core/logging/results.py": "28381e17a13d6ba3a019e0443225907b1de1e8f325e04fd9c88e217e30c259b6",
+      "robolab/core/logging/state_logging_interval.py": "c2e7e10a2eb553ec5c332717ee1465cf3ce43017b222ca0aafe4b9ac33ced5f1",
+      "robolab/core/logging/streaming_hdf5_handler.py": "d9ed96ea2a699db88a02e7a10c9ec1150f73d3fe6fca304deec2d2de315d630e",
+      "robolab/core/metrics/__init__.py": "4c9df10a952b0d32fb5cc9676716990dbeb04ac3674d48cbeab8a91f9387482d",
+      "robolab/core/metrics/compute_metrics.py": "370ba93d3cbb9d4f2feb68dfbdc32e1fc9b6efc31c1c895bcaa69fc5dcaeabd3",
+      "robolab/core/metrics/metrics_recorder.py": "20efc5139164acf3bdf563df4cfdee5aa9faff86bc7a0022961094967a1502b1",
+      "robolab/core/metrics/trajectory_metrics.py": "583e945c50ee9a76ce31a444bb08b00b589d8e193929e03d4fd071e09015177f",
+      "robolab/core/observations/example.py": "5722673edf21bafb4ee1592d73c1b5a5165f47e53e02e34509663e644d9dab59",
+      "robolab/core/observations/observation_utils.py": "2e3eefe60a44e9b750a11119680d7f123a0e9e3aa2dd3e4624e86685c7d12ab2",
+      "robolab/core/physics/__init__.py": "6958209f33b08c4ff369c884f1b453a4e5a2ca50b124db114b4affef103d90ee",
+      "robolab/core/physics/friction.py": "9d0c85bd96609860125d2f9bb2bc255265722050abbe6eec301a9f48da40af28",
+      "robolab/core/physics/newton_friction.py": "ee04cb84b4380064f879d233522ff3c67d0538d21f1a6280247027c5af27efa4",
+      "robolab/core/physics/timing.py": "8bde44c43e2759bffa8759eff6972eabc80d52b2470edb8dfab9a1d40c4d5f1f",
+      "robolab/core/replay/__init__.py": "6ee462f87a386080a059d3a3c02fca1d836f4915642698429c7b056280e68504",
+      "robolab/core/replay/env_config.py": "31e279c8bf9de1092d2c9aff60ba5eb278bb5c40698b61220ced5ee95eed87c9",
+      "robolab/core/replay/scene_state.py": "d124b8fef60dc19a4d0ef79eafa561b3aef21b4b0149b6d12b0124074ee0fb08",
+      "robolab/core/scenes/__init__.py": "ff7cf089ee99dd2a71849f382e3a180a5bfbd5e556ed0778c599a6a3b379c1f2",
+      "robolab/core/scenes/utils.py": "44279e629389d79999827d0b0d9fd384b0ff52190c522dfd30a1bcc0c1f9bd1a",
+      "robolab/core/sensors/body_attached_camera.py": "4b23136ac350a3b0d2da078720b5e9b1256a375d42ca6d19491603afdb71c8e7",
+      "robolab/core/sensors/camera_utils.py": "f5e5b7baccb5e448a6312aff2281d2bbca748c2b1eeb31f85dca0d39e9ba6be8",
+      "robolab/core/sensors/contact_sensor_utils.py": "b64429daa1264c181c4a90c9b10f824e6c6c33175ed882129e88f83c0a091834",
+      "robolab/core/task/collateral.py": "a3239bb5493f51dcaeae623e5e4f557e37344700aa38ed70804eba2f153147b5",
+      "robolab/core/task/conditionals.py": "21ada99d49e729e9b4d8aaee47af32dd4e140d8f51bb3e3a3b6c03dd9ffd62ff",
+      "robolab/core/task/conditionals_state_machine.py": "58db9a6e298a4e1dd988836222dd12d9a25f28f3d310fd09868deb013e8c05ba",
+      "robolab/core/task/confirm.py": "d54877a969170b3109b6d3e085ff7c092ce92a1c83fd5e5d30e6af0015a2ca5e",
+      "robolab/core/task/decorators.py": "fe6771f37c0b1ad56388a17329727b7a792bb7cc0bfc6bdf56ff33ca82b59bce",
+      "robolab/core/task/event_tracker.py": "472df337cc8306cc9471efe59203ee9e37573973710e5200bc15d75bfe597b1d",
+      "robolab/core/task/grasp.py": "044761c8ac9d1b75620d77c5aef1a7f453fa1e2e4dd51bf3ac2136b7f4abe1f1",
+      "robolab/core/task/hull_check.py": "4f7bc6feb68557c41d32d77215a77c696cf5ca173e33b56293af61103c3e29bf",
+      "robolab/core/task/off_table.py": "7458997582830ef57ef84294d1273ad0d7d0bb95af6ba4613df38702c42dd68d",
+      "robolab/core/task/predicate_logic.py": "4a1e71947153b51d5e651d65e2fb2c659e13db3344587f1dedb729ded3c6b181",
+      "robolab/core/task/rest.py": "90dc94e4bcf57c9ce08498920cf67896ee896a33b5c3de6cc62933308c956dd8",
+      "robolab/core/task/status.py": "04a5a60554a77dc328d6260190307e24c7bd85c49aad2b3a13d3be114228ec7c",
+      "robolab/core/task/subtask.py": "613e24671dfcf65a47dc273ed7b3ed1ca1caa2a889d1821e2f6efcae4bb76a4b",
+      "robolab/core/task/subtask_state_machine.py": "e79fdd4a73c64f3c2fefab91dc7ef40c363e54f79f321de1cec965e5b3902bf0",
+      "robolab/core/task/subtask_utils.py": "1ad214d382a4f89f64307c06318e7a20597ca94c7581dc5b0dced218733975ab",
+      "robolab/core/task/target_objects.py": "74bcb6f20460709896b5d2c7219fec41278900a970b71d01e3e5318f2b06f438",
+      "robolab/core/task/task.py": "e59838ed2e353db4895c9c433b7b64449d9d2ff00ba00a9a96fc246a0a20813c",
+      "robolab/core/task/task_utils.py": "5c2294eb4bd900868479fc3d2c7a9dd11365e79a64218160a6dd6a49f1135fa1",
+      "robolab/core/utils/__init__.py": "39b67a3543de12fbe919327958818a53222b223688ef8ece33a12bc1e46d1f14",
+      "robolab/core/utils/adaptive_sampling.py": "e56b2bcceb056e78350d60ad26faf60897bd6b557688276b72d5a6b664ebef9e",
+      "robolab/core/utils/app_launcher.py": "a52140db985393a32bb015b21f34a363e6ab5ae6b0ec56db6990f25745458f13",
+      "robolab/core/utils/csv_utils.py": "99902e9ef54dad0dfda7c9e189d1de381fb14f287f2924abe25cd34752eabc3b",
+      "robolab/core/utils/cv2_utils.py": "8dcbb904878ab6b7e32b77ae2199b811ec940de9bf0eef19cd9e9f05bacc9763",
+      "robolab/core/utils/debug_utils.py": "6bc568a6c38fbf460405acfd6102d226b19fca9bd76ba4551dda9f00234e45eb",
+      "robolab/core/utils/file_utils.py": "dcf77cf77f37adc1120cdba7d1e7fbfbd914766e8d406407b3336c40ab638128",
+      "robolab/core/utils/function_loader.py": "4590fd781b4f7161456c129f5f9b28981c6da4960f22a553623f4ae43219e11f",
+      "robolab/core/utils/geometry_utils.py": "3beb76b1d776e7e1b67347efc6b570bad9dcd8e7e11bc221bb8f02b4697af25a",
+      "robolab/core/utils/gym_utils.py": "c9c8629b7f2cfacb3dbe0eebf446c95597ef7d7c89ebaf068f6aa36611bca9ed",
+      "robolab/core/utils/image_utils.py": "aead0c246b696ce5feabbbc63df93f42762365cc6315269fa08ad5c98e1a3d94",
+      "robolab/core/utils/isaaclab_compat.py": "2f6d495eb0c3ca5b125f14ec3ae0a2ced27cc46fc4734bbef3b63c68c2b006b5",
+      "robolab/core/utils/newton_compiled_colliders.py": "142d589ad0d6790fdadf36df27ba5723f47f19d713d2ca43a0ffb2525ea87571",
+      "robolab/core/utils/params_utils.py": "4a7651c45b3375fdc0b9035c595b8806d6cb1a82003570c56a3a3bbd018b7281",
+      "robolab/core/utils/physics_utils.py": "1bad0cfaec3e47a3c58ee6f6bd57a9a0e79768b5d3810a40610be6bc1e6d8bf7",
+      "robolab/core/utils/plot_utils.py": "b062a057faf5e2c2e607391c4aa8cfbfd3158c99ee73c9d0b84226f5b72401c3",
+      "robolab/core/utils/print_utils.py": "a998084846602ef5d4116a71b8453aba59857a8ffdffb6fe23165687c3820bf0",
+      "robolab/core/utils/render_utils.py": "93748a7cce534dbced08090bcaa5cfa95bdbbf245eac130d95ed524bceefff76",
+      "robolab/core/utils/rot_defaults.py": "b6f6d980570e602a853a702ebb2b0f9828dd5568801a9ebec9788fdecb7e1304",
+      "robolab/core/utils/scene_timing_utils.py": "687c024811126fa0ccd8c164139df6ab2b05b26862c14efdd1e7962ffc3c0804",
+      "robolab/core/utils/transform_utils.py": "09585c4ec8810bc42fba82b7fcefc34b51b2b03734859b2da934b72b005e682c",
+      "robolab/core/utils/usd_utils.py": "34e00f558d85dfc70b9ce6b0154cd6283655a4d10c7afa4c96f232bca681ae57",
+      "robolab/core/utils/version_utils.py": "d7578609eddc0b947b1db9b5c6cbce67b3b6da32a99bddd5c089ab7893317ba7",
+      "robolab/core/utils/video_utils.py": "a8573da961c7fb26dc21ccddc0f39b2c87a7712b12e694bcc8dfd3fa77f0637e",
+      "robolab/core/utils/vis_utils.py": "7ad087f372944b0ac30a7824091ec3120b031b3fb57c27396615efb6aa33fa3a",
+      "robolab/core/world/world_state.py": "ac2173a5f9c01d1693fe85c0bdff187c7b83c86e9deb20d7dfebb19287615777",
+      "robolab/eval/__init__.py": "f0ba63052651417d431cbe88cad654fd1358ee7cc96e7fccfa9176b298a88891",
+      "robolab/eval/base_client.py": "ed2286bc41d68b4f512bfc2dd7893cd82f7da462377ba23e2817cbd9959ffe27",
+      "robolab/eval/episode.py": "421f8faea8a4c1b6b5c4bce10fa618e39a9b199843ad29070fc43c461fe2e599",
+      "robolab/eval/gt_state.py": "cc6c4517004dc08d53268eb903a01aebd03b2cf1c4e87739930490f1cd746d72",
+      "robolab/eval/phases.py": "ab1103ccbbcf60f8a2157412ecb418053672f71cb35f7bd47a0894811313ff78",
+      "robolab/eval/runner.py": "1c4fc09ee017b7bd6188c4115aebd42f44fa5c63ca3d755f5d524b538dfa79f3",
+      "robolab/eval/summarize.py": "248ec64dd7bb0dff3e1d5ee27d83594eb4bc612a176c7c70a58fe9f3a63c9d31",
+      "robolab/eval/tows.py": "4b6b7662ff1c55e27bc55966236ffc0b0dd0e72cebab58f3fbebf8b3039114c1",
+      "robolab/eval/tracker_replay.py": "6266b90c6bc1207690cca846da91f092b325a5342eafccf8fa7c437d0f9bcce3",
+      "robolab/registrations/aloha/__init__.py": "cd741f8ce71076e0bbea15250cdc935c2c096689d1dc4b46b6b215e5f3b3ab5c",
+      "robolab/registrations/aloha/auto_env_registrations.py": "85f81471b9350f1352f1e4d5dde29af3520bbefcf5f6fe2142af7b4eb0db637f",
+      "robolab/registrations/bimanual_franka/__init__.py": "9005fc3903416e0057c0a24e2e9ad510f262a0ceb9d1d34d8eb644b93b713935",
+      "robolab/registrations/bimanual_franka/auto_env_registrations.py": "9518a38004c230e05301917438072879a96587a9f9db02b51044a44224960f15",
+      "robolab/registrations/bimanual_yam/__init__.py": "39b67a3543de12fbe919327958818a53222b223688ef8ece33a12bc1e46d1f14",
+      "robolab/registrations/bimanual_yam/auto_env_registrations.py": "f0aff4d1cf36fb58224f529a4ec8f97c4c98b31c20e332a61bd94beaf75f696c",
+      "robolab/registrations/droid/__init__.py": "39b67a3543de12fbe919327958818a53222b223688ef8ece33a12bc1e46d1f14",
+      "robolab/registrations/droid/auto_env_registrations_abs_ik.py": "fe9c8a6fc361bf527672223a0c7f3936162ea689ae891d7d7fd8c0283b264621",
+      "robolab/registrations/droid/auto_env_registrations_bg_variations.py": "d1e4e906e0bcd18451b555644c98361b3d96ff6d9b6a73d961d5444da1df8cc1",
+      "robolab/registrations/droid/auto_env_registrations_jointpos.py": "2429f6e9f12be709ffba0db9b502f15311dfa0f1a4dd8567fa46f215191a6992",
+      "robolab/registrations/droid/auto_env_registrations_lighting_variations.py": "5c14069482c1924d9b23a08c62186145eb8d5c2270f72e5a766fcfc0ebd30aa5",
+      "robolab/registrations/droid/auto_env_registrations_rel_ik.py": "4864bea6c9d20cf9584ebc6974b8559afcf73bbf9887f2e11b982c6d6e4f8cd3",
+      "robolab/registrations/droid/camera_presets.py": "06ce41334a5264718e0fdd1c7d7f7a5de3b6281c20bb97a9379fc4d80d83f64c",
+      "robolab/registrations/droid_jointpos/__init__.py": "15a5552c6b671f2a06dab7a386c6e27751e047136feef3d27e6e2e620a0f0f17",
+      "robolab/registrations/droid_jointpos/auto_env_registrations.py": "274978eb02c1021597ac2549be0d8ce3eb4f1d7e925f78f00ecc04a2c11ef4cc",
+      "robolab/registrations/droid_jointpos/auto_env_registrations_abs_ik.py": "8d86866f36d033abeb54af37d35d89e105c7a88c6fa6ee7a898a5d8948c0c452",
+      "robolab/registrations/droid_jointpos/auto_env_registrations_bg_variations.py": "cf2569c1403aced2323e6589b3877a988450b3a84d2a7fe61e24587894d4b430",
+      "robolab/registrations/droid_jointpos/auto_env_registrations_lighting_variations.py": "97024491fe15da4726cc5d6e28c106cfc9c50bdc53210b9868ef8a0982b32b9e",
+      "robolab/registrations/droid_jointpos/camera_presets.py": "1e28ed6c671eebfe7265b8932886333dc7f90df5d8ed10701c9b96a8a5719132",
+      "robolab/registrations/example/auto_env_registration.py": "cdb4e15bbde009da825fb85fa836ae60d38528817039a81cca9fb7b76e93029b",
+      "robolab/registrations/kinova/__init__.py": "44546ba57479a3ca3064d1731c1fc5000b04cf4104cbd53d8484ec6a33428eed",
+      "robolab/registrations/kinova/auto_env_registrations_jointpos.py": "e8a6357ed94b011ab0d25abedb621c9d37b313fe8e8cbef2568f289fa8e3e722",
+      "robolab/robots/aloha.py": "03dfdc39ba274d9bf4fa91bbe4f621737dc41d38ecc03d8f8562beb86d76d944",
+      "robolab/robots/bimanual_franka.py": "a7d8d099190f8c6fcecbc5acef8f0fdfdfb3ab8229e987a3a3762ea6d8b44022",
+      "robolab/robots/bimanual_station.py": "1fa061b55b7295239ddb8cb5050f8e011927bdf4766bacfa134f67fbea5b2401",
+      "robolab/robots/bimanual_yam.py": "457f2f5c417c58add0d807eba45358ea558d2390ad71a3a748c8a61a70e9c33f",
+      "robolab/robots/delta_actions.py": "aa4192cc49f9f17580db7deac86a53b197dc03562d69e4fe4cae0e0144c130a5",
+      "robolab/robots/droid.py": "aba7f62b6aa60ef93331cbd6559a17d2cbd735c1aa1d48fa4e3cf2addfd54d25",
+      "robolab/robots/franka.py": "973dce7e6c899b889385356ed308c8eefd3acf7c0522fce01d13e8fe49fdc7a1",
+      "robolab/robots/franka_definitions.py": "fd19c090101d55f66459282cf01ef0ce9ee530f31ccdb850d40407649560ab60",
+      "robolab/robots/franka_high_pd.py": "4e5eafb8400bf2da34d1aae630abc2a2b6838de541e6efaf77cb0cf970305b1e",
+      "robolab/robots/kinova_gen3.py": "ea2f5fdd3084a8ba5ee1870db87d1271ee299d91403fb80e0cb04227ec36d72b",
+      "robolab/robots/newton_gripper.py": "749301c75e0877988f44794d8897f567251d8e1aead2b06ad2be4b7d7de1949c",
+      "robolab/scene_gen/__init__.py": "39b67a3543de12fbe919327958818a53222b223688ef8ece33a12bc1e46d1f14",
+      "robolab/scene_gen/llm_scene_gen/__init__.py": "cd7fcc5caab1f32945ceed32ab41d351095503ed8647ba5f9300ab2fc4868e4e",
+      "robolab/scene_gen/llm_scene_gen/feedback_system.py": "c8c4acc8ce0b01918634526a460436ba507f18c5501717e102e5bb71d1a7d2a9",
+      "robolab/scene_gen/llm_scene_gen/physical_solver.py": "f3990545bc900518f16ed3420f97cff62d3f1d25d31c617d908797847206b302",
+      "robolab/scene_gen/llm_scene_gen/predicates.py": "2bc933445b9651f2de4967879bc1189d32bb918b7ece643978ca127dbb62ddad",
+      "robolab/scene_gen/llm_scene_gen/spatial_solver.py": "aefd493c366de671af35a6ea7e61501f36044f929d2863eee9fe5d6b15f66ded",
+      "robolab/tasks/__init__.py": "39b67a3543de12fbe919327958818a53222b223688ef8ece33a12bc1e46d1f14",
+      "robolab/tasks/_utils/compute_task_statistics.py": "e21226db7ca17bb9180fd976f8d740b50d716db81100c1f79780f59de88a908b",
+      "robolab/tasks/_utils/generate_task_metadata.py": "9eb6d5d1f465fe0af67b2b37a3e31795a7affe8e878ca8d049a20462c8e37003",
+      "robolab/tasks/_utils/load_task_info.py": "95db9ef02dbb0a920026b5777924fe83f29c70d4b5f421eec467aba3ac57c176",
+      "robolab/tasks/benchmark/animals_in_bin.py": "4cdb2fc16a549cea673908a972eff797f571408f19f338414b6db21eee03c14e",
+      "robolab/tasks/benchmark/apple_and_yogurt_in_bowl_task.py": "d0514512d5a4f096df8ae669c2cebfbd979c1c0d0d8e69ea70cd64a7fb2c62b5",
+      "robolab/tasks/benchmark/bagel_on_plate_task.py": "e0cef8ecc8a44ea76c7529c7ff170a9cd3d04d0d89fb6c78472e96f7228f8c03",
+      "robolab/tasks/benchmark/banana_in_bowl_task.py": "ceaba5a9944cf6a9cd1ba6809a73251c01786059c0d4bd02604bf0c9c824ab4a",
+      "robolab/tasks/benchmark/banana_on_plate_task.py": "c07cd538e616ae5fbefa4a8a7b342ce5a0c0da95d12e2329c2bd9d972ce025fc",
+      "robolab/tasks/benchmark/banana_then_rubiks_cube.py": "b08a14f857dee2c5f99caa7fa20c1ed11b84e2bbafe94a98ddb204a8fbce2539",
+      "robolab/tasks/benchmark/bananas_in_bin_one_more.py": "3380ad1107be0c08643e391719fdf101144421d4f4ad5ebd21b90dbecf6bcad2",
+      "robolab/tasks/benchmark/bananas_in_bin_three.py": "4f15107dc913e3a429f8aca1f75d99b028b53c12994f8f9671cde6985ae66198",
+      "robolab/tasks/benchmark/bananas_in_crate.py": "634b076a8561a658e85aa25a0ad4aaf295d22807f13ffd16cc37b8b63846492a",
+      "robolab/tasks/benchmark/bananas_out_of_bin.py": "e7bc770d1d98decf746ec42cb5d3d73e776b89d5218a030aff4fc2c1b6b72df4",
+      "robolab/tasks/benchmark/bbq_sauce_in_bin_task.py": "2bf0a74c7b1b1790195fddc035531dd0fc66289c7611f226f221e24e8a6933ed",
+      "robolab/tasks/benchmark/bigger_object.py": "c1f52455bb90e3be4fc3e08678d5c4e8e232475f4c8df561a4d997a73532bbbe",
+      "robolab/tasks/benchmark/black_items_in_bin.py": "ca54ad89fc4b1b82e629228826ae72a7566f64ff2c5f4f8e92a2b8ce25bc23b0",
+      "robolab/tasks/benchmark/block_stacking_order_agnostic_task.py": "01da33887db6070823203c2cad2d8fea521fa39b3155669401c8e3045d1544fa",
+      "robolab/tasks/benchmark/block_stacking_specified_order_task.py": "3e8bd2831dd95891d926eff64d5084c7ae6910e4e4d4bc1867fd83424a41899e",
+      "robolab/tasks/benchmark/blocks_in_bin.py": "f5983c5bcc2d32875278dec18a9f86b4b98b92e4eb5c2747c1b14e900efac56b",
+      "robolab/tasks/benchmark/bottles_on_shelf_task.py": "8f510893be9e140bddd1f3f45c83a8289da8c43867d26e8fa68baf02052bfb27",
+      "robolab/tasks/benchmark/bowl_in_bin_task.py": "fb7ffe99ad9ad0c5658aa9be24a33b271ee67e8bbc1add9364f4d6e683ac3e7d",
+      "robolab/tasks/benchmark/bowl_stacking_left_on_right.py": "5f97aaf30c16459fcf138f02f665626204b0b60fac6cd06225974aaf8decbed3",
+      "robolab/tasks/benchmark/bowl_stacking_right_on_left.py": "c64c46a825f097df4c69ef954efa7ea7ec018afbb03f1aaaa1cfffd6ce12b49b",
+      "robolab/tasks/benchmark/butter_above_raisin_task.py": "28173a5ad5dab5dfd0f0814897ea3154cdda19fd4db0969755e24ce0dc874f05",
+      "robolab/tasks/benchmark/canned_food_in_bin_task.py": "d37250587651a05462ef7e567af9374a2e768738ceedea4957343eac27ea5e67",
+      "robolab/tasks/benchmark/clamp_in_right_bin.py": "521df10c8b31faf3c5c317b0f1b3cd65aa1653ec79dc1f2e8a774b9dc6bebc2a",
+      "robolab/tasks/benchmark/clean_up_toys.py": "4285aec58714dfabc47bf95c3e5c42af00b3a5f2ad38e6371841dd4edf32efb0",
+      "robolab/tasks/benchmark/clutter_big_pumpkin_task.py": "a9684a19a6496a19ba502d6a8f35ebf92a2ae3430f907c5b00c2d9c03bcd9b5a",
+      "robolab/tasks/benchmark/clutter_organic_objects_task.py": "da448a449ae7607fc20258bd0734cdf9756b719317a7695b949f45a796a5863f",
+      "robolab/tasks/benchmark/clutter_plastic_task.py": "01abecd9aa125c72ff6b291650f5372392c6cfabbc5411d458b9cf970f3c1e81",
+      "robolab/tasks/benchmark/clutter_pumpkin_task.py": "cbfe1107f68f43d73c9993298caf0ba9e066473a85dbd8b9f5c50f6a3d082248",
+      "robolab/tasks/benchmark/clutter_small_pumpkin_task.py": "f69ff8ef0b4011286f3329c4426d0cf0c42dc833864f80b6eb1fe2c2d143750b",
+      "robolab/tasks/benchmark/coffee_pot_in_bin.py": "71c1f2a92379b58320b0bc84e2d675db23288315503595a2e467a9b2de87f96d",
+      "robolab/tasks/benchmark/condiments_in_bin_task.py": "c4302403af9c69ada700e01ffa070de1d0c37d047e72f5e9dd6ad169629b557c",
+      "robolab/tasks/benchmark/cooking_clear_plate_specific.py": "6f10906a03be46efa836591ddca80120a0083760d8cf71a836258c8c52c77b03",
+      "robolab/tasks/benchmark/cooking_orange_object.py": "ca1af737c3f53c4b0a77538088ee52d8b939588dad3408ff668ef00648997eee",
+      "robolab/tasks/benchmark/cooking_pick_pasta_tool.py": "e2b0a7c1ac3f0de99ebaa771f1b64a8eaeb9d4f76bea4a9dcdbc5e3f504e3f64",
+      "robolab/tasks/benchmark/cubes_and_blocks_in_bin.py": "24ca284ea12d467061d414b477220366713df0d59ec923c1a954c6814c07fd59",
+      "robolab/tasks/benchmark/dishes_in_bin.py": "e852b8601fbaea5e897e5daeb519551a43678f79351ce60555f5ea22a09a00bf",
+      "robolab/tasks/benchmark/electronics_in_bin_task.py": "13f909fc2215bc1cbb89369f1f45822c10224a1d3eadb356fff7d6c0b2cd2fe3",
+      "robolab/tasks/benchmark/food_packing_by_color_task.py": "eb7c08529a792eec5d6102495942d490db9c452cbaa9e80d49f44076f5baf992",
+      "robolab/tasks/benchmark/foodpacking_1bin_1box.py": "b53a441de5882abcefdb8101d77c195dd96769395c8c76c1667903a718552833",
+      "robolab/tasks/benchmark/foodpacking_1bin_1can.py": "73cce34aadcf9af9d6d219b0799242ac9733318444f7c66e13cdea44c5ddc0a2",
+      "robolab/tasks/benchmark/foodpacking_1bin_2box.py": "f4fcebe1b148617792fa1ff70a739f73398f620c92ff40fe7bacc7ba63720774",
+      "robolab/tasks/benchmark/foodpacking_1bin_2can.py": "58b10756038e79aa46a797388ff8c24fa8a39937256b514f4cae110e0475b86a",
+      "robolab/tasks/benchmark/foodpacking_1bin_3box.py": "41f08918426ece2c015c9d199db372409b53a691d52399ed851dff2fe0a9926a",
+      "robolab/tasks/benchmark/foodpacking_1bin_3can.py": "2d934a9ede3e2fdefdc1d1a7ef8822f82dcf0d454353e022a173b5a7d0814dad",
+      "robolab/tasks/benchmark/fruits_green_limes_on_plate.py": "7101de14929bf0b4753865f7c13573c7d668369180230eff00302d65fffeb194",
+      "robolab/tasks/benchmark/fruits_move_orange.py": "f42fac0ad76499ca4a8bfdeb3b3d13cca019253956766326ee41b1787a22b304",
+      "robolab/tasks/benchmark/fruits_move_orange_or_lime.py": "fe6f28323dddbad91e19c2fee61cd5843e11db1e3b33fc336774085547b05d27",
+      "robolab/tasks/benchmark/fruits_onion_to_bowl.py": "8cb0e0bb2f6254cb8b8266fe8aed6676a841cbb2c9ca8815b067f737b1f444c6",
+      "robolab/tasks/benchmark/fruits_onion_to_plate.py": "eab8edf1d2dac1f68b2263b7fcf6076cd01f82fd3bacdc315274e5a65884387a",
+      "robolab/tasks/benchmark/fruits_oranges_on_plate.py": "297d169b6b8e8365a0630ca858ccc0c8cd7be6f3138a4c92fd42ee5e8a6a0922",
+      "robolab/tasks/benchmark/fruits_to_plate.py": "8c0275c2c9ca1f202aface07084e1d108faa1d1162bd2791e28c5ea29fa51780",
+      "robolab/tasks/benchmark/fruits_to_plate_3.py": "54ed599e98279b1bdb743fdf4d8c2290026791008f0e96ab53ed4dd6bb3e09d0",
+      "robolab/tasks/benchmark/grab_a_bagel.py": "9f53b2d7a39356330f10b58b0fbbcfbeb33c9148ad2ff816eff7c0e3a470ebef",
+      "robolab/tasks/benchmark/grab_a_fruit.py": "493e1698413bf0cc90b753898ed2a0720f4ce401fea272b762c21573fddd7c5e",
+      "robolab/tasks/benchmark/green_spoons_in_pot.py": "5633e6ce82020124c279d3131b11726dd32b30d6cb866e18804bd405139faa9e",
+      "robolab/tasks/benchmark/jugs_on_shelf_task.py": "d9ec335357567d49699ef278d2ebf101a1f30d4fbfbf2af909ec7c0a6e441bcc",
+      "robolab/tasks/benchmark/keyboard_out_of_bin_task.py": "d7d359270bc397e03429624f235556cc294c38212d0977751ac142c82e2700da",
+      "robolab/tasks/benchmark/lizard_in_bin_task.py": "74381a1d287d2ac23a427bfcd596846f695bd8f0db33c16868523bf0bc39e403",
+      "robolab/tasks/benchmark/marker_in_mug_task.py": "e6dd8c9f96a1f5a3dbf5792dd72e4246940429c520b39a5c2f8fbe05781f70eb",
+      "robolab/tasks/benchmark/mouse_on_keyboard.py": "d20859b4bc90f470498a49d45b34bcc2080cd45947ebb5dc67ce5e977d8667c5",
+      "robolab/tasks/benchmark/move_banana_to_bagel_plate.py": "f8a7ad1cbf22a8543d0ca28e2d79e1fabad0f2ca1683f9b73e8e4b2dc61cd7cc",
+      "robolab/tasks/benchmark/mustard_above_raisin_task.py": "18320ac679014b6d1cfcc24765f66d0debf456c03a0cd38dc055db3b31ef8387",
+      "robolab/tasks/benchmark/mustard_in_left_bin.py": "026518480c0d5dc0a1f518a41a6bc6a4937ce320b41bd547dd9c95e3be3b5bb6",
+      "robolab/tasks/benchmark/mustard_in_right_bin.py": "b7c17a542d6bb5fc308766c0cd1fe0a8c3dc94dfecb3946a555259e82f5116f8",
+      "robolab/tasks/benchmark/non_hammer_tools_in_right_bin.py": "da87e285ab3ad862b42d40ea3ad0af7247f5df4c9fb50c70a26cf4a0e5daeef9",
+      "robolab/tasks/benchmark/one_bottle_in_square_pail.py": "999f3e4aed2ceed3e8543b6e56aaf2ac9cde5fab1196a67fc6b035a383f46b00",
+      "robolab/tasks/benchmark/one_bottle_on_shelf_task.py": "cc4e1c456804d3f58e5b29ca08c3f5ab7ea132af94808d8ce91e5202d4bdb6ba",
+      "robolab/tasks/benchmark/phone_or_remote_in_bin_task.py": "c12e0d7baad60bad14e9400887a665731a1ca41d5a140231dcb06d012c87caab",
+      "robolab/tasks/benchmark/pick_drill.py": "c8f15d8e12b5e26cbcf309239c00a9b804236e1cc596d2816d54e6b2d1e9c781",
+      "robolab/tasks/benchmark/pick_glasses_task.py": "ea466f46f58fe3ffb8b91196016dc2de6de26c8e6f8d6aa643aec0e644ede79f",
+      "robolab/tasks/benchmark/pick_up_blue_pitcher.py": "254c6287a5ad881a67726ef89c27015f9df2fcc96c2d35dc6a8d5a545e4afea6",
+      "robolab/tasks/benchmark/pick_up_green_object.py": "c7f1e6688e2c65f42f0ec41521396312ed2d2b42b376b528f7c1760027f49e5a",
+      "robolab/tasks/benchmark/pink_spoon_in_pot.py": "1dca36fb43e28312b2e623cfb386d0d18c44e50a3cde6289c562963971de7c2d",
+      "robolab/tasks/benchmark/put_bowl_on_shelf.py": "988efa001ed44628b52695f67eeb24f20d270f941a71e71a993670f550436674",
+      "robolab/tasks/benchmark/put_mugs_on_shelf.py": "df4dd954652edd9860566ce712794b1a12cffa827f13ebd15ae1724175a10228",
+      "robolab/tasks/benchmark/put_two_mugs_on_shelf.py": "80ecdde7b439fb03a4dbf46b6c35d56f354c3426c314303a581fb5a8c92828c5",
+      "robolab/tasks/benchmark/recycle_cartons.py": "3e6db59dcc342f5b82d174e9452d23e3ae59328221c6da306b361fed6dd0aa1a",
+      "robolab/tasks/benchmark/recycle_cartons_on_box.py": "6f1bcfbca9f8976b452f483a0bc05bab96082c1a550c89c626cd12f90a9e8d7a",
+      "robolab/tasks/benchmark/recycle_cartons_vertical_crate.py": "63926482f1a11ff9952a4d867fb00aaa09b80df3667d94a06614749d5c045477",
+      "robolab/tasks/benchmark/red_dishes_in_bin.py": "4295a299098bf369e890efd3380168ae4be4e5a93cf895d84a3f824083523fb0",
+      "robolab/tasks/benchmark/red_items_in_bin.py": "75fd9c6d96df9b44544ff8faa27f4b777db10bb5dfc995ef3d32696f50582fd0",
+      "robolab/tasks/benchmark/reorient_all_mugs_task.py": "a6b324d4eab54a1eb629939d8b20b1dd6cac54f5bf535d6c929dade73a8f9dbc",
+      "robolab/tasks/benchmark/reorient_jug.py": "7877da74f6263fd59e6e8a64e42e79bb3edbc5f36b6f8003dc4f4857710039b9",
+      "robolab/tasks/benchmark/reorient_red_mugs_task.py": "6f420c45b707a0dd7d37acb37e45e156189536ba8dd0b9b11fde533e2cd4f69a",
+      "robolab/tasks/benchmark/reorient_white_mugs.py": "d88ff10dd34013aa49c564c56d0abf6dbef14224010d46e6956b5671ee48b086",
+      "robolab/tasks/benchmark/rubiks_cube_and_banana_task.py": "3687a21481ffb7482b42a801ab2950dbdb684c39cfc122dff3a8edbaf923f90f",
+      "robolab/tasks/benchmark/rubiks_cube_behind_bowl.py": "3746906d19cf03bf1ea3c1919fa7c2a4c7d81167b26618e14f2e2c938c17a719",
+      "robolab/tasks/benchmark/rubiks_cube_in_front_of_bowl.py": "137563d76ce15889cd3c55ea7ed5c904a5c9fe3305cea677bc3c9138cc1f4ec2",
+      "robolab/tasks/benchmark/rubiks_cube_left_of_bowl.py": "96c86ef512784503f286afe7bc179e0e473eb12b36202581a8c04d8a486ac267",
+      "robolab/tasks/benchmark/rubiks_cube_or_banana_task.py": "ecbab8502d01dd3518d9e16acb81f44831a011a5574d05b5eea2573fc13531f8",
+      "robolab/tasks/benchmark/rubiks_cube_right_of_bowl.py": "670363f60052af98baf0988614e0edf544f52a00cf41934df85e5d20ce794b85",
+      "robolab/tasks/benchmark/rubiks_cube_stacking_task.py": "7c4e011d75015d1df1d0dd3da7ed2dc94736b31f88bd2e737aa7dfda9108f865",
+      "robolab/tasks/benchmark/rubiks_cube_task.py": "ee4a137d56feb6277efb537a274e36b23ede210dbc46829bbb44bf2a8369b3eb",
+      "robolab/tasks/benchmark/rubiks_cube_then_banana.py": "a7cb6b2469f4269f888f3d4b0441254a844bf95583516473610a714dfaa2e23f",
+      "robolab/tasks/benchmark/rubiks_cubes_in_bin.py": "05ba9ca865771082fba06d4db51e01de5bf43785e6355cfd4628c527740c2337",
+      "robolab/tasks/benchmark/sauce_bottles_crate_task.py": "a1df82f6f75f1b313e15b016b1bdc6ed0710c5f841a865848f18960d3cb0fe68",
+      "robolab/tasks/benchmark/smaller_object.py": "3c7f367e16f67b6dc36b35c37e141104783e69e406d48eb1e0da393c9f633a73",
+      "robolab/tasks/benchmark/smartphone_in_bin_task.py": "845f1de1d03ebe39ee6aeb385792df88e548781d24f5c119535e05851ae67576",
+      "robolab/tasks/benchmark/spoon_in_mug_task.py": "be5879182d41a102b981478bd76a872c01309661853ba03e20bba1bdbd0e6b8f",
+      "robolab/tasks/benchmark/spoons_in_pot.py": "508aaf1c123c9e85e1b9ead538be3c607b0993ebc16229c164a99ac3cf56ce6e",
+      "robolab/tasks/benchmark/stack_white_mugs_task.py": "b15cf6cb5925d83b11890f9cb16cfbc16b0f0133b51128f3fae5f86878f8f074",
+      "robolab/tasks/benchmark/stack_yellow_on_red.py": "68a73fd9f0a0ccb95e190d45e9b0eea25d9d24e856469b01e671489c56e5f695",
+      "robolab/tasks/benchmark/take_measuring_spoon_out.py": "c5366831ac38eb47b8725364eae11f3b857aeeb1c5ec805d4d51fc98aa3b8b17",
+      "robolab/tasks/benchmark/take_mugs_off_of_shelf.py": "216fa88892d6b24387df06236c736937c8fb405df90244405150ac4a520debb2",
+      "robolab/tasks/benchmark/take_spatula_off_shelf.py": "fe62dc7de036736f858f37e7cec9b1abaa5f3977acee8af8f1c63682a96053f1",
+      "robolab/tasks/benchmark/throw_away_apple_task.py": "11ca905019112a562c233a6c8d97840a6dfb0a67160661b5893922d0263eed73",
+      "robolab/tasks/benchmark/throw_away_snacks_task.py": "d19eb1964d575ff3bd711fa1f82685435e6515c2e11f5ba58763d5cfb28dbd76",
+      "robolab/tasks/benchmark/tool_organization_both_task.py": "d124e3a74fd43af17258b67b8a84963764da4ebccf2308aba980fe422e03807a",
+      "robolab/tasks/benchmark/tool_organization_left_task.py": "7d0ce35a2d767cec0eaf94b4cd2121684b35a3354e52a3bf0b75434bb1d93629",
+      "robolab/tasks/benchmark/tool_organization_task.py": "a87758d67e781a8f7b1aaeab40939c6ef79605dce7c4e4ade6f104e2f987bce2",
+      "robolab/tasks/benchmark/tools_picking_all_hammers.py": "6c4799f53d76697a6b809453d023a95b25d52b7aa279575157274007d8df5e65",
+      "robolab/tasks/benchmark/tools_picking_drill.py": "ebe3617aa758405b54f491b7a20a50a18d6d7857c241707e2b69bb194e2cbce2",
+      "robolab/tasks/benchmark/tools_picking_hammer.py": "51eb553be33b270c5571bda515d977a0ecff804d517fee615f0e0a292d27ba86",
+      "robolab/tasks/benchmark/unstack_rubiks_cube.py": "fb9066401231860a765937826354c5651fc65fe33e4f1cc96fe5c757066f09d1",
+      "robolab/tasks/benchmark/utensils_in_mug.py": "3aa16d7d687f598d7d8f6b2ace85c57e8cac27392b1207f84f178bc69e137fb5",
+      "robolab/tasks/benchmark/white_mug_in_center_of_table.py": "288b14a6aa3209e4af9eace1f4f10511bbf714d01398f85db3e492647a53b6b8",
+      "robolab/tasks/benchmark/white_mugs_in_bin.py": "67213dc1bcd5a0a276f35f2d0fadb81db5b6abf6b9b0dd1c3504839e99221294",
+      "robolab/tasks/benchmark/wood_spatula_to_bowl.py": "dc1c0f448958e2cc0576a9d614f797b924ff63caa43ce8c2924de68c13f21e79",
+      "robolab/tasks/benchmark/yellow_and_white_objects_in_bin.py": "5a96febcfc22ff62a80aadb8291e1195449807a6cedcbb332ab801cd835b9563",
+      "robolab/tasks/benchmark/yogurt_in_bowl.py": "569f73b6c2cab20d9e865f3e3416a94aa503f884ed34c92b3a3a5b719bc0ec9c",
+      "robolab/tasks/bimanual/__init__.py": "7b714986aeacab6585b71fe05ed3cd8959580c5b0427f42ef33e1f92e6150502",
+      "robolab/tasks/bimanual/aloha_transfer_cube_task.py": "b13146dba49f49aa23e0f0a202a250ea60ce279972f60c68a6366deda685c34d",
+      "robolab/tasks/bimanual/bimanual_fruits_in_bowls_task.py": "8f91d1ff604cb5880dd300ab4ee7425414f6121e1454c8e431092bc87443bd07",
+      "robolab/tasks/bimanual/bimanual_lift_tote_task.py": "e760ebb4b2468a001de666ba27de283c19aa50540b080329731cf14925af2e9d",
+      "robolab/tasks/bimanual/yam_put_everything_in_box_task.py": "9af09913e09a2453387b0476b921bccaab50bb886f7dc1a37f634eb2f0138b10",
+      "robolab/tasks/randomize_initial_pose/banana_in_bowl_uniform_10cm.py": "bea6d8bfca1e32cd7fc5e05bf8b88af98ca782157bc59eda8462b9af5c6729fd",
+      "robolab/tasks/randomize_initial_pose/banana_in_bowl_uniform_20cm.py": "e4a179bee476b4b6d5ddf7a36ad795babe12bcedd5690e52ef3603deffe948de",
+      "robolab/tasks/randomize_initial_pose/banana_in_bowl_uniform_30cm.py": "d4edbf2df1cbfdac5d51148ec943d7c4119aff9b8eb71d88fa6d86046bab9f59",
+      "robolab/tasks/randomize_initial_pose/rubiks_cube_and_banana_uniform_10cm.py": "b5266a2edb41dcd5c36ec46acf274f87d6c1b49ff2f8813750dde9db1e9d1620",
+      "robolab/tasks/randomize_initial_pose/rubiks_cube_and_banana_uniform_20cm.py": "b4e4eab23ab1e50e377e0056d6d342b2a5e3db1a1a31dd12eb74152880074088",
+      "robolab/tasks/randomize_initial_pose/rubiks_cube_and_banana_uniform_30cm.py": "e18e2b243e040ddf6e0c6aa1cd0596ac264c8ec3ee90a939661ff56e2960cd2e",
+      "robolab/tasks/test_tasks/banana_in_bowl_task_explicit.py": "a823243769ae53d941955d1b0e2a7201a25d85c0570cd562b00eaee31a5fb01a",
+      "robolab/tasks/test_tasks/banana_in_bowl_task_import.py": "0769176d627e3da887143ccaf689241c45cb9dd9bd2c2b0f7bc692fb23c25035",
+      "robolab/tasks/test_tasks/conditionals_task.py": "26449ab29621836f44b21a216d6327a0fe018752b754e298981a663d47c38b18",
+      "robolab/tasks/test_tasks/fruits_oranges_on_plate_test.py": "20018a2160575dc64fbf37a7abbc4e84c0b49c5cc3f32ab4081690e77f546c5a",
+      "robolab/tasks/test_tasks/marble.py": "d2edb91a980fb24d07ef0e669e8612b9670d605ec26bf39c67138e444f2c06e4",
+      "robolab/tasks/test_tasks/plate_banana_rubiks_cube.py": "5b613d08fe84f69b8a7828456427ed6b550ea6e8e70e454c3cc880f65b720eaf",
+      "robolab/variations/backgrounds.py": "8381fde2107c4a3f3f3cea0becad5f8294f22436a40ad6fc14b918269d3b66c3",
+      "robolab/variations/camera.py": "75e12a83378cf02292f58b31bb3c1b3d783faad4e870bf2547c191839a678b3b",
+      "robolab/variations/lighting.py": "cdac8a21e960308df58bb546fe77cc1f5a40ba219ee1620c2d0c99b6e9a854ec"
+    },
+    "baseline_files_checked": 78,
+    "baseline_changed": []
+  },
+  "archive_verification": {
+    "archive_sha256": "cc1618481f467e758ef57ba83b0f927668b00d0312e232591544b6144909e96d",
+    "archive_bytes": 156047745,
+    "manifest_files_verified": 138,
+    "all_match": true
+  },
+  "evidence_archive": {
+    "remote_path": "/workspace/newton-compliance-20261014/compliance-evidence.tar.gz",
+    "local_path": "/Users/metz/Documents/manda/state-of-robot-aug-2026/output/newton-compliance-20261014/compliance-evidence.tar.gz"
+  },
+  "presentation": {
+    "contact-unloading-final.png": {
+      "sha256": "962cc70a1fae18c59b882d2359b54a5dfea2b17dfe0840356973e086082dfb56",
+      "bytes": 446323
+    },
+    "contact-unloading-final.pdf": {
+      "sha256": "2c37840a243af01d4f290622037005d8ae00ae9faf4e7535905090a5171cb5fb",
+      "bytes": 31513
+    },
+    "plot_release_final.py": {
+      "sha256": "e6704bc7ddd3dc78ed1dd1d1724bb18959c71894cc77c9608af4451792c08a41",
+      "bytes": 6253
+    }
+  },
+  "limitations": [
+    "Rigid geometric overlap is not in itself a physics defect or material calibration.",
+    "No authored intent is inferred from these results.",
+    "Axial bagel controls change both direction and commanded withdrawal distance.",
+    "Restored-state trials omit original solver history; two bagel trials replay the original prefix.",
+    "One shorter bagel withdrawal still has active contact at the end.",
+    "Sampling is 15 Hz, not every solver substep; no convergence residual is measured.",
+    "This does not validate physical force-displacement curves or resolve all policy failures."
+  ],
+  "original_force_depth": {
+    "BagelsOnPlateTask": [
+      {
+        "object": "bagel_06",
+        "start_s": 4.4,
+        "end_s": 38.6,
+        "depth_vs_force_corr": 0.3478536283454795,
+        "force_bins": [
+          {
+            "force_N": [
+              0,
+              1
+            ],
+            "n": 4,
+            "median_depth_mm": 4.4456975953632085
+          },
+          {
+            "force_N": [
+              1,
+              5
+            ],
+            "n": 51,
+            "median_depth_mm": 9.088842909295295
+          },
+          {
+            "force_N": [
+              5,
+              15
+            ],
+            "n": 97,
+            "median_depth_mm": 10.103119753758719
+          },
+          {
+            "force_N": [
+              15,
+              1000
+            ],
+            "n": 19,
+            "median_depth_mm": 12.388393808545056
+          }
+        ],
+        "rows_time_depth_force": [
+          [
+            4.4,
+            3.7061055994827217,
+            5.842382431030273
+          ],
+          [
+            4.6,
+            9.020871301335605,
+            14.671642303466797
+          ],
+          [
+            4.8,
+            13.799112751118066,
+            18.177753448486328
+          ],
+          [
+            5.0,
+            13.418793159304125,
+            33.06785202026367
+          ],
+          [
+            5.2,
+            18.156862732019324,
+            27.52771759033203
+          ],
+          [
+            5.4,
+            13.532806611365752,
+            10.967691421508789
+          ],
+          [
+            5.6,
+            15.857142323349157,
+            36.136234283447266
+          ],
+          [
+            5.8,
+            18.55038704405477,
+            35.109615325927734
+          ],
+          [
+            6.0,
+            15.139355006264656,
+            10.696429252624512
+          ],
+          [
+            6.2,
+            15.00107650497181,
+            2.7097818851470947
+          ],
+          [
+            6.4,
+            12.44291166694063,
+            2.611940860748291
+          ],
+          [
+            6.6,
+            12.76580384905296,
+            2.4670052528381348
+          ],
+          [
+            6.8,
+            13.303029582993945,
+            2.382549285888672
+          ],
+          [
+            7.0,
+            15.281717274482604,
+            1.707088589668274
+          ],
+          [
+            7.2,
+            12.41673952230906,
+            7.227214813232422
+          ],
+          [
+            7.4,
+            11.904264331129816,
+            12.75515079498291
+          ],
+          [
+            7.6,
+            10.501101243133267,
+            13.448556900024414
+          ],
+          [
+            7.8,
+            10.034952836873966,
+            14.070634841918945
+          ],
+          [
+            8.0,
+            13.566623336972581,
+            28.98862648010254
+          ],
+          [
+            8.2,
+            13.52256108563886,
+            25.32783317565918
+          ],
+          [
+            8.4,
+            12.46312464866204,
+            32.26860046386719
+          ],
+          [
+            8.6,
+            11.046875526384902,
+            13.610468864440918
+          ],
+          [
+            8.8,
+            10.254224605563227,
+            9.67916488647461
+          ],
+          [
+            9.0,
+            10.414665199739604,
+            5.30555534362793
+          ],
+          [
+            9.2,
+            10.733577110750538,
+            2.653412342071533
+          ],
+          [
+            9.4,
+            10.409240097248675,
+            2.1644089221954346
+          ],
+          [
+            9.6,
+            9.860962802234884,
+            1.5404627323150635
+          ],
+          [
+            9.8,
+            9.86370099039693,
+            1.6019881963729858
+          ],
+          [
+            10.0,
+            8.525596786317106,
+            7.6257805824279785
+          ],
+          [
+            10.2,
+            7.151903050696538,
+            8.688494682312012
+          ],
+          [
+            10.4,
+            7.219371319285118,
+            8.40849494934082
+          ],
+          [
+            10.6,
+            8.389778458385019,
+            8.848116874694824
+          ],
+          [
+            10.8,
+            9.390702177443863,
+            9.527085304260254
+          ],
+          [
+            11.0,
+            9.562027180290949,
+            1.9407601356506348
+          ],
+          [
+            11.2,
+            8.5270892356537,
+            2.5066208839416504
+          ],
+          [
+            11.4,
+            8.972373264327015,
+            1.9748188257217407
+          ],
+          [
+            11.6,
+            10.056672614862538,
+            3.5382893085479736
+          ],
+          [
+            11.8,
+            9.008756033583413,
+            4.087433338165283
+          ],
+          [
+            12.0,
+            8.709898923018406,
+            1.4294211864471436
+          ],
+          [
+            12.2,
+            7.990378431104842,
+            0.7784313559532166
+          ],
+          [
+            12.4,
+            7.537665470234316,
+            1.356271743774414
+          ],
+          [
+            12.6,
+            7.117659242504154,
+            0.619232177734375
+          ],
+          [
+            12.8,
+            7.386148848301997,
+            3.5236384868621826
+          ],
+          [
+            13.0,
+            8.155829904936397,
+            19.590991973876953
+          ],
+          [
+            13.2,
+            7.847966646706228,
+            24.85003662109375
+          ],
+          [
+            13.4,
+            9.55554196234982,
+            11.788415908813477
+          ],
+          [
+            13.6,
+            10.719258214460305,
+            7.554764747619629
+          ],
+          [
+            13.8,
+            10.840494435128397,
+            6.80954122543335
+          ],
+          [
+            14.0,
+            9.277089452659263,
+            3.458487033843994
+          ],
+          [
+            14.2,
+            8.654521447407946,
+            1.472031831741333
+          ],
+          [
+            14.4,
+            8.707900697357243,
+            1.6759487390518188
+          ],
+          [
+            14.6,
+            8.604950010359339,
+            3.4668827056884766
+          ],
+          [
+            14.8,
+            8.487034458942809,
+            4.050722122192383
+          ],
+          [
+            15.0,
+            8.719236623066559,
+            1.1659832000732422
+          ],
+          [
+            15.2,
+            6.349144208576543,
+            3.35532808303833
+          ],
+          [
+            15.4,
+            7.633175958852167,
+            5.368257522583008
+          ],
+          [
+            15.6,
+            8.187026456722961,
+            7.743320465087891
+          ],
+          [
+            15.8,
+            8.20023756343869,
+            7.5324296951293945
+          ],
+          [
+            16.0,
+            6.535924929355046,
+            6.1774468421936035
+          ],
+          [
+            16.2,
+            7.500272011292986,
+            6.301889896392822
+          ],
+          [
+            16.4,
+            8.041057193881068,
+            6.778997421264648
+          ],
+          [
+            16.6,
+            8.928080021349913,
+            8.346404075622559
+          ],
+          [
+            16.8,
+            8.924466704749554,
+            12.592035293579102
+          ],
+          [
+            17.0,
+            8.44171266252712,
+            13.24439525604248
+          ],
+          [
+            17.2,
+            8.441816629266945,
+            9.999762535095215
+          ],
+          [
+            17.4,
+            8.1479105549562,
+            9.358908653259277
+          ],
+          [
+            17.6,
+            8.602377512090698,
+            11.99858283996582
+          ],
+          [
+            17.8,
+            10.425148856066647,
+            13.577764511108398
+          ],
+          [
+            18.0,
+            11.355900144557243,
+            12.288579940795898
+          ],
+          [
+            18.2,
+            10.816021352269868,
+            9.41679573059082
+          ],
+          [
+            18.4,
+            9.439473322102518,
+            7.96042013168335
+          ],
+          [
+            18.6,
+            8.366357465857659,
+            6.953871250152588
+          ],
+          [
+            18.8,
+            11.194266530933286,
+            13.341666221618652
+          ],
+          [
+            19.0,
+            8.031319897111512,
+            2.6745412349700928
+          ],
+          [
+            19.2,
+            8.620411788633886,
+            3.026075839996338
+          ],
+          [
+            19.4,
+            8.111722474480151,
+            2.629368782043457
+          ],
+          [
+            19.6,
+            8.35566079630306,
+            2.289032220840454
+          ],
+          [
+            19.8,
+            7.894058800261391,
+            1.1221098899841309
+          ],
+          [
+            20.0,
+            6.927031390784644,
+            9.210373878479004
+          ],
+          [
+            20.2,
+            7.419138635908897,
+            8.73975658416748
+          ],
+          [
+            20.4,
+            7.144485481567972,
+            7.810083866119385
+          ],
+          [
+            20.6,
+            7.954314798903,
+            4.990884780883789
+          ],
+          [
+            20.8,
+            8.915444049093484,
+            2.8007524013519287
+          ],
+          [
+            21.0,
+            8.285504574419418,
+            12.708492279052734
+          ],
+          [
+            21.2,
+            8.899682965965033,
+            13.288918495178223
+          ],
+          [
+            21.4,
+            9.450849572129293,
+            17.810611724853516
+          ],
+          [
+            21.6,
+            8.241248370743426,
+            20.619932174682617
+          ],
+          [
+            21.8,
+            8.838163974868616,
+            17.405803680419922
+          ],
+          [
+            22.0,
+            9.710240400706237,
+            11.867598533630371
+          ],
+          [
+            22.2,
+            9.49443242380852,
+            10.44100570678711
+          ],
+          [
+            22.4,
+            8.629799537593176,
+            1.932613492012024
+          ],
+          [
+            22.6,
+            12.906335868338745,
+            24.956748962402344
+          ],
+          [
+            22.8,
+            11.408034914575788,
+            10.602665901184082
+          ],
+          [
+            23.0,
+            1.7737359482222632,
+            0.7039046883583069
+          ],
+          [
+            23.2,
+            9.19057906781701,
+            7.936606407165527
+          ],
+          [
+            23.4,
+            8.938861801207388,
+            4.458828449249268
+          ],
+          [
+            23.6,
+            9.894034050502233,
+            4.022840976715088
+          ],
+          [
+            23.8,
+            10.160095782216972,
+            4.083786487579346
+          ],
+          [
+            24.0,
+            11.16384670936452,
+            4.620491981506348
+          ],
+          [
+            24.2,
+            13.251742423261305,
+            6.099406719207764
+          ],
+          [
+            24.4,
+            14.089438038594588,
+            6.498612403869629
+          ],
+          [
+            24.6,
+            14.680026813914816,
+            8.382587432861328
+          ],
+          [
+            24.8,
+            13.800136839085237,
+            7.313483238220215
+          ],
+          [
+            25.0,
+            15.614114915350024,
+            8.73287582397461
+          ],
+          [
+            25.2,
+            15.68862094915232,
+            9.663020133972168
+          ],
+          [
+            25.4,
+            15.999278639087198,
+            9.25068187713623
+          ],
+          [
+            25.6,
+            17.212115102268186,
+            11.37479019165039
+          ],
+          [
+            25.8,
+            14.36897582537648,
+            8.971571922302246
+          ],
+          [
+            26.0,
+            10.862312330099149,
+            6.289456844329834
+          ],
+          [
+            26.2,
+            7.2404082321924665,
+            7.306163311004639
+          ],
+          [
+            26.4,
+            8.51580244101292,
+            8.561410903930664
+          ],
+          [
+            26.6,
+            8.645581137851504,
+            8.234504699707031
+          ],
+          [
+            26.8,
+            9.350516863511734,
+            8.12202262878418
+          ],
+          [
+            27.0,
+            8.493984273222344,
+            5.932939052581787
+          ],
+          [
+            27.2,
+            8.210993142825533,
+            8.022520065307617
+          ],
+          [
+            27.4,
+            9.656275232913902,
+            8.137078285217285
+          ],
+          [
+            27.6,
+            11.66388118565763,
+            8.76042652130127
+          ],
+          [
+            27.8,
+            11.247187426873555,
+            4.507346153259277
+          ],
+          [
+            28.0,
+            9.088842909295295,
+            4.2494306564331055
+          ],
+          [
+            28.2,
+            8.343139544888716,
+            6.68383264541626
+          ],
+          [
+            28.4,
+            7.914254733196815,
+            7.144128799438477
+          ],
+          [
+            28.6,
+            10.329423180948698,
+            33.10871505737305
+          ],
+          [
+            28.8,
+            10.619612623654836,
+            23.60544776916504
+          ],
+          [
+            29.0,
+            0,
+            0.0
+          ],
+          [
+            29.2,
+            9.06792455317254,
+            8.520241737365723
+          ],
+          [
+            29.4,
+            11.38282748235233,
+            8.975704193115234
+          ],
+          [
+            29.6,
+            11.20093163714705,
+            6.946313858032227
+          ],
+          [
+            29.8,
+            7.843676819532103,
+            7.882731914520264
+          ],
+          [
+            30.0,
+            7.733397541311377,
+            4.480506420135498
+          ],
+          [
+            30.2,
+            9.27876753950942,
+            6.092248439788818
+          ],
+          [
+            30.4,
+            10.751884811894978,
+            7.000386714935303
+          ],
+          [
+            30.6,
+            11.522628039742896,
+            6.644387245178223
+          ],
+          [
+            30.8,
+            11.27893675646184,
+            4.378838062286377
+          ],
+          [
+            31.0,
+            10.883000392862982,
+            6.153911113739014
+          ],
+          [
+            31.2,
+            12.223398242992129,
+            7.624820709228516
+          ],
+          [
+            31.4,
+            13.678649817939467,
+            6.352723121643066
+          ],
+          [
+            31.6,
+            14.067422877995776,
+            9.07915210723877
+          ],
+          [
+            31.8,
+            12.598056679392913,
+            8.234514236450195
+          ],
+          [
+            32.0,
+            11.849080879184488,
+            10.296858787536621
+          ],
+          [
+            32.2,
+            10.442024543451799,
+            5.708259582519531
+          ],
+          [
+            32.4,
+            9.291747377086576,
+            4.761466026306152
+          ],
+          [
+            32.6,
+            8.346162736248708,
+            4.372553825378418
+          ],
+          [
+            32.8,
+            9.323027927108756,
+            10.936171531677246
+          ],
+          [
+            33.0,
+            10.103119753758719,
+            6.3420634269714355
+          ],
+          [
+            33.2,
+            12.276331959673419,
+            8.660821914672852
+          ],
+          [
+            33.4,
+            14.367333187019355,
+            5.139756679534912
+          ],
+          [
+            33.6,
+            14.70560445209896,
+            5.504347324371338
+          ],
+          [
+            33.8,
+            14.89137640850994,
+            4.834264278411865
+          ],
+          [
+            34.0,
+            14.873743623276301,
+            9.142583847045898
+          ],
+          [
+            34.2,
+            9.451327796511425,
+            7.843105316162109
+          ],
+          [
+            34.4,
+            9.83491665658938,
+            15.865617752075195
+          ],
+          [
+            34.6,
+            10.399530898390811,
+            14.810161590576172
+          ],
+          [
+            34.8,
+            11.740224156021897,
+            12.573722839355469
+          ],
+          [
+            35.0,
+            9.475504590043561,
+            9.696165084838867
+          ],
+          [
+            35.2,
+            8.961694375115524,
+            1.2062480449676514
+          ],
+          [
+            35.4,
+            10.206023140377576,
+            3.02219295501709
+          ],
+          [
+            35.6,
+            10.565027179748103,
+            2.9309563636779785
+          ],
+          [
+            35.8,
+            10.241844803571574,
+            2.708599805831909
+          ],
+          [
+            36.0,
+            8.258263470910014,
+            5.783805847167969
+          ],
+          [
+            36.2,
+            11.464564562001755,
+            6.55088472366333
+          ],
+          [
+            36.4,
+            13.124042778419783,
+            10.454014778137207
+          ],
+          [
+            36.6,
+            8.080479956806721,
+            9.499484062194824
+          ],
+          [
+            36.8,
+            11.735277760692519,
+            10.812581062316895
+          ],
+          [
+            37.0,
+            14.619767440203505,
+            2.5586326122283936
+          ],
+          [
+            37.2,
+            12.388393808545056,
+            18.72963523864746
+          ],
+          [
+            37.4,
+            11.696376757063934,
+            17.818891525268555
+          ],
+          [
+            37.6,
+            11.48783966113505,
+            7.263270378112793
+          ],
+          [
+            37.8,
+            12.52770810291691,
+            3.18434739112854
+          ],
+          [
+            38.0,
+            13.027527780680407,
+            3.9576146602630615
+          ],
+          [
+            38.2,
+            12.23787154156413,
+            5.145312786102295
+          ],
+          [
+            38.4,
+            5.020196144196097,
+            4.444572448730469
+          ]
+        ]
+      },
+      {
+        "object": "bagel_06",
+        "start_s": 50.333,
+        "end_s": 53.733,
+        "depth_vs_force_corr": 0.31392512919793075,
+        "force_bins": [
+          {
+            "force_N": [
+              0,
+              1
+            ],
+            "n": 0,
+            "median_depth_mm": null
+          },
+          {
+            "force_N": [
+              1,
+              5
+            ],
+            "n": 15,
+            "median_depth_mm": 6.339817270658296
+          },
+          {
+            "force_N": [
+              5,
+              15
+            ],
+            "n": 1,
+            "median_depth_mm": 7.3007969673608875
+          },
+          {
+            "force_N": [
+              15,
+              1000
+            ],
+            "n": 1,
+            "median_depth_mm": 8.191226991276949
+          }
+        ],
+        "rows_time_depth_force": [
+          [
+            50.333333333333336,
+            7.3007969673608875,
+            5.208308219909668
+          ],
+          [
+            50.53333333333333,
+            6.976683414705337,
+            3.953791379928589
+          ],
+          [
+            50.733333333333334,
+            6.573693174853762,
+            3.36734938621521
+          ],
+          [
+            50.93333333333333,
+            6.339817270658296,
+            4.005943775177002
+          ],
+          [
+            51.13333333333333,
+            6.4629312920007305,
+            3.4827234745025635
+          ],
+          [
+            51.333333333333336,
+            6.107800425021914,
+            3.0842719078063965
+          ],
+          [
+            51.53333333333333,
+            6.537171531344824,
+            3.1812446117401123
+          ],
+          [
+            51.733333333333334,
+            5.808866734509616,
+            3.1934187412261963
+          ],
+          [
+            51.93333333333333,
+            8.191226991276949,
+            19.724027633666992
+          ],
+          [
+            52.13333333333333,
+            10.522072020575683,
+            2.545645236968994
+          ],
+          [
+            52.333333333333336,
+            7.709904773146356,
+            2.4410593509674072
+          ],
+          [
+            52.53333333333333,
+            7.083304186410976,
+            2.441859483718872
+          ],
+          [
+            52.733333333333334,
+            6.033608133207472,
+            2.38639235496521
+          ],
+          [
+            52.93333333333333,
+            5.676638583691159,
+            2.554527997970581
+          ],
+          [
+            53.13333333333333,
+            4.767491260812152,
+            2.4490139484405518
+          ],
+          [
+            53.333333333333336,
+            4.593297613886153,
+            2.417804718017578
+          ],
+          [
+            53.53333333333333,
+            3.848007391181487,
+            2.5019607543945312
+          ]
+        ]
+      }
+    ],
+    "FruitsOnPlateTask": [
+      {
+        "object": "pomegranate01",
+        "start_s": 30.333,
+        "end_s": 37.133,
+        "depth_vs_force_corr": 0.8846206345391712,
+        "force_bins": [
+          {
+            "force_N": [
+              0,
+              1
+            ],
+            "n": 2,
+            "median_depth_mm": 0.0
+          },
+          {
+            "force_N": [
+              1,
+              5
+            ],
+            "n": 1,
+            "median_depth_mm": 0.50584144136619
+          },
+          {
+            "force_N": [
+              5,
+              15
+            ],
+            "n": 7,
+            "median_depth_mm": 1.567385069722066
+          },
+          {
+            "force_N": [
+              15,
+              1000
+            ],
+            "n": 24,
+            "median_depth_mm": 2.558500392374052
+          }
+        ],
+        "rows_time_depth_force": [
+          [
+            30.333333333333332,
+            1.4520369628198588,
+            11.982086181640625
+          ],
+          [
+            30.533333333333335,
+            2.193756179094817,
+            17.48454475402832
+          ],
+          [
+            30.733333333333334,
+            3.33311258839759,
+            25.022476196289062
+          ],
+          [
+            30.933333333333334,
+            3.686218226095158,
+            26.96773910522461
+          ],
+          [
+            31.133333333333333,
+            2.5593527841808115,
+            18.70648193359375
+          ],
+          [
+            31.333333333333332,
+            2.557648000567292,
+            20.12677574157715
+          ],
+          [
+            31.533333333333335,
+            2.8680623721322047,
+            23.335735321044922
+          ],
+          [
+            31.733333333333334,
+            2.6720151652970987,
+            30.314895629882812
+          ],
+          [
+            31.933333333333334,
+            3.0580735601884803,
+            37.412017822265625
+          ],
+          [
+            32.13333333333333,
+            2.115675289574362,
+            25.458362579345703
+          ],
+          [
+            32.333333333333336,
+            2.4412904631230767,
+            31.212182998657227
+          ],
+          [
+            32.53333333333333,
+            2.6300293703723674,
+            34.319156646728516
+          ],
+          [
+            32.733333333333334,
+            3.118652532482585,
+            36.24283981323242
+          ],
+          [
+            32.93333333333333,
+            3.553282977278475,
+            34.870140075683594
+          ],
+          [
+            33.13333333333333,
+            2.6282738387853923,
+            18.720420837402344
+          ],
+          [
+            33.333333333333336,
+            2.2759501654691197,
+            17.38031578063965
+          ],
+          [
+            33.53333333333333,
+            2.0050005340944663,
+            15.570808410644531
+          ],
+          [
+            33.733333333333334,
+            1.6594487061819991,
+            13.832395553588867
+          ],
+          [
+            33.93333333333333,
+            2.2308213398198675,
+            17.723310470581055
+          ],
+          [
+            34.13333333333333,
+            1.199858329079366,
+            9.508169174194336
+          ],
+          [
+            34.333333333333336,
+            2.05429958604917,
+            16.545473098754883
+          ],
+          [
+            34.53333333333333,
+            2.5108784823697183,
+            20.302448272705078
+          ],
+          [
+            34.733333333333334,
+            3.0186471554484244,
+            25.665544509887695
+          ],
+          [
+            34.93333333333333,
+            3.524174996701372,
+            29.139354705810547
+          ],
+          [
+            35.13333333333333,
+            1.1391056196893012,
+            8.696544647216797
+          ],
+          [
+            35.333333333333336,
+            1.9920752490055067,
+            14.950361251831055
+          ],
+          [
+            35.53333333333333,
+            2.2037890556248807,
+            17.362197875976562
+          ],
+          [
+            35.733333333333334,
+            2.336330543176248,
+            18.246414184570312
+          ],
+          [
+            35.93333333333333,
+            2.4123975902530375,
+            18.100862503051758
+          ],
+          [
+            36.13333333333333,
+            1.9363457903662091,
+            14.033252716064453
+          ],
+          [
+            36.333333333333336,
+            1.567385069722066,
+            12.317204475402832
+          ],
+          [
+            36.53333333333333,
+            0.50584144136619,
+            3.1355371475219727
+          ],
+          [
+            36.733333333333334,
+            0,
+            0.0
+          ],
+          [
+            36.93333333333333,
+            0,
+            0.0
+          ]
+        ]
+      }
+    ],
+    "FruitsOrangesOnPlateTask": [
+      {
+        "object": "lemon_01",
+        "start_s": 76.667,
+        "end_s": 79.867,
+        "depth_vs_force_corr": 0.21992495185070593,
+        "force_bins": [
+          {
+            "force_N": [
+              0,
+              1
+            ],
+            "n": 0,
+            "median_depth_mm": null
+          },
+          {
+            "force_N": [
+              1,
+              5
+            ],
+            "n": 2,
+            "median_depth_mm": 5.084112097143702
+          },
+          {
+            "force_N": [
+              5,
+              15
+            ],
+            "n": 2,
+            "median_depth_mm": 6.290057053003062
+          },
+          {
+            "force_N": [
+              15,
+              1000
+            ],
+            "n": 12,
+            "median_depth_mm": 5.137682264307228
+          }
+        ],
+        "rows_time_depth_force": [
+          [
+            76.66666666666667,
+            3.874725448135635,
+            20.033933639526367
+          ],
+          [
+            76.86666666666666,
+            6.0601659010909374,
+            29.36098289489746
+          ],
+          [
+            77.06666666666666,
+            3.5808756494088607,
+            17.11932945251465
+          ],
+          [
+            77.26666666666667,
+            3.9335043518396313,
+            19.912647247314453
+          ],
+          [
+            77.46666666666667,
+            4.698986733602005,
+            22.42087745666504
+          ],
+          [
+            77.66666666666667,
+            5.334368310015085,
+            25.835445404052734
+          ],
+          [
+            77.86666666666666,
+            4.115011522144368,
+            21.68109130859375
+          ],
+          [
+            78.06666666666666,
+            5.161650989129258,
+            30.340917587280273
+          ],
+          [
+            78.26666666666667,
+            5.1137135394851985,
+            20.514835357666016
+          ],
+          [
+            78.46666666666667,
+            5.192808533279275,
+            17.066205978393555
+          ],
+          [
+            78.66666666666667,
+            5.873240743853425,
+            53.937137603759766
+          ],
+          [
+            78.86666666666666,
+            8.88786720587557,
+            29.130170822143555
+          ],
+          [
+            79.06666666666666,
+            6.82057625838417,
+            11.784402847290039
+          ],
+          [
+            79.26666666666667,
+            5.449584187219622,
+            1.6126996278762817
+          ],
+          [
+            79.46666666666667,
+            5.759537847621954,
+            13.510574340820312
+          ],
+          [
+            79.66666666666667,
+            4.718640007067783,
+            1.1542097330093384
+          ]
+        ]
+      }
+    ]
+  },
+  "diagnostic_harness_failures": {
+    "v1": "Output directory already existed",
+    "v2": "IK orientation error frame did not match world Jacobian",
+    "included_in_completed_trials": false
+  },
+  "node_action": "Left running"
+}

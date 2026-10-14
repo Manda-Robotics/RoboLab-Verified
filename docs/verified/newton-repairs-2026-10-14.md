@@ -16,7 +16,9 @@ videos have received manual review.
 One policy case, `FruitsOnionTask`, failed at the simulator level: the retained
 retry reports **66,695 CCD candidates against 65,536 slots**. Three completed
 failures carry explicit contact-artifact flags: `BagelsOnPlateTask`,
-`FruitsOnPlateTask`, and `FruitsOrangesOnPlateTask`. A passive breakfast-table
+`FruitsOnPlateTask`, and `FruitsOrangesOnPlateTask`. These detector flags are
+review signals, not proof that soft contact is physically invalid; see the
+[force and release follow-up](newton-contact-compliance-2026-10-14.md). A passive breakfast-table
 recording also showed persistent apple motion during its 20-second window.
 
 ## Accepted repair: candidate storage
@@ -80,7 +82,7 @@ poses within 1.24 micrometres. It finds substantial native pad/object penetratio
 
 This reconstruction uses the compiled collision geometry and recorded poses;
 it is not a readback of the original run's GPU contacts. A subsequent live GPU
-bagel replay confirms the problem. Four 12-second replays use the same original
+bagel replay confirms comparable overlap in live contacts. Four 12-second replays use the same original
 actions and recorded initial state, with contacts sampled at 5 Hz:
 
 | Experiment | Worst penetration | Median sampled penetration |
@@ -90,11 +92,14 @@ actions and recorded initial state, with contacts sampled at 5 Hz:
 | Native pads, 16 substeps | 18.53 mm | 11.07 mm |
 | Native pads, 16 substeps, 1.1 ms contact time constant | 12.34 mm | 7.14 mm |
 
-The box substitution worsens the result. Finer steps alone do not resolve it;
-the stiffer response helps but remains unacceptable. None of these parameter or
-geometry experiments is included in P128, and none of the three artifact flags
-is cleared. A focused investigation of pad contact forces, solver convergence,
-and constrained gripper motion remains necessary before changing defaults.
+The box substitution increases the measured overlap. Finer steps alone do not
+reduce it materially; the stiffer response reduces overlap, but that alone does
+not establish better physical behavior for food. None of these parameter or
+geometry experiments is included in P128, and none of the three detector flags
+is cleared. The subsequent [force and release investigation](newton-contact-compliance-2026-10-14.md)
+finds clean fruit unloading and configuration-dependent bagel release, qualifying
+the earlier categorical interpretation. Material calibration remains necessary
+before judging acceptable overlap or changing defaults.
 
 ## Apple settling
 
