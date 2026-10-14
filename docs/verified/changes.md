@@ -215,6 +215,12 @@ R1 to R6 of the plan are not started).
 |---|---|---|---|---|---|
 | P127 | Newton supports uniform/table friction through native sliding coefficients with verified CPU/GPU readback; both backends expose simulation rate, Newton exposes substeps, and output provenance guards parameter changes. | Defaults unchanged; requested material/resolution changes can change scores. | OFFLINE + CPU dynamics + recorded GPU integration | D9, C1 | 345 offline and 123 Newton CPU tests pass (2 GPU-only skips); seven GPU conditions cover both backends, all friction modes and two environments. A sliding test demonstrates the effect on motion. A fresh public-runner policy episode completes recording but fails the task; no score improvement claimed. [Report](newton-controls-2026-10-14.md), [baseline and verification](evidence/newton-controls-p127-verification.json). |
 
+## Newton failure follow-up (2026-10-14)
+
+| ID | Change | Scores | Level | Finding | Evidence |
+|---|---|---|---|---|---|
+| P128 | Grow bounded broadphase candidate storage before narrowphase; preserve contact, constraint and CCD budgets, all pairs, and the existing safety guard. | Can recover aborted episodes; default contact physics and scoring unchanged. | OFFLINE + CPU/GPU contact parity + recorded integration | D10 | 353 offline tests and the 127-test Newton suite pass; final candidate tests pass on CPU and GPU. A real saved onion state overflows the old reduced-capacity path, then retains all 1,389 contacts with candidate-only growth. A fresh onion episode succeeds with a clean recording audit but does not exercise growth. Original overflow trajectory and three pad-contact artifacts remain unresolved as described in the [report](newton-repairs-2026-10-14.md) and [evidence](evidence/newton-repairs-p128-verification.json). |
+
 ## Withdrawn, reverted, rejected
 
 Kept with the reason for each.

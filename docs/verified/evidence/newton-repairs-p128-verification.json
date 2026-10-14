@@ -1,0 +1,749 @@
+{
+  "offline-final.xml": {
+    "tests": 353,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "newton-full.xml": {
+    "tests": 127,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "candidate-cpu-gpu.xml": {
+    "tests": 4,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "bagel_contact_comparison": [
+    {
+      "case": "native",
+      "samples_with_contact": 39,
+      "worst_penetration_mm": 19.401632249355316,
+      "median_penetration_mm": 10.707520879805088,
+      "physics_timing": null,
+      "settings": null
+    },
+    {
+      "case": "box",
+      "samples_with_contact": 39,
+      "worst_penetration_mm": 21.416977047920227,
+      "median_penetration_mm": 13.4276133030653,
+      "physics_timing": null,
+      "settings": null
+    },
+    {
+      "case": "substeps16",
+      "samples_with_contact": 39,
+      "worst_penetration_mm": 18.534135073423386,
+      "median_penetration_mm": 11.0664963722229,
+      "physics_timing": {
+        "requested_sim_rate_hz": null,
+        "requested_newton_substeps": 16,
+        "sim_rate_hz": 120.0,
+        "physics_dt_s": 0.008333333333333333,
+        "control_rate_hz": 15.0,
+        "decimation": 8,
+        "render_interval": 8,
+        "render_rate_hz": 15.0,
+        "newton_substeps": 16,
+        "solver_dt_s": 0.0005208333333333333
+      },
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      }
+    },
+    {
+      "case": "stiffer16",
+      "samples_with_contact": 39,
+      "worst_penetration_mm": 12.343869544565678,
+      "median_penetration_mm": 7.139913272112608,
+      "physics_timing": {
+        "requested_sim_rate_hz": null,
+        "requested_newton_substeps": 16,
+        "sim_rate_hz": 120.0,
+        "physics_dt_s": 0.008333333333333333,
+        "control_rate_hz": 15.0,
+        "decimation": 8,
+        "render_interval": 8,
+        "render_rate_hz": 15.0,
+        "newton_substeps": 16,
+        "solver_dt_s": 0.0005208333333333333
+      },
+      "settings": {
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0011,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      }
+    }
+  ],
+  "scene_candidate_equivalence": {
+    "task": "FruitsOnionTask",
+    "source": "last recorded state of failed retry",
+    "candidate_count": 1825,
+    "contact_count": 1389,
+    "contact_capacity": 1607,
+    "negative_control": "CCD candidate overflow: 1825 > 1607; refusing unsafe kernel launch",
+    "adaptive": {
+      "contact_capacity": 1607,
+      "candidate_capacity": 2048,
+      "peak_candidates": 1825,
+      "growth_events": 1
+    },
+    "matches_large_buffer": true
+  },
+  "primitive_candidate_equivalence": [
+    {
+      "device": "cpu",
+      "shape": "sphere",
+      "contact_rows": [
+        [
+          0,
+          [
+            10,
+            11
+          ],
+          -0.029999999329447746
+        ],
+        [
+          1,
+          [
+            10,
+            11
+          ],
+          -0.029999999329447746
+        ]
+      ],
+      "stats": {
+        "contact_capacity": 32,
+        "candidate_capacity": 256,
+        "peak_candidates": 132,
+        "growth_events": 1
+      },
+      "contact_capacity": 32,
+      "matches_reference": true
+    },
+    {
+      "device": "cpu",
+      "shape": "box",
+      "contact_rows": [
+        [
+          0,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          0,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          0,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          0,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          1,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          1,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          1,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          1,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ]
+      ],
+      "stats": {
+        "contact_capacity": 32,
+        "candidate_capacity": 256,
+        "peak_candidates": 132,
+        "growth_events": 1
+      },
+      "contact_capacity": 32,
+      "matches_reference": true
+    },
+    {
+      "device": "cuda:0",
+      "shape": "sphere",
+      "contact_rows": [
+        [
+          0,
+          [
+            10,
+            11
+          ],
+          -0.029999999329447746
+        ],
+        [
+          1,
+          [
+            10,
+            11
+          ],
+          -0.029999999329447746
+        ]
+      ],
+      "stats": {
+        "contact_capacity": 32,
+        "candidate_capacity": 256,
+        "peak_candidates": 132,
+        "growth_events": 1
+      },
+      "contact_capacity": 32,
+      "matches_reference": true
+    },
+    {
+      "device": "cuda:0",
+      "shape": "box",
+      "contact_rows": [
+        [
+          0,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          0,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          0,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          0,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          1,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          1,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          1,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ],
+        [
+          1,
+          [
+            10,
+            11
+          ],
+          -0.030000999569892883
+        ]
+      ],
+      "stats": {
+        "contact_capacity": 32,
+        "candidate_capacity": 256,
+        "peak_candidates": 132,
+        "growth_events": 1
+      },
+      "contact_capacity": 32,
+      "matches_reference": true
+    }
+  ],
+  "apple_motion": [
+    {
+      "start": 0,
+      "end": 5,
+      "xy_span_mm": 310.65845628435625,
+      "angular_rms": 5.517484043714969
+    },
+    {
+      "start": 5,
+      "end": 10,
+      "xy_span_mm": 0.8641712077697296,
+      "angular_rms": 0.0446581676155714
+    },
+    {
+      "start": 10,
+      "end": 20,
+      "xy_span_mm": 0.07031724553510872,
+      "angular_rms": 0.03874467206202066
+    },
+    {
+      "start": 20,
+      "end": 30,
+      "xy_span_mm": 0.1101276626383189,
+      "angular_rms": 0.04190857907945193
+    },
+    {
+      "start": 30,
+      "end": 40,
+      "xy_span_mm": 0.08196213008522338,
+      "angular_rms": 0.04200376508049257
+    },
+    {
+      "start": 40,
+      "end": 50,
+      "xy_span_mm": 0.1160372328325597,
+      "angular_rms": 0.0396687166878307
+    },
+    {
+      "start": 50,
+      "end": 60,
+      "xy_span_mm": 0.08978070188045156,
+      "angular_rms": 0.039791570056009376
+    },
+    {
+      "start": 55,
+      "end": 60,
+      "xy_span_mm": 0.08687670904752161,
+      "angular_rms": 0.043091080287170354
+    }
+  ],
+  "fresh_onion": {
+    "env_name": "FruitsOnionTask",
+    "task_name": "FruitsOnionTask",
+    "run_name": "FruitsOnionTask_0",
+    "run": 0,
+    "episode": 0,
+    "env_id": 0,
+    "policy": "pi05",
+    "instruction": "Put the onion in the wood bowl",
+    "attributes": [
+      "semantics",
+      "simple"
+    ],
+    "success": true,
+    "episode_step": 499,
+    "duration": 33.266666666666666,
+    "early_resets": 0,
+    "pre_satisfied": false,
+    "collateral_placed": 1,
+    "towed_objects": [],
+    "physics_artifact": false,
+    "success_first_hold_s": 33.266666666666666,
+    "success_confirmed_s": 33.266666666666666,
+    "dt": 0.06666666666666667,
+    "metrics": {
+      "ee_sparc": -6.080161857372353,
+      "joint_sparc_mean": -8.375414882746544,
+      "ee_isj": 469.73097614339406,
+      "joint_isj": 4750.8858005551465,
+      "ee_path_length": 2.229782303203949,
+      "joint_rmse_mean": 0.017654770854643922,
+      "ee_speed_max": 0.34672561287879944,
+      "ee_speed_mean": 0.062163785099983215
+    },
+    "events": {
+      "SCENE_SETTLING": 1,
+      "OBJECT_BUMPED": 2,
+      "GRIPPER_HIT_OBJECT": 1,
+      "GRASP_ATTEMPT_FAILED": 1,
+      "OBJECT_GRIPPED": 2,
+      "OBJECT_CARRIED": 2,
+      "WRONG_OBJECT_GRABBED": 1,
+      "OBJECT_RELEASED": 2,
+      "WRONG_OBJECT_PLACED": 1,
+      "OBJECT_GRABBED_SUCCESS": 1,
+      "SUBTASK_COMPLETED": 1,
+      "wrong_objects_grabbed": [
+        "pumpkinlarge"
+      ]
+    },
+    "instruction_type": "default",
+    "timing": {
+      "policy_inference_s": 13.254,
+      "policy_inference_avg_ms": 26.6,
+      "env_step_s": 443.808,
+      "env_step_avg_ms": 889.4,
+      "video_write_s": 1.307,
+      "video_write_avg_ms": 2.6,
+      "wall_total_s": 458.37,
+      "it_per_sec": 1.09
+    },
+    "score": 1.0,
+    "score_peak": 1.0,
+    "reason": "Completed subtask 'pick_and_place' 1/1",
+    "phases": {
+      "time_by_family_s": {
+        "motion": 16.53,
+        "in_hand": 7.73,
+        "still": 6.07,
+        "grasp": 1.8,
+        "settle": 0.73,
+        "scene": 0.4
+      },
+      "n_phases": 42,
+      "n_picks": 2,
+      "n_picks_pass": 2,
+      "n_picks_wrong_object": 1,
+      "n_drops": 0,
+      "n_places_by_cause": {
+        "released": 2
+      },
+      "n_places_pass": 2,
+      "first_contact_s": 7.87,
+      "time_in_hand_s": 7.73,
+      "time_press_table_s": 0.0,
+      "n_flags": 3
+    },
+    "tows": {
+      "tow_tier": null,
+      "n_tow": 0,
+      "n_drag": 0,
+      "n_press": 0,
+      "n_squeeze": 2,
+      "towed_objects": [],
+      "tow_time_s": 0.0,
+      "first_tow_s": null,
+      "max_depth_mm": 5.4
+    }
+  },
+  "fresh_onion_audit": {
+    "kind": "policy",
+    "task": "FruitsOnionTask",
+    "success": true,
+    "steps": 499,
+    "dt": 0.06666666666666667,
+    "checks": {
+      "finite_numeric_data": true,
+      "all_step_lengths_match": true,
+      "unit_quaternions": true,
+      "pad_and_extra_contact_channels": true,
+      "video_lengths_match": true
+    },
+    "review_flags": [],
+    "hdf5": "FruitsOnionTask/run_0.hdf5",
+    "object_motion": {
+      "clay_plates": {
+        "max_position_norm_m": 0.5127903819084167,
+        "max_pose_difference_speed_m_s": 0.007691759616136551,
+        "vertical_drop_m": 0.0005570696666836739
+      },
+      "lemon_01": {
+        "max_position_norm_m": 0.546823263168335,
+        "max_pose_difference_speed_m_s": 0.26436638832092285,
+        "vertical_drop_m": 0.025136690586805344
+      },
+      "lemon_02": {
+        "max_position_norm_m": 0.41959330439567566,
+        "max_pose_difference_speed_m_s": 0.2689133882522583,
+        "vertical_drop_m": 0.005584273487329483
+      },
+      "lime01": {
+        "max_position_norm_m": 0.49816861748695374,
+        "max_pose_difference_speed_m_s": 0.14624187350273132,
+        "vertical_drop_m": 0.014177292585372925
+      },
+      "lime01_01": {
+        "max_position_norm_m": 0.49024075269699097,
+        "max_pose_difference_speed_m_s": 0.1564517617225647,
+        "vertical_drop_m": 0.011447206139564514
+      },
+      "orange_01": {
+        "max_position_norm_m": 0.5800988078117371,
+        "max_pose_difference_speed_m_s": 0.062469035387039185,
+        "vertical_drop_m": 0.0011594928801059723
+      },
+      "orange_02": {
+        "max_position_norm_m": 0.43168169260025024,
+        "max_pose_difference_speed_m_s": 0.05650102347135544,
+        "vertical_drop_m": 0.0035939589142799377
+      },
+      "pomegranate01": {
+        "max_position_norm_m": 0.4821620583534241,
+        "max_pose_difference_speed_m_s": 0.10012943297624588,
+        "vertical_drop_m": 0.005953522399067879
+      },
+      "pumpkinlarge": {
+        "max_position_norm_m": 0.7289357781410217,
+        "max_pose_difference_speed_m_s": 0.9113801717758179,
+        "vertical_drop_m": 6.831251084804535e-07
+      },
+      "pumpkinsmall": {
+        "max_position_norm_m": 0.6149191856384277,
+        "max_pose_difference_speed_m_s": 0.00027113105170428753,
+        "vertical_drop_m": 1.7257174476981163e-05
+      },
+      "redonion": {
+        "max_position_norm_m": 0.7077862024307251,
+        "max_pose_difference_speed_m_s": 0.8607463836669922,
+        "vertical_drop_m": 0.0
+      },
+      "serving_bowl": {
+        "max_position_norm_m": 0.5816339254379272,
+        "max_pose_difference_speed_m_s": 0.000645542866550386,
+        "vertical_drop_m": 4.270346835255623e-05
+      },
+      "spatula": {
+        "max_position_norm_m": 0.45124855637550354,
+        "max_pose_difference_speed_m_s": 0.20853658020496368,
+        "vertical_drop_m": 0.0
+      },
+      "storage_box": {
+        "max_position_norm_m": 0.42223337292671204,
+        "max_pose_difference_speed_m_s": 0.0012173368595540524,
+        "vertical_drop_m": 8.1697478890419e-05
+      },
+      "table": {
+        "max_position_norm_m": 0.6479451656341553,
+        "max_pose_difference_speed_m_s": 2.1163759811315686e-06,
+        "vertical_drop_m": 0.0
+      },
+      "wooden_bowl": {
+        "max_position_norm_m": 0.527118980884552,
+        "max_pose_difference_speed_m_s": 0.058350905776023865,
+        "vertical_drop_m": 0.0031935246661305428
+      },
+      "wooden_spoons": {
+        "max_position_norm_m": 0.5042036771774292,
+        "max_pose_difference_speed_m_s": 0.3508951961994171,
+        "vertical_drop_m": 0.025099337100982666
+      }
+    },
+    "pad_objects": [
+      "clay_plates",
+      "lemon_01",
+      "lemon_02",
+      "lime01",
+      "lime01_01",
+      "orange_01",
+      "orange_02",
+      "pomegranate01",
+      "pumpkinlarge",
+      "pumpkinsmall",
+      "redonion",
+      "serving_bowl",
+      "spatula",
+      "storage_box",
+      "table",
+      "wooden_bowl",
+      "wooden_spoons"
+    ],
+    "numeric_datasets": 369,
+    "extra_channels": 119,
+    "ee_velocity_rms": 0.045821093022823334,
+    "videos": [
+      {
+        "file": "FruitsOnionTask/Put_the_onion_in_the_wood_bowl_0.mp4",
+        "width": 960,
+        "height": 270,
+        "r_frame_rate": "15/1",
+        "nb_frames": "498"
+      }
+    ],
+    "physics_artifact": false,
+    "pre_satisfied": false
+  },
+  "original_sweep": {
+    "tasks": 120,
+    "physics_status": {
+      "passed": 120
+    },
+    "policy_status": {
+      "completed": 119,
+      "null": 1
+    },
+    "successes": 45,
+    "completed_failures": 74,
+    "failure_events": {
+      "TARGET_LOST": 9,
+      "OBJECT_FELL_OFF_TABLE": 9,
+      "GRASP_ATTEMPT_FAILED": 62,
+      "WRONG_OBJECT_GRABBED": 25,
+      "OBJECT_DROPPED": 37,
+      "GRIPPER_FULLY_CLOSED": 63
+    },
+    "failed_with_artifact": [
+      "BagelsOnPlateTask",
+      "FruitsOnPlateTask",
+      "FruitsOrangesOnPlateTask"
+    ]
+  },
+  "scope": {
+    "base_commit": "7857803",
+    "production_change": "bounded candidate-only storage growth",
+    "default_contact_parameters_changed": false,
+    "default_geometry_changed": false,
+    "all_task_sweep_rerun": false,
+    "original_overflow_trajectory_reproduced": false,
+    "node_stopped": false
+  },
+  "evidence_archive": {
+    "archive": "/workspace/newton-repairs-20261014/repair-evidence.tar.gz",
+    "bytes": 72211124,
+    "sha256": "f015efd96ca25570f771746b2fe55ee7d1bd6bb40d1033fef36491d690e874fd",
+    "files": 168,
+    "locally_verified_files": 168
+  },
+  "baseline_preservation": {
+    "files_checked": 78,
+    "changed": [],
+    "original_sweep_results_preserved": true
+  },
+  "production_runtime_sha256": {
+    "newton_candidates.py": "6c69ad00a151bc52ce1c3a871b93d0c7caa31fec6a5fa85034bca9f1718bd3eb",
+    "newton_contacts.py": "d94da8ca29991de2e7a2ae1c5b8c5db97a145445c1157b6db9bfc1ecbb95562c"
+  },
+  "native_reconstruction": {
+    "BagelsOnPlateTask": {
+      "max_pad_pose_error_m": 1.234116420818955e-06,
+      "segments": [
+        {
+          "object": "bagel_06",
+          "pad": "right",
+          "t_start": 4.4,
+          "t_end": 38.6,
+          "detector_depth_med_mm": 9.035,
+          "native_min_distance_mm": -18.55038704405477,
+          "native_median_min_distance_mm": -9.83491665658938
+        },
+        {
+          "object": "bagel_06",
+          "pad": "right",
+          "t_start": 50.333,
+          "t_end": 53.733,
+          "detector_depth_med_mm": 8.4997,
+          "native_min_distance_mm": -10.522072020575683,
+          "native_median_min_distance_mm": -6.4629312920007305
+        }
+      ]
+    },
+    "FruitsOnPlateTask": {
+      "max_pad_pose_error_m": 1.1423265484038831e-06,
+      "segments": [
+        {
+          "object": "pomegranate01",
+          "pad": "left",
+          "t_start": 30.333,
+          "t_end": 37.133,
+          "detector_depth_med_mm": 5.872,
+          "native_min_distance_mm": -3.686218226095158,
+          "native_median_min_distance_mm": -2.306140354322684
+        }
+      ]
+    },
+    "FruitsOrangesOnPlateTask": {
+      "max_pad_pose_error_m": 1.0890288910432001e-06,
+      "segments": [
+        {
+          "object": "lemon_01",
+          "pad": "left",
+          "t_start": 76.667,
+          "t_end": 79.867,
+          "detector_depth_med_mm": 5.7866,
+          "native_min_distance_mm": -8.88786720587557,
+          "native_median_min_distance_mm": -5.177229761204266
+        }
+      ]
+    }
+  },
+  "unresolved": {
+    "artifact_tasks": [
+      "BagelsOnPlateTask",
+      "FruitsOnPlateTask",
+      "FruitsOrangesOnPlateTask"
+    ],
+    "apple": "Rerun settled, but previous trajectory differed; no placement or physics fix applied."
+  },
+  "limitations": [
+    "Original 66695-candidate trajectory was not reproduced. Real-scene regression uses a deliberately reduced buffer.",
+    "Fresh onion success remained below original capacity; it does not establish that the repair caused success.",
+    "No new contact geometry, material, damping, solver-response or timestep defaults were adopted.",
+    "Other failed policy episodes were triaged from structured logs, not all manually video-reviewed."
+  ]
+}

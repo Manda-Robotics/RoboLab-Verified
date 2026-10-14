@@ -150,9 +150,10 @@ def contact_runtime(settings):
 
     from contextlib import nullcontext
     pads = single_hull_fingertips(ModelBuilder, reports) if settings["single_hull_fingertips"] else nullcontext()
+    from robolab.core.environments.newton_candidates import candidate_storage
     _active = True
     try:
-        with pads, guard_ccd_capacity(wp, stats):
+        with pads, candidate_storage(wp), guard_ccd_capacity(wp, stats):
             SolverMuJoCo._mujoco_warp_step = step
             try:
                 yield

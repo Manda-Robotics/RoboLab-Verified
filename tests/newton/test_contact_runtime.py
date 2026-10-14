@@ -110,6 +110,9 @@ def test_runtime_patches_once_and_restores_on_failure(monkeypatch, filter_enable
     monkeypatch.setitem(sys.modules, "robolab.core.environments.newton_collision_filter",
                         NS(filter_immovable_contacts=lambda *a: updates.append("filter"),
                            override_support_rolling=lambda *a: updates.append("rolling")))
+    from contextlib import nullcontext
+    monkeypatch.setitem(sys.modules, "robolab.core.environments.newton_candidates",
+                        NS(candidate_storage=lambda wp: nullcontext()))
     settings = dict(single_hull_fingertips=False, timeconst=.0045, impedance=(.99, .999),
                     filter_immovable_contacts=filter_enabled, support_rolling_friction=rolling)
     with pytest.raises(ValueError, match="exit"):
