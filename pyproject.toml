@@ -13,9 +13,9 @@ maintainers = [{name = "Manda Robotics"}]
 
 dependencies = [
     # Core
-    # IsaacLab + IsaacSim are NOT pinned here: they are mutually-exclusive,
-    # version-specific stacks selected via the `isaac50` / `isaac51` / `isaac60` extras
-    # below (see [tool.uv].conflicts). Install with e.g.
+    # IsaacLab + IsaacSim are installed separately. The EA source target uses
+    # scripts/install_newton61.py; legacy stacks use mutually-exclusive
+    # `isaac50` / `isaac51` / `isaac60` extras (see [tool.uv].conflicts):
     #   uv sync --extra isaac50   # IsaacLab 2.2.0 / IsaacSim 5.0.0
     #   uv sync --extra isaac51   # IsaacLab 2.3.2.post1 / IsaacSim 5.1.0
     #   uv sync --extra isaac60   # IsaacLab 3.0 beta / IsaacSim 6.0.1 (Python 3.12)
@@ -75,9 +75,9 @@ isaac60 = [
     "isaaclab[isaacsim]==3.0.0b2.post1; python_version >= '3.12'",
 ]
 analysis = ["sbi"]
-# Newton uses the pinned Isaac Lab source stack and Isaac Sim 6.1; install with
+# Newton uses pinned Isaac Lab 3.0 EA source and Isaac Sim 6.1; install with
 # scripts/install_newton61.py, not the isaac60 wheel extra (docs/newton.md).
-test = ["pytest", "usd-core"]   # usd-core: offline asset checks (pxr)
+test = ["pytest", "usd-core"]   # CPU/offline only; EA supplies pxr via usd-exchange
 all = ["sbi", "pytest"]
 
 [project.scripts]

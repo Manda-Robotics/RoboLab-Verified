@@ -1,5 +1,12 @@
 # Experimental Newton integration
 
+**EA dependency update:** new installations now pin Isaac Lab `v3.0.0-EA`
+(`ae37b028ea415c91ea2bc32609efcd759ed2b974`). See the
+[EA migration record](isaaclab-ea-2026-10-18.md) for local verification and the
+October 19 GPU checks: 134 Newton tests, 241 simulator integration tests, and a
+rendered contact/recording probe passed. The policy towing study is still running. The earlier GPU evidence below was collected on the
+September 11 source revision, not the EA tag.
+
 This branch combines RoboLab-Verified at `790c1a5` with the four Newton commits
 from `ymetz/RoboLab`, ending at `56d461a`. Their common base is `82725b5`;
 Verified has 186 commits after that base. The merge retains both histories.
@@ -119,8 +126,9 @@ interpret a sandbox bind failure as a simulator failure.
 ## GPU validation before benchmark use
 
 Follow the pinned installation in [the Newton guide](../newton.md): Isaac Sim
-6.1.0.0 and Isaac Lab source revision
-`4ed09d414e93f35b8573db8850f8b27572779176`. Do not re-sync the older `isaac60`
+6.1.0.0 and Isaac Lab `v3.0.0-EA`, revision
+`ae37b028ea415c91ea2bc32609efcd759ed2b974`. Activate the separate EA venv first.
+Do not re-sync the older `isaac60`
 wheel extra over that environment. Use the same pinned stack for a solver-control
 comparison; keep legacy PhysX wheel stacks in a separate environment. Give every
 attempt a fresh output directory.
@@ -132,10 +140,10 @@ attempt a fresh output directory.
    not a bound on transient penetration.
 
    ```bash
-   .venv/bin/python examples/run_newton_smoke.py --headless \
+   .venv-ea/bin/python examples/run_newton_smoke.py --headless \
      --physics newton_mjwarp --task RubiksCubeTask --num-envs 1 --steps 120 \
      --output output/verified_newton_smoke_1
-   .venv/bin/python examples/run_newton_smoke.py --headless \
+   .venv-ea/bin/python examples/run_newton_smoke.py --headless \
      --physics newton_mjwarp --task RubiksCubeTask --num-envs 2 --steps 120 \
      --output output/verified_newton_smoke_2
    ```
@@ -166,7 +174,7 @@ Example policy launch after the smoke/contact checks, with the policy server
 already running:
 
 ```bash
-.venv/bin/python policies/pi0_family/run.py --policy pi05 --headless \
+.venv-ea/bin/python policies/pi0_family/run.py --policy pi05 --headless \
   --physics newton_mjwarp --friction upstream --task RubiksCubeTask \
   --seed 0 --num-envs 1 --num-runs 1 --remote-host localhost --remote-port 8000 \
   --video-mode sensor --output-folder-name verified_pi05_newton_cube

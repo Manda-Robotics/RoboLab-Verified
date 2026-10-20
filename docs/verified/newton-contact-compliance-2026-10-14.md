@@ -18,15 +18,24 @@ Pomegranate and lemon unloaded cleanly. The bagel showed substantial one-finger
 retention: one shorter withdrawal remained loaded at the end, while replaying
 from the beginning eventually released. Both longer withdrawals along the
 finger axis released. Thus the tested bagel contact is not permanently trapped,
-but its large overlap and delayed, configuration-dependent release still need
-review. It would be premature to label every flagged episode either physically
-invalid or physically validated.
+but its large overlap and delayed, configuration-dependent release failed
+subsequent visual review. Eventual detachment is not acceptable release behavior.
+At this stage the bagel remained unresolved; these tests do not physically
+validate every flagged episode. Subsequent stronger/faster contact candidates
+improved release, and the user accepted the improved visual behavior while
+reporting similar sticking in PhysX. See the
+[follow-up investigation](newton-bagel-repair-2026-10-14.md) for the completed
+comparisons and the decision to stop bagel-specific tuning in favor of broader
+regression checks. Production defaults and benchmark outcomes remain unchanged.
 
 ## Controlled experiments
 
 Restore the recorded post-step state, hold its original command for 2 seconds,
-open the gripper for 1 second, withdraw over 3 seconds, and wait another
-3 seconds. No state is teleported after initialization. The first four trials
+command the gripper open for 1 second, withdraw over 3 seconds, and wait another
+3 seconds. **Correction:** all three source actions already command the gripper
+open (`0.0`). The phase labeled `open` therefore does not change the command;
+withdrawal is the actual unloading intervention. Historical phase labels and
+raw measurements are retained. No state is teleported after initialization. The first four trials
 command 80 mm along the average loaded contact-normal direction. The two bagel
 controls command 120 mm opposite the finger-extension axis, verified from the
 compiled Robotiq geometry. These controls vary both direction and distance;
@@ -74,13 +83,14 @@ envelope; it is not an allowed-penetration offset in the contact force law.
 Sampled solver iteration counts stay at six or fewer, without a divergence or
 overflow reported by these diagnostics. Iteration count alone is not proof of
 adequate physical accuracy or a measured convergence residual. The bagel video
-shows contact with its outer ring; this evidence does not establish that the
-finger simply passed through the central hole. Nor does the rigid model
+shows contact with the ring. Subsequent reconstructed collision projections
+locate the pressing finger near the inner edge of that ring, rather than
+establishing an unobstructed passage through the central hole. Nor does the rigid model
 explicitly represent puncture, tearing, or permanent deformation.
 
-The appropriate next validation is a controlled indentation/unloading curve
-with an explicit material acceptance range, followed by a fresh policy run
-if contact parameters change. The present evidence does not justify globally
+Further repair work must address the observed retention and verify release,
+including a controlled indentation/unloading curve with an explicit material
+acceptance range and a fresh policy run if contact parameters or geometry change. The present evidence does not justify globally
 stiffening contact solely to minimize geometric overlap. Original detector
 flags remain preserved as review signals; no task was rescored.
 

@@ -41,9 +41,9 @@ See the [Ecosystem](docs/ecosystem.md) page for projects built on RoboLab.
 
 ## Getting Started
 
-Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and a system `ffmpeg` (used for video recording). The Isaac Sim/Isaac Lab stack is selected with a mutually-exclusive extra. `isaac60` is the default documented path; `isaac50` and `isaac51` remain available for existing experiments. See [Isaac Sim 6 support](docs/isaac_sim_6.md) and [Requirements](#requirements).
+Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and a system `ffmpeg` (used for video recording). The current source installation targets Isaac Sim 6.1 / Isaac Lab 3.0 EA on Linux x86_64. EA passed 134 Newton regression tests, 241 simulator integration tests, and a rendered contact/recording probe on an RTX PRO 5000; see the [EA migration record](docs/verified/isaaclab-ea-2026-10-18.md#gpu-follow-up-2026-10-19). The policy towing study is still running. The `isaac60`, `isaac50` and `isaac51` extras retain the older stacks for existing experiments. See [Isaac Sim 6 support](docs/isaac_sim_6.md) and [Requirements](#requirements).
 
-**Experimental Newton integration:** see the [Verified compatibility limits and remaining contact validation](docs/verified/newton.md). Use the [Isaac Sim 6.1 / Isaac Lab 3 source installer](docs/newton.md#new-vast-instance), not the `isaac60` quick-start commands below. Running `uv sync --extra isaac60` in that environment would downgrade it to the older beta2 stack.
+**Experimental Newton integration:** see the [Verified compatibility limits and remaining contact validation](docs/verified/newton.md). Use the [pinned Isaac Lab 3.0 EA source installer](docs/newton.md#new-vast-instance) shown below. Running `uv sync --extra isaac60` in that environment would downgrade it to the older beta2 stack.
 
 ### Installation
 
@@ -56,14 +56,13 @@ git lfs version               # must print a version: without git-lfs the two lf
 git lfs install
 git clone https://github.com/Manda-Robotics/RoboLab-Verified.git robolab
 cd robolab
-uv venv --python 3.12
-source .venv/bin/activate
-uv sync --extra isaac60          # Isaac Sim 6.0.1 / Isaac Lab 3.0 beta
-# uv sync --extra isaac50        # Isaac Sim 5.0 / Isaac Lab 2.2.0 (Python 3.11)
-# uv sync --extra isaac51        # Isaac Sim 5.1 / Isaac Lab 2.3.2.post1 (Python 3.11)
+uv venv --python 3.12 .venv-ea
+.venv-ea/bin/python scripts/install_newton61.py \
+  --isaaclab-root ../IsaacLab-v3.0.0-EA --install
+source .venv-ea/bin/activate
 ```
 
-The stacks cannot coexist in one environment. To keep multiple versions available, install each into its own venv:
+The stacks cannot coexist in one environment. The installer supplies test tools without adding a second USD provider. To reproduce older experiments, keep their stacks in separate venvs:
 
 ```bash
 UV_PROJECT_ENVIRONMENT=.venv-60 uv sync --python 3.12 --extra isaac60
@@ -73,13 +72,13 @@ UV_PROJECT_ENVIRONMENT=.venv-51 uv sync --python 3.11 --extra isaac51
 Verify the installation:
 
 ```bash
-python -m pytest offline_tests     # 251 tests, no simulator: the evaluation-correctness suite
-uv run --no-sync pytest tests/     # boots Isaac Sim: isaaclab importable, all task definitions valid, one full episode runs
+python -m pytest offline_tests    # no simulator: the evaluation-correctness suite
+python -m pytest tests/           # boots Isaac Sim: isaaclab importable, all task definitions valid, one full episode runs
 ```
 
 The Isaac suite auto-accepts the NVIDIA Omniverse EULA, so the run is headless with no prompts. More details at [Debugging → Diagnostic Scripts](docs/debug.md#diagnostic-scripts).
 
-> **Running without activating the venv**: if you don't `source .venv/bin/activate`, prefix every `python` command with `uv run --no-sync` (e.g. `uv run --no-sync pytest tests/`). A bare `uv run` first re-syncs the environment to the default dependency set, which removes the Isaac extra you just installed.
+> **Running without activating the EA venv**: use `.venv-ea/bin/python` (for example, `.venv-ea/bin/python -m pytest tests/`). A bare `uv run` or `uv sync` can replace the source-installed stack with the project's legacy dependency set. Do not install the offline `[test]` extra into the EA venv; its USD bindings are already provided by `usd-exchange`.
 
 > **Long runs**: launch with `python -u` (or `PYTHONUNBUFFERED=1`). With stdout redirected to a file, Python block-buffers, and Isaac Sim frequently dies at shutdown before the buffer is flushed. Per-episode results are always flushed to `episode_results.jsonl`. A finished run writes `run_complete.json` next to it; a run directory without that file is partial.
 
@@ -213,8 +212,8 @@ Full documentation is at [docs/README.md](docs/README.md), covering:
 
 | Dependency | Version |
 |---|---|
-| Isaac Sim | 6.0.1 (default), 5.0, or 5.1 |
-| Isaac Lab | 3.0 beta 2 patch 1, 2.2.0, or 2.3.2.post1 |
+| Isaac Sim | 6.1.0.0 (EA source target); legacy 6.0.1, 5.0, or 5.1 |
+| Isaac Lab | 3.0 EA (pinned source); legacy beta 2 patch 1, 2.2.0, or 2.3.2.post1 |
 | Python | 3.12 for Isaac Sim 6; 3.11 for Isaac Sim 5 |
 | Linux | Ubuntu 22.04+ |
 

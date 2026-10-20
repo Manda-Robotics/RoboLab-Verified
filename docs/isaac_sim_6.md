@@ -1,29 +1,42 @@
 # Isaac Sim 6 support
 
-RoboLab supports Isaac Sim 6.0.1 with the Isaac Lab 3.0 beta 2 patch 1 stack.
-This is the recommended stack for RTX PRO 5000/6000 and other recent GPUs.
+The source installation now targets **Isaac Sim 6.1.0.0 + Isaac Lab 3.0 EA**,
+pinned to `ae37b028ea415c91ea2bc32609efcd759ed2b974`. The
+[EA migration record](verified/isaaclab-ea-2026-10-18.md) records local checks and the successful October 19 GPU/runtime checks;
+the policy towing study is still running. The older Isaac Sim 6.0.1 / Lab beta2
+wheel stack remains available as `isaac60` for reproducing existing experiments.
 
 Experimental DROID Newton support is described in [newton.md](newton.md).
 
-## Install
+## Install EA
 
-Isaac Sim 6 requires Python 3.12. It cannot share an environment with an
-Isaac Sim 5 stack.
+Use Linux x86_64 and a fresh Python 3.12 environment. Keep the old simulator and
+policy-server environments separate:
 
 ```bash
-uv venv --python 3.12
-source .venv/bin/activate
-uv sync --extra isaac60
-uv run pytest tests/
+uv venv --python 3.12 .venv-ea
+.venv-ea/bin/python scripts/install_newton61.py \
+  --isaaclab-root ../IsaacLab-v3.0.0-EA --install
+source .venv-ea/bin/activate
+python -m pytest offline_tests
 ```
 
-For the container image:
+See the [source installation instructions](newton.md#new-vast-instance) for
+resolution-only mode, the USD provider constraint and GPU smoke commands. Use
+`python` from the activated EA venv, not an implicit `uv sync` that would select
+a different stack. The installer supplies `pytest` and uses `usd-exchange` for
+USD bindings; do not add the offline `[test]` extra to this simulator environment.
+
+## Legacy 6.0 stack
 
 ```bash
+UV_PROJECT_ENVIRONMENT=.venv-60 uv sync --python 3.12 --extra isaac60
 ./docker/build_docker.sh --isaac60
 ```
 
-The default Docker base is `nvcr.io/nvidia/isaac-lab:3.0.0-beta2`.
+The existing Docker recipe still defaults to
+`nvcr.io/nvidia/isaac-lab:3.0.0-beta2`; it is a legacy workflow and does not build
+the pinned EA source environment. No EA Docker image has been validated here.
 
 ## Compatibility design
 
@@ -76,16 +89,16 @@ Run at least one rendered smoke test and one contact-rich task on the target
 driver/GPU before producing benchmark results:
 
 ```bash
-uv run python examples/run_kinova_jointpos.py --headless --num-steps 180
-uv run python examples/run_abs_ik_demo.py --headless
+.venv-ea/bin/python examples/run_kinova_jointpos.py --headless --num-steps 180
+.venv-ea/bin/python examples/run_abs_ik_demo.py --headless
 ```
 
-Isaac Lab 3.0 is still a beta line. NVIDIA's 3.0 beta release notes list a
-known Robotiq 2F-85 issue, so the DROID and Kinova grippers need particular
-attention in smoke testing. Keep Isaac Sim 5.1 available for result comparison
-until the task suite passes on your hardware.
+Isaac Lab 3.0 is now Early Access. Earlier beta releases listed a Robotiq
+2F-85 issue; recheck both DROID and Kinova grippers when validating EA. Keep
+the previous environment available for result comparison until the task suite
+passes on your hardware.
 
-## Validation in RoboLab Verified
+## Earlier 6.0 validation in RoboLab Verified
 
 Checked on an A40 with both stacks installed side by side (`.venv-51`: Python 3.11,
 `--extra isaac51`; `.venv-60`: Python 3.12, `--extra isaac60`) from one tree, with an open-loop

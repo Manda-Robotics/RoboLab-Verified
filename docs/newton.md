@@ -142,41 +142,53 @@ policy success rates. Revalidate the private APIs before upgrading Newton.
 ## New VAST instance
 
 The current experimental target is **Isaac Sim 6.1.0.0 + Isaac Lab
-release/3.0.0 at `4ed09d414e93f35b8573db8850f8b27572779176`**.
-That source revision selects Newton 1.5.2, MuJoCo/MuJoCo-Warp 3.11 and Warp
-1.16.0. This is not the published Lab beta2 wheel. The source workspace has
-separately versioned packages (for example `isaaclab==17.0.1`); use the git SHA,
-not that internal extension version, to identify the Lab release.
+[v3.0.0-EA](https://github.com/isaac-sim/IsaacLab/releases/tag/v3.0.0-EA),
+commit `ae37b028ea415c91ea2bc32609efcd759ed2b974`**. The installer clones this
+release tag and verifies its SHA, rather than following `release/3.0.0`.
+It retains Newton 1.5.2, MuJoCo/MuJoCo-Warp 3.11.0 and Warp 1.16.0.
+MuJoCo patch versions are pinned exactly because RoboLab's contact adapters
+use private APIs audited against those versions.
 
-On an x86_64 Linux GPU server, check out the integration commit being tested.
-In the RoboLab checkout:
+The source workspace has separately versioned packages (`isaaclab==17.0.2`
+for this tag); use the release tag and git SHA to identify the Lab release.
+The [EA migration record](verified/isaaclab-ea-2026-10-18.md) separates local
+checks from the [October 19 EA GPU validation](verified/isaaclab-ea-2026-10-18.md#gpu-follow-up-2026-10-19). Earlier GPU results in this guide used
+`4ed09d414e93f35b8573db8850f8b27572779176` and are not EA runtime validation.
+
+On an x86_64 Linux GPU server, use a fresh Python 3.12 environment and a new Lab
+checkout so the previous environment remains available for comparison:
 
 ```bash
-# Fresh environment only; reuse an existing Python 3.12 .venv for an upgrade.
-uv venv --python 3.12 .venv
-.venv/bin/python scripts/install_newton61.py \
-  --isaaclab-root /workspace/repos/IsaacLab-newton61 --install
+uv venv --python 3.12 .venv-ea
+.venv-ea/bin/python scripts/install_newton61.py \
+  --isaaclab-root /workspace/repos/IsaacLab-v3.0.0-EA --install
 export OMNI_KIT_ACCEPT_EULA=Y
-.venv/bin/python examples/run_newton_smoke.py \
+.venv-ea/bin/python examples/run_newton_smoke.py \
   --headless --physics newton_mjwarp --num-envs 2 --steps 60 \
-  --output output/newton_smoke
+  --output output/newton_ea_smoke
 ```
 
-The installer clones/pins Lab when the target directory does not exist. An
-existing checkout must be clean and already at the pinned SHA. It reads the
-workspace's dependencies and overrides, resolves them together with RoboLab,
-then installs the resulting plan. This avoids accidentally downgrading Newton
-to the older version requested by Isaac Sim's wheel metadata. Each invocation
-saves its inputs, resolved requirements, git SHA and before/after package lists
-in a git-ignored `newton61-install-*` directory.
+An existing Lab checkout must be clean and already at the pinned SHA; the
+installer will not rewrite it. The installer reads the EA workspace dependencies
+and overrides, resolves them together with RoboLab, then installs the resulting
+plan. This prevents Isaac Sim's older Newton metadata from downgrading the solver.
+Each invocation saves its inputs, resolved requirements, release tag, git SHA,
+and before/after package lists in a git-ignored `newton61-install-*` directory.
 
-Omit `--install` to resolve only. On a small existing instance, add
-`--replace-isaacsim` to uninstall the old Sim packages **after** resolution and
-before downloading replacements. This changes that venv in place; assets,
-recordings and separate policy-server environments remain untouched.
-Do not run `uv sync --extra isaac60` afterward: it reinstalls the old beta2
-stack. The old `newton` wheel extra has been removed in favor of this installer.
-Run simulation commands with `.venv/bin/python` to avoid an implicit re-sync.
+The EA environment uses `usd-exchange`, which already supplies `pxr`. Do not add
+RoboLab's offline `[test]` extra or `usd-core` there: they install a second USD
+provider over the same files. The installer includes `pytest` separately and
+rejects an install into a venv containing `usd-core`. The standalone macOS/CPU
+test environment can still use `[test]` with `usd-core`.
+
+Omit `--install` to resolve only. `--replace-isaacsim` remains available for an
+existing compatible venv: it uninstalls old Sim packages only after resolution.
+For this migration, a separate EA venv is preferred. Assets, recordings and
+separate policy-server environments are not modified by the installer.
+Do not run `uv sync --extra isaac60` afterward: it reinstalls the older beta2
+stack. Run commands with `.venv-ea/bin/python`, or activate `.venv-ea` and use
+`python`, to avoid an implicit re-sync. The `isaac60` extra is retained only for
+legacy experiments; it does not select EA.
 
 On 6.1, omit the old `--newton-convex-decomposition-threshold` and
 `--newton-contact-timeconst` options (smoke equivalents: `--decomposition-threshold`
@@ -206,7 +218,7 @@ Use a fresh output path for each test attempt.
 Once the existing pi0.5 server is available on port 8000:
 
 ```bash
-.venv/bin/python policies/pi0_family/run.py \
+.venv-ea/bin/python policies/pi0_family/run.py \
   --policy pi05 --headless --physics newton_mjwarp \
   --task RubiksCubeThenBananaTask --num-envs 1 --num-runs 1 \
   --remote-host localhost --remote-port 8000 \

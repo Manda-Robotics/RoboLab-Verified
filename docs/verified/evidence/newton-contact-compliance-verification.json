@@ -3702,5 +3702,25 @@
     "v2": "IK orientation error frame did not match world Jacobian",
     "included_in_completed_trials": false
   },
-  "node_action": "Left running"
+  "node_action": "Left running",
+  "followup_corrections": {
+    "date": "2026-10-14",
+    "source_gripper_commands": {
+      "BagelsOnPlateTask": 0.0,
+      "FruitsOnPlateTask": 0.0,
+      "FruitsOrangesOnPlateTask": 0.0
+    },
+    "phase_interpretation": "All source commands already open the gripper; the phase named open is a continued open hold. Withdrawal is the actual unloading intervention. Historical phase labels and raw measurements are retained.",
+    "bagel_acceptance": "Failed visual release review; eventual detachment does not resolve one-finger retention.",
+    "contact_location": "Subsequent reconstructed collision projections locate the finger pressing into the ring near its inner edge."
+  },
+  "subsequent_review": {
+    "date": "2026-10-14",
+    "report": "newton-bagel-repair-2026-10-14.md",
+    "improved_behavior_accepted_qualitatively_by_user": true,
+    "physx_sticking_user_report_only": true,
+    "further_bagel_specific_tuning_paused": true,
+    "production_defaults_changed": false,
+    "benchmark_scores_changed": false
+  }
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install the pinned Isaac Lab 3 source stack into a RoboLab Python 3.12 venv.
+"""Install the pinned Isaac Lab 3.0 EA source stack into a RoboLab Python 3.12 venv.
 
 Run with the target venv's Python. Default is resolution only; --install applies
 the plan. --replace-isaacsim first uninstalls the old Sim wheels to save space.
@@ -16,7 +16,8 @@ import subprocess
 import sys
 import tomllib
 
-ISAACLAB_COMMIT = "4ed09d414e93f35b8573db8850f8b27572779176"
+ISAACLAB_REF = "v3.0.0-EA"
+ISAACLAB_COMMIT = "ae37b028ea415c91ea2bc32609efcd759ed2b974"
 
 
 def run(*args, **kwargs):
@@ -35,13 +36,47 @@ def prepare_requirements(lab, robolab):
         else:
             requirements.append(requirement)
     requirements.extend(cfg["project"]["optional-dependencies"]["isaacsim"])
-    requirements.append(f"-e {robolab}[test]")
+    # usd-exchange already supplies pxr. RoboLab's offline [test] extra also
+    # installs usd-core, which would overwrite the same USD Python files.
+    requirements.extend([f"-e {robolab}", "pytest"])
     overrides = cfg["tool"]["uv"]["override-dependencies"]
-    # uv pip does not inherit the workspace's torch source routing.
-    overrides = [v + "+cu128" if v in (
-        "torch==2.11.0", "torchaudio==2.11.0", "torchvision==0.26.0"
-    ) else v for v in overrides]
+    # uv pip does not inherit the workspace's torch source routing. Keep the
+    # exact MuJoCo versions audited by our private solver adapters; upstream's
+    # compatible-release ranges would otherwise admit unvalidated patch builds.
+    replacements = {
+        "torch==2.11.0": "torch==2.11.0+cu128",
+        "torchaudio==2.11.0": "torchaudio==2.11.0+cu128",
+        "torchvision==0.26.0": "torchvision==0.26.0+cu128",
+        "mujoco~=3.11.0": "mujoco==3.11.0",
+        "mujoco-warp~=3.11.0": "mujoco-warp==3.11.0",
+    }
+    overrides = [replacements.get(value, value) for value in overrides]
     return requirements, overrides
+
+
+def prepare_checkout(lab):
+    """Clone the release tag, then verify its immutable identity and clean tree."""
+    if not lab.exists():
+        run("git", "clone", "--depth", "1", "--branch", ISAACLAB_REF,
+            "https://github.com/isaac-sim/IsaacLab.git", str(lab),
+            env={**os.environ, "GIT_LFS_SKIP_SMUDGE": "1"})
+    head = run("git", "-C", str(lab), "rev-parse", "HEAD", capture_output=True).stdout.strip()
+    if head != ISAACLAB_COMMIT:
+        raise ValueError(f"Expected Isaac Lab {ISAACLAB_REF} ({ISAACLAB_COMMIT}), found {head}; "
+                         "use a new --isaaclab-root or a checkout of the pinned commit")
+    if run("git", "-C", str(lab), "status", "--porcelain", capture_output=True).stdout.strip():
+        raise ValueError("Isaac Lab checkout must be clean for a reproducible installation")
+    return head
+
+
+def check_usd_provider():
+    """Refuse an in-place install that would mix two owners of the pxr package."""
+    try:
+        metadata.version("usd-core")
+    except metadata.PackageNotFoundError:
+        return
+    raise ValueError("The target venv contains usd-core, but Isaac Lab EA uses usd-exchange. "
+                     "Use a fresh Python 3.12 venv; do not mix these USD providers.")
 
 
 def main():
@@ -57,25 +92,19 @@ def main():
         parser.error("--replace-isaacsim requires --install")
     lab = args.isaaclab_root.resolve()
     robolab = Path(__file__).resolve().parents[1]
-    if not lab.exists():
-        run("git", "clone", "--depth", "1", "--branch", "release/3.0.0",
-            "https://github.com/isaac-sim/IsaacLab.git", str(lab),
-            env={**os.environ, "GIT_LFS_SKIP_SMUDGE": "1"})
-        run("git", "-C", str(lab), "fetch", "--depth", "1", "origin", ISAACLAB_COMMIT)
-        run("git", "-C", str(lab), "checkout", "--detach", ISAACLAB_COMMIT,
-            env={**os.environ, "GIT_LFS_SKIP_SMUDGE": "1"})
-    head = run("git", "-C", str(lab), "rev-parse", "HEAD", capture_output=True).stdout.strip()
-    if head != ISAACLAB_COMMIT:
-        parser.error(f"Expected Isaac Lab {ISAACLAB_COMMIT}, found {head}; use a checkout of the pinned commit")
-    if run("git", "-C", str(lab), "status", "--porcelain", capture_output=True).stdout.strip():
-        parser.error("Isaac Lab checkout must be clean for a reproducible installation")
+    try:
+        if args.install:
+            check_usd_provider()
+        head = prepare_checkout(lab)
+    except ValueError as exc:
+        parser.error(str(exc))
     # Fresh, durable logs beside the environment, never in episode result folders.
     import tempfile
     record = Path(tempfile.mkdtemp(prefix="newton61-install-", dir=robolab))
     requirements, overrides = prepare_requirements(lab, robolab)
     (record / "requirements.in").write_text("\n".join(requirements) + "\n")
     (record / "overrides.txt").write_text("\n".join(overrides) + "\n")
-    (record / "stack.json").write_text(json.dumps({"isaaclab_commit": head, "python": sys.executable}, indent=2))
+    (record / "stack.json").write_text(json.dumps({"isaaclab_ref": ISAACLAB_REF, "isaaclab_commit": head, "python": sys.executable}, indent=2))
     (record / "before.txt").write_text(run("uv", "pip", "freeze", "--python", sys.executable,
                                            capture_output=True).stdout)
     common = ["--python", sys.executable, "--index-strategy", "unsafe-best-match", "--prerelease", "allow",
