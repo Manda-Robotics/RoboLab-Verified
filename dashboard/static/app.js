@@ -2224,6 +2224,10 @@ async function renderEpisode(runId, task, envId, runIndex) {
   const header = el('div', { class: 'flex items-start gap-3 flex-wrap mb-4' },
     epChip,
     badge(ep.success),
+    ep.artifact_integrity && ep.artifact_integrity.eligible_for_comparison === false
+      ? el('span', { class: 'chip fail', title: 'Outcome records disagree or are incomplete. Original grades are preserved; exclude this episode from comparisons.' }, '⚠ outcome integrity') : null,
+    ep.reason_source === 'subtask_final_state'
+      ? el('span', { class: 'chip', title: 'The displayed reason describes the final subtask state, not the native termination predicate.' }, 'subtask diagnostic') : null,
     ep.physics_artifact ? el('span', { class: 'chip fail', title: 'TOWED_WITHOUT_GRASP fired — an object moved with an open hand; physics artifact, do not trust this episode' }, '⚠ physics artifact') : null,
     chip(`${ep.episode_step} steps`),
     chip(fmtSec(ep.duration)),

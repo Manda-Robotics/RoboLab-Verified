@@ -34,3 +34,24 @@ def test_legacy_names_without_a_run_token_still_attach(tmp_path):
     e.env_id, e.run_index, e.last_frame_path, e.videos = 0, 0, None, []
     L.LocalLoader.__new__(L.LocalLoader)._attach_media(tmp_path, e)
     assert sorted(v.name for v in e.videos) == ["recording", "viewport"]
+
+
+def test_outcome_audit_and_reason_provenance_reach_episode_api(tmp_path):
+    import json
+    from dataclasses import asdict
+
+    run = tmp_path / 'run'
+    (run / 'Task').mkdir(parents=True)
+    integrity = {'status': 'conflict', 'eligible_for_comparison': False,
+                 'observed_success': {'verified': False, 'hdf5': True}}
+    (run / 'episode_results.jsonl').write_text(json.dumps({
+        'env_name': 'Task', 'run': 0, 'env_id': 0, 'success': False,
+        'artifact_integrity': integrity, 'reason_source': 'subtask_final_state',
+        'reason': 'object_grabbed is false on final frame',
+    }) + '\n')
+    rows = _loader().LocalLoader(tmp_path).list_episodes('run', 'Task')
+    assert len(rows) == 1
+    value = asdict(rows[0])
+    assert value['artifact_integrity'] == integrity
+    assert value['reason_source'] == 'subtask_final_state'
+    assert value['success'] is False

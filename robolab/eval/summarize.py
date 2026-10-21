@@ -199,6 +199,8 @@ def build_run_summary(
         else:
             summary["score"] = None
 
+        summary["reason_source"] = "event_log" if events_list else None
+        summary["subtask_diagnostic"] = None
         # Reason: derived from the v2 events stream. For success, walk back
         # past post-success drift (failure-range codes that fire after the
         # success transition) to the last success-range event.
@@ -218,7 +220,14 @@ def build_run_summary(
 
         # For failed episodes, prefer the per-env final_info reason if available.
         if not env_result["success"] and final_info is not None:
-            summary["reason"] = final_info.get("info", summary.get("reason"))
+            diagnostic = final_info.get("info")
+            if diagnostic is not None:
+                summary["reason"] = diagnostic
+                summary["reason_source"] = "subtask_final_state"
+                summary["subtask_diagnostic"] = diagnostic
+            # This is a final-frame ladder diagnostic, not the native termination
+            # predicate. For example, a released object is no longer grabbed even
+            # after a successful carry. Keep its provenance explicit.
 
     if extra_fields:
         summary.update(extra_fields)
