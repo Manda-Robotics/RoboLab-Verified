@@ -547,7 +547,8 @@ function renderSidebar() {
             : ''),
         el('div', { class: 'text-xs', style: { color: 'var(--text-2)' } },
           run.policy ? `${run.policy} · ` : '',
-          `${run.num_success}/${run.num_episodes} (${fmtPct(run.success_rate)})`),
+          `${run.num_success}/${run.num_episodes} (${fmtPct(run.success_rate)})`,
+          run.num_integrity_invalid ? ` · RAW: ${run.num_integrity_invalid} invalid grade record(s)` : ''),
         showSource && run.source
           ? el('div', {
               class: 'text-xs truncate font-mono',
@@ -1960,6 +1961,8 @@ async function renderRun(runId) {
   const tasks = state.tasksByRun[runId] || [];
   const totalEps = tasks.reduce((a, t) => a + t.num_episodes, 0);
   const totalSucc = tasks.reduce((a, t) => a + t.num_success, 0);
+  const invalidGrades = tasks.reduce((a, t) => a + (t.num_integrity_invalid || 0), 0);
+  const unaudited = tasks.reduce((a, t) => a + (t.num_unaudited || 0), 0);
 
   const pane = $('#pane');
   pane.innerHTML = '';
@@ -1968,6 +1971,10 @@ async function renderRun(runId) {
   pane.appendChild(el('div', { class: 'mb-6' },
     el('h2', { class: 'text-xl font-semibold mb-1 truncate', title: runId }, runId),
     headerLine));
+  if (invalidGrades || unaudited) pane.appendChild(el('p', {
+    class: 'text-sm mb-4', style: { color: 'var(--text-2)' }
+  }, `Raw recorded outcomes: ${invalidGrades} invalid/conflicting, ${unaudited} unaudited. ` +
+     'These historical totals are not a validated matched comparison; inspect the pair audit before drawing performance conclusions.'));
 
   // Inline analytics: fetch every task's episodes (cached) and render the
   // shared analytics block above the task list. Renders progressively so

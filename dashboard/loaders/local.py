@@ -166,6 +166,8 @@ class TaskSummary:
     score_ucb: float | None
     mean_duration: float
     instruction: str | None
+    num_integrity_invalid: int = 0
+    num_unaudited: int = 0
 
 
 @dataclass
@@ -179,6 +181,8 @@ class RunMeta:
     num_success: int
     success_rate: float
     modified_at: float | None = None   # unix time of the newest episode_results/log file
+    num_integrity_invalid: int = 0
+    num_unaudited: int = 0
     family: str = "Unlabelled"         # policy family for sidebar grouping (see policy_family)
 
 
@@ -267,6 +271,10 @@ class LocalLoader:
             success_rate=(success / len(eps)) if eps else 0.0,
             modified_at=self._run_modified_at(run_dir),
             family=policy_family(policy),
+            num_integrity_invalid=sum(e.artifact_integrity is not None and
+                                      e.artifact_integrity.get("eligible_for_comparison") is False
+                                      for e in eps),
+            num_unaudited=sum(e.artifact_integrity is None for e in eps),
         )
 
     def _attach_progress(self, task_dir: Path, e: EpisodeRow) -> None:
@@ -407,7 +415,12 @@ class LocalLoader:
                                     score_std=score_std,
                                     score_n=score_n,
                                     score_lcb=score_lcb, score_ucb=score_ucb,
-                                    mean_duration=mean_dur, instruction=instr))
+                                    mean_duration=mean_dur, instruction=instr,
+                                    num_integrity_invalid=sum(
+                                        e.artifact_integrity is not None and
+                                        e.artifact_integrity.get("eligible_for_comparison") is False
+                                        for e in es),
+                                    num_unaudited=sum(e.artifact_integrity is None for e in es)))
         return out
 
     # ---- episodes ------------------------------------------------------------

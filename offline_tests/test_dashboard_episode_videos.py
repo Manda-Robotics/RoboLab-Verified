@@ -55,3 +55,23 @@ def test_outcome_audit_and_reason_provenance_reach_episode_api(tmp_path):
     assert value['artifact_integrity'] == integrity
     assert value['reason_source'] == 'subtask_final_state'
     assert value['success'] is False
+
+
+def test_raw_totals_disclose_invalid_and_unaudited_outcomes(tmp_path):
+    import json
+    run = tmp_path / 'run'
+    (run / 'Task').mkdir(parents=True)
+    rows = [
+        {'env_name': 'Task', 'run': 0, 'env_id': 0, 'success': True,
+         'artifact_integrity': {'eligible_for_comparison': False}},
+        {'env_name': 'Task', 'run': 1, 'env_id': 0, 'success': False},
+    ]
+    (run / 'episode_results.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in rows))
+    loader = _loader().LocalLoader(tmp_path)
+    meta = loader.list_runs()[0]
+    task = loader.list_tasks('run')[0]
+    for summary in [meta, task]:
+        assert summary.num_integrity_invalid == 1
+        assert summary.num_unaudited == 1
+        assert summary.num_episodes == 2  # raw historical totals are preserved, labelled raw
+    assert len(loader.list_episodes('run', 'Task')) == 2
