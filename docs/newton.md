@@ -41,6 +41,30 @@ newton_mjwarp` cube episode also succeeded at step 174 (11.6 s), without the stu
 harness or its disk cache. This validates the integrated launch path, not exact
 trajectory parity with the earlier run; the policy server was not reseeded.
 
+### Bagel defaults
+
+Newton automatically uses the clean `bagel_00` and `bagel_06` collision assets
+in the bagel/plate, breakfast-table and test-plate scenes, including renamed
+instances such as `bagel_01`, `bagel_02` and `bagel_07` in the breakfast scene.
+Each asset has 64 connected convex sectors and sliding friction 5. Visuals,
+scene placement and the original Newton mass, center of mass and inertia are
+retained. PhysX continues to load the original scenes and materials.
+
+These Newton scenes default to **elliptic** friction cones. Cone type is a
+solver-wide setting, so it affects every contact in that scene, not just the
+bagels. Other Newton scenes retain pyramidal cones. An explicit
+`cfg.newton_contact_settings["cone"]` can select either `"elliptic"` or
+`"pyramidal"`; explicit `--friction` requests override the bagel material too.
+The resolved scene, asset defaults and contact settings are saved in the
+environment configuration. Use a fresh output directory for the changed preset.
+
+Friction 5 is an empirical benchmark choice, not a measured material coefficient.
+The GPU replay checks showed much shallower penetration, but the three friction-5
+fixed-action trials did not carry the bagel; fresh-policy grasp/release coverage
+and equivalent dynamic validation of `bagel_06` remain outstanding. The builder
+`scripts/build_clean_bagels.py` uses `bagel_clean_reference_inertia.json` to
+regenerate the assets without requiring the original diagnostic MJB file.
+
 ### Contact preset configuration
 
 For programmatic experiments, set `cfg.newton_contact_settings` before

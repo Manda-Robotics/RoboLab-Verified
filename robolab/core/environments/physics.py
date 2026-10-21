@@ -34,7 +34,10 @@ def configure_physics(cfg, backend="physx"):
     robot.spawn.usd_path = str(Path(ROBOTS_DIR) / overlay)
     if not Path(robot.spawn.usd_path).is_file():
         raise FileNotFoundError(f"Newton robot overlay missing: {robot.spawn.usd_path}")
-    settings = dict(enable_multiccd=True, compact_keyboard_colliders=True, compact_shelf_colliders=True, compact_contact_storage=True, mesh_compatibility=True, single_hull_fingertips=True, filter_immovable_contacts=True, support_rolling_friction=0.001, timeconst=0.0045,
+    from robolab.core.physics.newton_bagels import configure_scene
+
+    clean_bagels = configure_scene(cfg)
+    settings = dict(cone="elliptic" if clean_bagels else "pyramidal", enable_multiccd=True, compact_keyboard_colliders=True, compact_shelf_colliders=True, compact_contact_storage=True, mesh_compatibility=True, single_hull_fingertips=True, filter_immovable_contacts=True, support_rolling_friction=0.001, timeconst=0.0045,
                     impedance=(0.99, 0.999), contact_capacity=65536,
                     constraint_capacity=131072, gripper_stiffness=10.0,
                     gripper_damping=0.5, gripper_target_velocity=3.141592653589793)
@@ -47,6 +50,8 @@ def configure_physics(cfg, backend="physx"):
     if "timeconst" not in overrides:
         settings["timeconst"] = max(settings["timeconst"], 2 * cfg.sim.dt / substeps)
     from math import isfinite
+    if settings["cone"] not in ("pyramidal", "elliptic"):
+        raise ValueError("Newton cone must be pyramidal or elliptic")
     if not isinstance(settings["enable_multiccd"], bool):
         raise ValueError("enable_multiccd must be boolean")
     if not isinstance(settings["compact_keyboard_colliders"], bool):
@@ -77,7 +82,7 @@ def configure_physics(cfg, backend="physx"):
     cfg.sim.physics = NewtonCfg(
         solver_cfg=MJWarpSolverCfg(
             njmax=settings["constraint_capacity"], nconmax=settings["contact_capacity"], iterations=100,
-            ls_iterations=50, integrator="implicitfast",
+            ls_iterations=50, integrator="implicitfast", cone=settings["cone"],
         ),
         num_substeps=substeps,
         use_cuda_graph=False,  # The pre-kernel capacity guard requires eager execution.
