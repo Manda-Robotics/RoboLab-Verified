@@ -365,19 +365,16 @@ class RobolabRecorderManager(RecorderManager):
 
         super().record_pre_reset(env_ids, force_export_or_skip=force_export_or_skip)
 
-        # Override upstream's HDF5 success flag with the authoritative signal.
-        #
-        # Upstream RecorderManager.record_pre_reset derives demo `success` from a
-        # termination term literally named "success". Tasks using the per-object
-        # `success_<obj>` any-of-N pattern (e.g. GrabABagelTask, GrabAFruitTask)
-        # have no such term, so upstream silently records success=False even when
-        # an episode genuinely succeeded. Re-derive from termination_manager.terminated
-        # (the OR of all non-timeout terms) — the same signal env.py uses for the
-        # canonical jsonl — so the HDF5 attr is correct regardless of term naming.
-        # set_success_to_episodes only updates in-memory EpisodeData.success; export
-        # runs later (env.py _reset_idx), so this re-set is picked up on write.
-        if hasattr(self._env, "termination_manager"):
-            success = self._env.termination_manager.terminated[env_ids]
+        # Use the same outcome resolver as the canonical episode JSON. The OR of
+        # non-timeout terms also includes failures such as target_lost, so using
+        # termination_manager.terminated here would label a dropped target a win.
+        # Upstream has already set its default flag; overwrite it before export.
+        if hasattr(self._env, "_success_of"):
+            success = torch.tensor(
+                [self._env._success_of(eid) for eid in env_ids],
+                dtype=torch.bool,
+                device=self._env.device,
+            )
             self.set_success_to_episodes(env_ids, success)
 
     def record_post_reset(self, env_ids: Sequence[int] | None) -> None:
