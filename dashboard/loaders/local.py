@@ -143,6 +143,7 @@ class EpisodeRow:
     score_peak: float | None = None      # highest live ladder score (subgoals reached, kept or not) — P34
     physics_artifact: bool = False       # TOWED_WITHOUT_GRASP fired: an object moved with an open hand
     recorded_at: float | None = None     # unix time the episode's newest video was written
+    group: str | None = None             # optional sidebar group stamped by the producer (``dashboard_group``)
     stages_reached: int | None = None    # subtask stages completed (from "Completed subtask k/N" events)
     stages_total: int | None = None      # N — from the events, else the task's ladder length
     stage_started: bool = False          # the stage after the last completed one was at least started
@@ -250,6 +251,9 @@ class LocalLoader:
             if not task_dirs:
                 return None
         policy = next((e.policy for e in eps if e.policy), None)
+        # A producer may group runs explicitly (e.g. Rung review copies: "Full runs" vs
+        # "Infra attempts"); otherwise the family comes from the policy label as before.
+        group = next((e.group for e in eps if e.group), None)
         success = sum(1 for e in eps if e.success)
         run_id = run_dir.name
         if run_id in used_ids:
@@ -264,7 +268,7 @@ class LocalLoader:
             num_success=success,
             success_rate=(success / len(eps)) if eps else 0.0,
             modified_at=self._run_modified_at(run_dir),
-            family=policy_family(policy),
+            family=group or policy_family(policy),
         )
 
     def _attach_progress(self, task_dir: Path, e: EpisodeRow) -> None:
@@ -549,6 +553,7 @@ class LocalLoader:
                 metrics=_json_safe(d.get("metrics") or {}),
                 timing=_json_safe(d.get("timing") or {}),
                 policy=d.get("policy"),
+                group=d.get("dashboard_group"),
             ))
         return rows
 
