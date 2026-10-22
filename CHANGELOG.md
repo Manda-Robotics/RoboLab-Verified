@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Restore the bowl and banana in `objects_around_table.usda` from below the
+  ground to the tabletop, with zero initial velocity and an upright bowl.
+  This changes the initial distractor layout for `WhiteMugInCenterOfTableTask`;
+  results on the corrected scene are not directly comparable with earlier
+  runs. Use the original scene revision when replaying old recordings.
+
 ## [0.3.2] - 2026-10-18
 
 ### Added
