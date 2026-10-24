@@ -63,8 +63,8 @@ def compiled_colliders(builder_class=None, coacd_module=None, path=None, *,
     ContextVar scopes the substitution to the current importer thread.
     """
     if builder_class is None:
-        if importlib.metadata.version("newton") != "1.5.2":
-            raise RuntimeError("Re-audit compiled colliders before changing Newton 1.5.2")
+        if importlib.metadata.version("newton") not in ("1.5.2", "1.6.1"):
+            raise RuntimeError("Re-audit compiled colliders for this Newton version")
         from newton import ModelBuilder
         builder_class = ModelBuilder
     if coacd_module is None:

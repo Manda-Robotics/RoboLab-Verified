@@ -50,6 +50,22 @@ def _uses_xyzw_quaternions() -> bool:
 ISAACLAB_USES_XYZW = _uses_xyzw_quaternions()
 
 
+def env_ids_tensor(env_ids, num_envs: int, device) -> torch.Tensor:
+    """Normalize Lab 3 reset slices and legacy selectors for RoboLab callbacks.
+
+    Keep tensor selectors on device; slices must become indices only in our
+    callbacks that iterate, count or filter selected environments.
+    """
+    if env_ids is None:
+        env_ids = slice(None)
+    if isinstance(env_ids, slice):
+        start, stop, step = env_ids.indices(num_envs)
+        if step <= 0:
+            raise ValueError("Environment slices must have a positive step")
+        return torch.arange(start, max(start, stop), step, device=device, dtype=torch.long)
+    return torch.as_tensor(env_ids, device=device, dtype=torch.long)
+
+
 def as_torch(value: Any) -> torch.Tensor:
     """Return a tensor view for a tensor, ProxyArray, or Warp array."""
     if isinstance(value, torch.Tensor):

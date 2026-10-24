@@ -22,7 +22,10 @@ def test_launch_flags_survive_new_and_old_lab(monkeypatch, legacy):
             parser.add_argument("--enable_cameras", action="store_true")
         parser.add_argument("--device", default="cuda:0")
     app = ModuleType("isaaclab.app")
-    app.AppLauncher = SimpleNamespace(add_app_launcher_args=upstream)
+    if legacy:
+        app.AppLauncher = SimpleNamespace(add_app_launcher_args=upstream)
+    else:
+        app.add_launcher_args = upstream
     monkeypatch.setitem(sys.modules, "isaaclab.app", app)
     parser = argparse.ArgumentParser()
     module.add_app_launcher_args(parser)

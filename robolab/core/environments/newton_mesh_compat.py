@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Narrow mesh-compiler compatibility for Newton 1.5.2 / MuJoCo 3.11.
+"""Narrow mesh-compiler compatibility for the pinned EA and GA Newton / MuJoCo stacks.
 
 Keep native decomposition settings and solid collision geometry. The adapters
 are process-wide and must enclose one environment's initialization/lifetime.
@@ -173,9 +173,9 @@ def mesh_compatibility():
     global _active
     if _active:
         raise RuntimeError("Concurrent/nested Newton mesh compatibility contexts are unsupported")
-    for package, expected in (("newton", "1.5.2"), ("mujoco", "3.11.0")):
-        if importlib.metadata.version(package) != expected:
-            raise RuntimeError(f"Re-audit mesh compatibility before changing {package} {expected}")
+    versions = tuple(importlib.metadata.version(package) for package in ("newton", "mujoco"))
+    if versions not in (("1.5.2", "3.11.0"), ("1.6.1", "3.12.0")):
+        raise RuntimeError(f"Re-audit mesh compatibility for Newton/MuJoCo {versions}")
     import mujoco
     from newton import GeoType, ModelBuilder
 

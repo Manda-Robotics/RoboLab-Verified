@@ -2,9 +2,12 @@
 
 
 def add_app_launcher_args(parser):
-    from isaaclab.app import AppLauncher
+    import isaaclab.app as app
 
-    AppLauncher.add_app_launcher_args(parser)
+    add_args = getattr(app, "add_launcher_args", None)
+    if add_args is None:
+        add_args = app.AppLauncher.add_app_launcher_args
+    add_args(parser)
     destinations = {action.dest for action in parser._actions}
     # Lab release/3.0 removed these CLI flags in favor of --viz, but still
     # accepts the corresponding AppLauncher kwargs. Existing deploy scripts

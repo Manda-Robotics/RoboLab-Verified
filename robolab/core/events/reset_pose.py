@@ -14,6 +14,7 @@ import robolab.constants
 import robolab.core.utils.usd_utils as usd_utils
 from robolab.core.utils.isaaclab_compat import (
     as_torch,
+    env_ids_tensor,
     write_joint_state,
     write_nodal_state,
     write_root_pose,
@@ -176,6 +177,7 @@ def sample_pose_uniform(
     Returns:
         Tuple of (positions, orientations, velocities) tensors.
     """
+    env_ids = env_ids_tensor(env_ids, env.num_envs, env.device)
     # get default root state
     root_states = as_torch(asset.data.default_root_state)[env_ids].clone()
 
@@ -265,6 +267,7 @@ def reset_pose_uniform(
             the objects' bounding boxes.
         max_retries: Maximum number of resampling attempts when collision checking is enabled.
     """
+    env_ids = env_ids_tensor(env_ids, env.num_envs, env.device)
     asset_names = _parse_asset_cfg(asset_cfg)
     sampled_pose_assets = set(asset_names)
 

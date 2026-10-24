@@ -165,7 +165,7 @@ def physics_context(cfg, backend="physx", launcher_args=None):
     contact_timeconst = getattr(cfg, "newton_contact_timeconst", None)
     if native_mesh_import and (threshold is not None or contact_timeconst is not None):
         raise ValueError(
-            "The Isaac Sim 6.1 stack uses native authored mesh import. Remove the beta2 "
+            "The Isaac Lab 3.0 source stack uses native authored mesh import. Remove the beta2 "
             "decomposition/contact overrides; their Newton 1.2 shim is not compatible."
         )
     if contact_timeconst is not None:

@@ -1,4 +1,4 @@
-"""Scoped contact adapters for the pinned Newton 1.5.2 / MJWarp 3.11 stack.
+"""Scoped contact adapters for the pinned EA and GA Newton / MJWarp stacks.
 
 These adapters deliberately use private solver APIs. Keep the installer pinned;
 revalidate the kernel argument layout and both model arrays before upgrading.

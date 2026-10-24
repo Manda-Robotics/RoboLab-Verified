@@ -16,7 +16,7 @@ import torch
 from isaaclab.envs import ManagerBasedRLEnv
 
 from robolab.core.logging.recorder_manager import RobolabRecorderManager
-from robolab.core.utils.isaaclab_compat import prepare_env_cfg
+from robolab.core.utils.isaaclab_compat import env_ids_tensor, prepare_env_cfg
 from robolab.core.world.world_state import get_world
 
 logger = logging.getLogger(__name__)
@@ -89,6 +89,7 @@ class RobolabEnv(ManagerBasedRLEnv):
         3. Export its recording data
         4. Skip the actual reset (env holds its final state)
         """
+        env_ids = env_ids_tensor(env_ids, self.num_envs, self.device)
         if not self._has_stepped:
             # Initial reset — let all envs reset normally
             super()._reset_idx(env_ids)

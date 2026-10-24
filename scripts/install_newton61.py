@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install the pinned Isaac Lab 3.0 EA source stack into a RoboLab Python 3.12 venv.
+"""Install the pinned Isaac Lab 3.0 GA source stack into a RoboLab Python 3.12 venv.
 
 Run with the target venv's Python. Default is resolution only; --install applies
 the plan. --replace-isaacsim first uninstalls the old Sim wheels to save space.
@@ -16,8 +16,8 @@ import subprocess
 import sys
 import tomllib
 
-ISAACLAB_REF = "v3.0.0-EA"
-ISAACLAB_COMMIT = "ae37b028ea415c91ea2bc32609efcd759ed2b974"
+ISAACLAB_REF = "v3.0.0"
+ISAACLAB_COMMIT = "e3f7d9ff1f5d7f8280de3ece9000b7117f66bcf4"
 
 
 def run(*args, **kwargs):
@@ -44,11 +44,11 @@ def prepare_requirements(lab, robolab):
     # exact MuJoCo versions audited by our private solver adapters; upstream's
     # compatible-release ranges would otherwise admit unvalidated patch builds.
     replacements = {
-        "torch==2.11.0": "torch==2.11.0+cu128",
-        "torchaudio==2.11.0": "torchaudio==2.11.0+cu128",
-        "torchvision==0.26.0": "torchvision==0.26.0+cu128",
-        "mujoco~=3.11.0": "mujoco==3.11.0",
-        "mujoco-warp~=3.11.0": "mujoco-warp==3.11.0",
+        "torch==2.11.0": "torch==2.11.0+cu130",
+        "torchaudio==2.11.0": "torchaudio==2.11.0+cu130",
+        "torchvision==0.26.0": "torchvision==0.26.0+cu130",
+        "mujoco~=3.12.0": "mujoco==3.12.0",
+        "mujoco-warp~=3.12.0": "mujoco-warp==3.12.0",
     }
     overrides = [replacements.get(value, value) for value in overrides]
     return requirements, overrides
@@ -75,7 +75,7 @@ def check_usd_provider():
         metadata.version("usd-core")
     except metadata.PackageNotFoundError:
         return
-    raise ValueError("The target venv contains usd-core, but Isaac Lab EA uses usd-exchange. "
+    raise ValueError("The target venv contains usd-core, but Isaac Lab 3.0 uses usd-exchange. "
                      "Use a fresh Python 3.12 venv; do not mix these USD providers.")
 
 
@@ -108,7 +108,7 @@ def main():
     (record / "before.txt").write_text(run("uv", "pip", "freeze", "--python", sys.executable,
                                            capture_output=True).stdout)
     common = ["--python", sys.executable, "--index-strategy", "unsafe-best-match", "--prerelease", "allow",
-              "--index", "https://pypi.nvidia.com", "--index", "https://download.pytorch.org/whl/cu128",
+              "--index", "https://pypi.nvidia.com", "--index", "https://download.pytorch.org/whl/cu130",
               "--override", str(record / "overrides.txt")]
     run("uv", "pip", "compile", *common, str(record / "requirements.in"),
         "--output-file", str(record / "resolved.txt"))

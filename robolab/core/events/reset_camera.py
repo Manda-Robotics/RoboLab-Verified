@@ -10,7 +10,7 @@ from isaaclab.utils import configclass
 
 import robolab.constants
 from robolab.core.sensors.camera_utils import is_camera
-from robolab.core.utils.isaaclab_compat import as_torch, quat_wxyz_to_isaaclab
+from robolab.core.utils.isaaclab_compat import as_torch, env_ids_tensor, quat_wxyz_to_isaaclab
 
 
 ########################################################
@@ -105,6 +105,7 @@ def sample_camera_pose_uniform(
             - orientations: Shape (num_envs, 4) in the installed Isaac Lab's
               internal convention; this value is passed directly to the camera setter.
     """
+    env_ids = env_ids_tensor(env_ids, env.num_envs, env.device)
     num_envs = len(env_ids)
     device = camera.device
 
@@ -159,6 +160,7 @@ def reset_camera_pose_uniform(
                      "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.1, 0.1)}
         camera_names: The camera name(s) to randomize. Must match names in env.scene.sensors.
     """
+    env_ids = env_ids_tensor(env_ids, env.num_envs, env.device)
     names = _parse_camera_names(camera_names)
 
     for camera_name in names:
@@ -204,6 +206,7 @@ def reset_camera_pose_to_default(
         env_ids: The environment indices to reset.
         camera_names: The camera name(s) to reset. Must match names in env.scene.sensors.
     """
+    env_ids = env_ids_tensor(env_ids, env.num_envs, env.device)
     names = _parse_camera_names(camera_names)
 
     for camera_name in names:
@@ -243,6 +246,7 @@ def reset_camera_pose_absolute(
         position: The target position as (x, y, z). If None, position is unchanged.
         orientation: The target orientation as quaternion (w, x, y, z). If None, orientation is unchanged.
     """
+    env_ids = env_ids_tensor(env_ids, env.num_envs, env.device)
     names = _parse_camera_names(camera_names)
 
     for camera_name in names:

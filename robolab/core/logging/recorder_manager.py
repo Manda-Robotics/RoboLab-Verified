@@ -225,6 +225,8 @@ class RobolabRecorderManager(RecorderManager):
         """
         if env_ids is None:
             env_ids = list(range(self._env.num_envs))
+        if isinstance(env_ids, slice):
+            env_ids = list(range(self._env.num_envs)[env_ids])
         if isinstance(env_ids, torch.Tensor):
             env_ids = env_ids.tolist()
 
@@ -250,6 +252,8 @@ class RobolabRecorderManager(RecorderManager):
         if env_ids is None:
             env_ids = list(range(self._env.num_envs))
 
+        if isinstance(env_ids, slice):
+            env_ids = list(range(self._env.num_envs)[env_ids])
         if isinstance(env_ids, torch.Tensor):
             env_ids = env_ids.tolist()
 
@@ -355,6 +359,8 @@ class RobolabRecorderManager(RecorderManager):
 
         if env_ids is None:
             env_ids = list(range(self._env.num_envs))
+        if isinstance(env_ids, slice):
+            env_ids = list(range(self._env.num_envs)[env_ids])
         if isinstance(env_ids, torch.Tensor):
             env_ids = env_ids.tolist()
 
@@ -388,6 +394,8 @@ class RobolabRecorderManager(RecorderManager):
 
         if env_ids is None:
             env_ids = list(range(self._env.num_envs))
+        if isinstance(env_ids, slice):
+            env_ids = list(range(self._env.num_envs)[env_ids])
         if isinstance(env_ids, torch.Tensor):
             env_ids = env_ids.tolist()
 
@@ -418,6 +426,8 @@ class RobolabRecorderManager(RecorderManager):
 
         if env_ids is None:
             env_ids = list(range(self._env.num_envs))
+        if isinstance(env_ids, slice):
+            env_ids = list(range(self._env.num_envs)[env_ids])
         if isinstance(env_ids, torch.Tensor):
             env_ids = env_ids.tolist()
 
@@ -497,6 +507,8 @@ class RobolabRecorderManager(RecorderManager):
 
         if env_ids is None:
             env_ids = list(range(self._env.num_envs))
+        if isinstance(env_ids, slice):
+            env_ids = list(range(self._env.num_envs)[env_ids])
         if isinstance(env_ids, torch.Tensor):
             env_ids = env_ids.tolist()
 
@@ -605,6 +617,8 @@ class RobolabRecorderManager(RecorderManager):
         if env_ids is None:
             env_ids = list(range(self._env.num_envs))
 
+        if isinstance(env_ids, slice):
+            env_ids = list(range(self._env.num_envs)[env_ids])
         if isinstance(env_ids, torch.Tensor):
             env_ids = env_ids.tolist()
 

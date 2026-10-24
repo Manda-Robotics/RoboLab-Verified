@@ -86,3 +86,37 @@ def test_unknown_narrowphase_layout_fails_closed():
         ('ncollision_in', 'collision_pair_in', 'naconmax_in')]))
     with pytest.raises(RuntimeError, match='Unsupported candidate narrowphase'):
         C.candidate_launch_dimensions(kernel, {'dim':4,'inputs':[Array(1),Array(8),4]})
+
+
+@pytest.mark.parametrize("count", [5, 8, 9])
+def test_ccd_batches_cover_tail_pairs_and_preserve_output_budget(count):
+    """MJWarp 3.12 clamps CCD candidates to naconmax; every tail pair must run."""
+    labels = ["ncollision_in", "collision_pair_in", "collision_pairid_in",
+              "collision_worldid_in", "naconmax_in", "grid_stride_in"]
+    kernel = NS(key="ccd_kernel", adj=NS(args=[NS(label=x) for x in labels]))
+    class DeviceArray(Array):
+        def fill_(self, value):
+            self.value.fill(value)
+        def __getitem__(self, key):
+            result = DeviceArray(len(self.value[key]))
+            result.value = self.value[key]
+            return result
+    counter = DeviceArray(1); counter.fill_(count)
+    arrays = [DeviceArray(16) for _ in range(3)]
+    for i, arr in enumerate(arrays):
+        arr.value[:] = 100 * i + np.arange(16)
+    output = object()
+    calls = []
+    def launch(kernel, **kwargs):
+        inputs = kwargs["inputs"]
+        n = int(inputs[0].numpy()[0])
+        assert n <= inputs[4] == 4
+        assert kwargs["outputs"] == [output] and inputs[5] == 2
+        calls.append([a.numpy()[:n].copy() for a in inputs[1:4]])
+    driver = NS(nxn_broadphase=lambda *a: None, sap_broadphase=lambda *a: None)
+    wp = NS(empty=DeviceArray, launch=launch)
+    with C.candidate_storage(wp, driver):
+        wp.launch(kernel, dim=2, inputs=[counter, *arrays, 4, 2], outputs=[output])
+    for i, arr in enumerate(arrays):
+        np.testing.assert_array_equal(np.concatenate([c[i] for c in calls]), arr.numpy()[:count])
+    assert counter.numpy()[0] == count and wp.launch is launch

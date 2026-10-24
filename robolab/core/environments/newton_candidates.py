@@ -100,6 +100,39 @@ def candidate_storage(wp, driver=None, max_multiplier=8):
     def launch(kernel, *args, **kwargs):
         if getattr(kernel, "adj", None) is not None:
             kwargs = candidate_launch_dimensions(kernel, kwargs)
+            labels = [arg.label for arg in kernel.adj.args] if "ccd_kernel" in kernel.key else []
+            inputs = kwargs.get("inputs", [])
+            values = dict(zip(labels, inputs))
+            if ("grid_stride_in" in values
+                    and values["collision_pair_in"].shape[0] > values["naconmax_in"]):
+                # MJWarp 3.12 bounds the CCD loop by min(ncollision, naconmax).
+                # Enlarging only candidate storage would silently skip later
+                # pairs. Process bounded views into that storage instead. Keep
+                # the original contact output budget, counter, CCD scratch and
+                # overflow checks across launches; never enlarge naconmax.
+                limit = values["naconmax_in"]
+                count = int(values["ncollision_in"].numpy()[0])
+                capacity = values["collision_pair_in"].shape[0]
+                if count < 0 or count > capacity:
+                    raise RuntimeError(f"CCD candidate overflow: {count} > {capacity}")
+                if count > limit:
+                    if limit <= 0:
+                        raise RuntimeError("CCD requires positive contact capacity")
+                    names = ("collision_pair_in", "collision_pairid_in", "collision_worldid_in")
+                    if not all(name in values and values[name].shape[0] >= count for name in names):
+                        raise RuntimeError("Unsupported CCD candidate array layout")
+                    counter = values["ncollision_in"]
+                    batch_counter = wp.empty(1, dtype=counter.dtype, device=counter.device)
+                    result = None
+                    for start in range(0, count, limit):
+                        end = min(start + limit, count)
+                        batch_counter.fill_(end - start)
+                        batch = list(inputs)
+                        batch[labels.index("ncollision_in")] = batch_counter
+                        for name in names:
+                            batch[labels.index(name)] = values[name][start:end]
+                        result = original_launch(kernel, *args, **{**kwargs, "inputs": batch})
+                    return result
         return original_launch(kernel, *args, **kwargs)
 
     try:

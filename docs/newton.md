@@ -1,5 +1,9 @@
 # Experimental Newton backend
 
+For the official Isaac Lab 3.0 GA / Isaac Sim 6.2 installation and current local
+validation, see [New VAST instance](#new-vast-instance) below. Earlier experiment
+sections retain the versions and results tested at the time.
+
 For this merged RoboLab-Verified branch, see the [integration status and GPU
 validation gates](verified/newton.md). The experiments below were reported by
 the source RoboLab Newton branch; they do not validate the merged Verified build.
@@ -9,7 +13,7 @@ The `newton` branch starts at main commit `82725b5`. Select Newton with
 supports DROID tasks and retains Isaac RTX cameras. PhysX remains the default.
 Other robot assets fail with an explicit unsupported-robot error.
 
-Current 6.1 status: the collision crash was isolated to candidate-buffer
+Earlier 6.1 validation: the collision crash was isolated to candidate-buffer
 overflow. Guarded diagnostic runs with larger buffers complete, and a centered
 scripted bottle grasp/lift/release passes with simplified fingertip pads and
 robot gravity compensation. The tested pad/contact/capacity settings are now
@@ -165,56 +169,147 @@ policy success rates. Revalidate the private APIs before upgrading Newton.
 
 ## New VAST instance
 
-The current experimental target is **Isaac Sim 6.1.0.0 + Isaac Lab
-[v3.0.0-EA](https://github.com/isaac-sim/IsaacLab/releases/tag/v3.0.0-EA),
-commit `ae37b028ea415c91ea2bc32609efcd759ed2b974`**. The installer clones this
-release tag and verifies its SHA, rather than following `release/3.0.0`.
-It retains Newton 1.5.2, MuJoCo/MuJoCo-Warp 3.11.0 and Warp 1.16.0.
-MuJoCo patch versions are pinned exactly because RoboLab's contact adapters
-use private APIs audited against those versions.
+The current source target is **Isaac Sim 6.2.0.0 + Isaac Lab
+[v3.0.0 GA](https://github.com/isaac-sim/IsaacLab/releases/tag/v3.0.0),
+commit `e3f7d9ff1f5d7f8280de3ece9000b7117f66bcf4`**. The installer clones the
+release tag and verifies this immutable SHA. It pins Newton **1.6.1**,
+MuJoCo/MuJoCo-Warp **3.12.0**, Warp **1.17.0**, and PyTorch **2.11.0+cu130**
+(torchvision **0.26.0+cu130**, CUDA **13.0**). MuJoCo patch versions stay exact
+because our contact adapters use private APIs.
 
-The source workspace has separately versioned packages (`isaaclab==17.0.2`
-for this tag); use the release tag and git SHA to identify the Lab release.
-The [EA migration record](verified/isaaclab-ea-2026-10-18.md) separates local
-checks from the [October 19 EA GPU validation](verified/isaaclab-ea-2026-10-18.md#gpu-follow-up-2026-10-19). Earlier GPU results in this guide used
-`4ed09d414e93f35b8573db8850f8b27572779176` and are not EA runtime validation.
+The source workspace packages have independent version numbers (`isaaclab==28.0.0`
+for this tag). Use the release tag and SHA to identify the Lab release. The
+GA stack passed the CUDA, simulator integration, rendered smoke and recording
+checks below on 2026-10-24. Fresh-policy evaluation, a loaded bagel release and
+full benchmark coverage remain unvalidated on GA. Earlier EA/6.1 results in this
+guide are historical evidence, not GA validation.
 
-On an x86_64 Linux GPU server, use a fresh Python 3.12 environment and a new Lab
-checkout so the previous environment remains available for comparison:
+On an x86_64 Linux GPU server with a CUDA-13-compatible NVIDIA driver, use a
+fresh Python 3.12 environment and a new Lab checkout:
 
 ```bash
-uv venv --python 3.12 .venv-ea
-.venv-ea/bin/python scripts/install_newton61.py \
-  --isaaclab-root /workspace/repos/IsaacLab-v3.0.0-EA --install
+uv venv --python 3.12 .venv-ga
+.venv-ga/bin/python scripts/install_newton61.py \
+  --isaaclab-root /workspace/repos/IsaacLab-v3.0.0 --install
 export OMNI_KIT_ACCEPT_EULA=Y
-.venv-ea/bin/python examples/run_newton_smoke.py \
+.venv-ga/bin/python examples/run_newton_smoke.py \
   --headless --physics newton_mjwarp --num-envs 2 --steps 60 \
-  --output output/newton_ea_smoke
+  --output output/newton_ga_smoke
 ```
 
-An existing Lab checkout must be clean and already at the pinned SHA; the
-installer will not rewrite it. The installer reads the EA workspace dependencies
-and overrides, resolves them together with RoboLab, then installs the resulting
-plan. This prevents Isaac Sim's older Newton metadata from downgrading the solver.
-Each invocation saves its inputs, resolved requirements, release tag, git SHA,
-and before/after package lists in a git-ignored `newton61-install-*` directory.
+The installer retains its historical filename `install_newton61.py` for existing
+scripts, but now selects GA/6.2. An existing Lab checkout must be clean and at
+the pinned SHA; the installer never rewrites it. It reads the release workspace
+requirements and overrides, resolves them with RoboLab, and installs that plan.
+Each invocation saves inputs, resolved requirements, tag, SHA and before/after
+package lists in a git-ignored `newton61-install-*` directory.
 
-The EA environment uses `usd-exchange`, which already supplies `pxr`. Do not add
-RoboLab's offline `[test]` extra or `usd-core` there: they install a second USD
+GA uses `usd-exchange` 3.0.1, which supplies `pxr`. Do not install RoboLab's offline
+`[test]` extra or `usd-core` into the simulator venv: these install a second USD
 provider over the same files. The installer includes `pytest` separately and
-rejects an install into a venv containing `usd-core`. The standalone macOS/CPU
-test environment can still use `[test]` with `usd-core`.
+rejects venvs containing `usd-core`. The separate macOS/CPU test venv can still
+use `usd-core`.
 
-Omit `--install` to resolve only. `--replace-isaacsim` remains available for an
-existing compatible venv: it uninstalls old Sim packages only after resolution.
-For this migration, a separate EA venv is preferred. Assets, recordings and
-separate policy-server environments are not modified by the installer.
-Do not run `uv sync --extra isaac60` afterward: it reinstalls the older beta2
-stack. Run commands with `.venv-ea/bin/python`, or activate `.venv-ea` and use
-`python`, to avoid an implicit re-sync. The `isaac60` extra is retained only for
-legacy experiments; it does not select EA.
+Omit `--install` to resolve only. `--replace-isaacsim` remains available for a
+compatible venv and removes old Sim packages only after resolution. A separate
+GA venv is preferred; assets, recordings and policy-server environments are not
+modified. Do not run `uv sync --extra isaac60` afterward: that extra is retained
+for beta2 experiments. Run `.venv-ga/bin/python` directly to avoid an implicit
+re-sync.
 
-On 6.1, omit the old `--newton-convex-decomposition-threshold` and
+### EA to GA compatibility
+
+Local validation on 2026-10-24: the complete Linux/Python-3.12 installation
+resolves (304 packages); 157 Newton CPU checks and 358 offline checks pass.
+Four CUDA-only checks are skipped on macOS. Probes against the actual GA source
+also match upstream RGB/depth results and exercise partial pose/camera resets and
+solver configuration. Full RoboLab environment imports require Kit (`omni`),
+which is unavailable on this Mac.
+
+GPU validation on 2026-10-24 used an RTX PRO 4000 Blackwell (24 GB), driver
+595.58.03 and Python 3.12.12 with the exact GA stack above. PyTorch reports CUDA
+13.0 and a working CUDA device. Results:
+
+| Check | Result |
+| --- | --- |
+| Newton suite | 161 passed, zero skipped, including all four formerly skipped CUDA checks |
+| Simulator integration suite | 241 passed, zero skipped |
+| Cube/banana Newton smoke | Two environments, 60 steps; finite state, support contacts, contact-query parity and three RGB cameras passed |
+| Shelf Newton smoke | One environment, 60 steps; finite state, support contacts and three RGB cameras passed |
+| Bagel recorded-action diagnostic | 345 steps / 23 seconds; source actions, finite data, HDF5/JSON agreement, native contacts and both 345-frame videos passed |
+| Newton reset/recording integration | Slice, device-tensor and all-environment object/camera resets; two batches of two environments with staggered termination, finite data and JSON/HDF5 parity passed |
+
+The initial Newton suite had three asset-check failures because it started before
+LFS hydration completed (158 passed). After verifying all 2,275 asset files, only
+those three checks were rerun; all passed. The four CUDA checks cover sphere and
+box candidate-growth parity, MULTICCD flat-mesh settling, and deferred CPU staging
+without changing the GPU trajectory.
+
+A final live Newton check exercises the GA reset selectors and two successive
+evaluation batches. Synthetic timeouts stop the two environments after 4 and 8
+steps respectively. All four recordings contain exactly those actions/states,
+retain failure labels, and receive no extra frames from later frozen steps;
+owned RGB observation buffers also remain unchanged across simulation steps.
+The first diagnostic attempt compared world-space positions with recorded
+relative positions and stopped at its audit; correcting that test comparison
+required no runtime change. These are lifecycle checks, not policy episodes.
+
+The initial rendered smoke exposed a crash in the timed `faulthandler` watchdog:
+a native debugger located it in `PyUnstable_InterpreterFrame_GetLine` while the
+watchdog walked Python frames. The smoke example now retains fatal-error
+reporting but omits the periodic all-thread stack walk; wall-clock limits are
+external. The repaired cube and shelf runs completed. No contact laws or solver
+settings were changed for this repair.
+
+The shelf scene took 60 seconds to construct, including 5.4 seconds finalizing
+the Newton model. Peak process RSS was 10.6 GiB and sampled GPU memory was 4.0 GiB;
+the complete cold/warm-mixed rendered smoke took 232 seconds. These are single-run
+measurements, not throughput benchmarks.
+
+The bagel diagnostic retains the production clean colliders, friction 5,
+elliptic cone, 120 Hz simulation and four substeps. Both sets of 64 authored
+convex hulls survive compilation within 0.000085 mm vertex round-trip error;
+mass, COM and inertia match the earlier EA clean assets. Sampled native
+finger/bagel overlap peaked at 0.60 mm and contact ended at 16 seconds, without
+contact or constraint overflow. Sampled overview and wrist frames show the
+bagel being pushed and tilted, then left on the table as the empty gripper rises.
+This matches the earlier friction-5 trials: **it does not exercise release from
+a held grasp**. The replay is unscored, reuses recorded actions with diagnostic
+termination suppression, and is neither a fresh policy episode nor a claim of
+deterministic replay. It establishes runtime/recording compatibility, not task
+success or towing elimination. Fresh-policy and full-task GA coverage remain
+outstanding.
+
+Raw logs, failed attempts, debugger output, recordings, geometry checks and
+manual review are retained outside the repository in the workspace artifact
+`output/isaaclab-ga-gpu-20261024`; they are not required runtime files.
+
+The migration follows the release's **Upgrading from Isaac Lab 3.0 Early Access
+to 3.0 GA** checklist. RoboLab keeps single-frame NHWC RGB observations (uint8
+for policies), metric depth and WXYZ recordings. The camera adapter replaces the
+removed generic image term and owns its returned buffers. Custom reset and
+recorder callbacks accept slices as well as device tensors, including partial
+resets and frozen episodes. Argument registration prefers `add_launcher_args`;
+the Newton environment lifetime already uses `launch_simulation`. Legacy
+AppLauncher calls only bootstrap the Kit services RoboLab still requires.
+
+RoboLab authors its own combined property configs, whose deprecated aliases are
+still supported in GA; it does not mutate the new upstream fragment lists.
+Its task registry does not use the removed Hydra decorators. No custom in-place
+noise, SB3 action wrappers, TorchScript loader, legacy visualizer fields or Gym
+RecordVideo path require migration. Robot joint selections already retain their
+selected dimension. These source checks do not replace GPU integration tests.
+
+Newton 1.6.1 no longer builds explicit same-body filter pairs in `add_shape`, so
+that EA workaround is bypassed. The remaining native-contact storage and compiled
+shelf/keyboard adapters retain exact version guards and parity checks. MJWarp
+3.12 bounds convex CCD candidate iteration by the contact-buffer capacity: our
+candidate-growth adapter now launches bounded slices of the candidate arrays,
+covering every pair while retaining the original output budget and overflow
+checks. Contact coefficients, assets, timing, and the clean-bagel elliptic/5
+preset are unchanged by the migration.
+
+On the GA source stack, omit the old `--newton-convex-decomposition-threshold` and
 `--newton-contact-timeconst` options (smoke equivalents: `--decomposition-threshold`
 and `--contact-timeconst`). Lab now honors authored approximations natively;
 the beta2-only monkeypatch remains available for old environments but is
@@ -226,7 +321,7 @@ The compatibility layer retains RoboLab's `--headless` / `--enable_cameras`
 flags even though upstream no longer registers them. It also maps RTX mode
 settings from the former `sim.render` field to each camera renderer's
 `global_settings`, preserving other authored camera properties. The removed
-`--rendering-type performance/balanced/quality` presets are rejected on 6.1
+`--rendering-type performance/balanced/quality` presets are rejected on the source stack
 rather than silently ignored; omit that option for the native renderer defaults.
 
 The results below describe the **earlier 6.0/beta2 experiments**, unless a section

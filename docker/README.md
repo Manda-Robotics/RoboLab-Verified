@@ -1,7 +1,7 @@
 # Docker
 
 This recipe retains the legacy Isaac Sim 6.0 / Isaac Lab beta2 image. For the
-current pinned Isaac Lab 3.0 EA source environment, use the
+current pinned Isaac Lab 3.0 GA source environment, use the
 [source installer](../docs/newton.md#new-vast-instance). An EA container build
 has not yet been validated.
 

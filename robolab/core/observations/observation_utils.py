@@ -15,21 +15,15 @@ from isaaclab.utils import configclass
 from robolab.core.utils.isaaclab_compat import as_torch, quat_isaaclab_to_wxyz
 
 
-def _image_observation_func():
-    """Resolve the IsaacLab image observation function across versions.
+def _legacy_image_observation_func():
+    """The generic image term exists in Lab 2.x and EA, but was removed in GA."""
+    return getattr(mdp, "image", None) or getattr(getattr(mdp, "observations", None), "image", None)
 
-    IsaacLab 2.2 (IsaacSim 5.0) exposes it as ``mdp.observations.image``;
-    IsaacLab 2.3 (IsaacSim 5.1) also exposes it directly as ``mdp.image``.
-    Prefer the direct attribute, then fall back to the nested module.
-    """
-    image_func = getattr(mdp, "image", None)
-    if image_func is not None:
-        return image_func
-    observations = getattr(mdp, "observations", None)
-    image_func = getattr(observations, "image", None) if observations is not None else None
-    if image_func is None:
-        raise AttributeError("IsaacLab image observation function not found")
-    return image_func
+
+def _image_observation_func():
+    # Keep legacy behavior and expose a function (not GA's stateful term class)
+    # with the same call signature to both generated and static observations.
+    return _legacy_image_observation_func() or image_safe
 
 
 def image_safe(
@@ -53,9 +47,24 @@ def image_safe(
             device=env.device,
             dtype=dtype,
         )
-    return _image_observation_func()(
-        env, sensor_cfg=sensor_cfg, data_type=data_type, normalize=normalize
-    )
+    legacy = _legacy_image_observation_func()
+    if legacy is not None:
+        return legacy(env, sensor_cfg=sensor_cfg, data_type=data_type, normalize=normalize)
+
+    # Lab 3.0 exposes image_rgb/image_depth as manager-owned classes. RoboLab
+    # uses single NHWC frames; preserve its RGB centering and metric depth
+    # without constructing a stateful term on every observation query. Return
+    # owned storage because the observation manager no longer clones for noise.
+    images = as_torch(sensor.data.output[data_type])
+    if data_type == "rgb":
+        images = images[..., :3]
+        if normalize:
+            images = images.float() / 255.0
+            return images - images.mean(dim=(1, 2), keepdim=True)
+        return images.clone()
+    if data_type in ("depth", "distance_to_image_plane", "distance_to_camera"):
+        return torch.nan_to_num(images, nan=0.0, posinf=0.0, neginf=0.0) if normalize else images.clone()
+    raise ValueError(f"Unsupported RoboLab camera data type: {data_type}")
 
 
 def camera_pos(env: Any, sensor_cfg: SceneEntityCfg) -> torch.Tensor:

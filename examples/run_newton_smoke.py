@@ -14,6 +14,10 @@ from isaaclab.app import AppLauncher
 
 
 def main():
+    # Timed all-thread stack walks can crash CPython 3.12's frame walker on
+    # the GA stack (PyUnstable_InterpreterFrame_GetLine). Keep fatal reporting;
+    # enforce wall-clock limits externally instead of starting a watchdog thread.
+    faulthandler.enable()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--physics", choices=["physx", "newton_mjwarp"], default="newton_mjwarp")
     parser.add_argument("--task", default="RubiksCubeThenBananaTask")
@@ -46,9 +50,7 @@ def main():
         parser.error("Use a fresh output directory; a previous pass marker must not survive a failed rerun")
     args.enable_cameras = True
     print("ROBOLAB_SMOKE_LAUNCH_BEGIN", flush=True)
-    faulthandler.dump_traceback_later(60, repeat=True)
     launcher = AppLauncher(args)
-    faulthandler.cancel_dump_traceback_later()
     print("ROBOLAB_SMOKE_LAUNCH_DONE", flush=True)
 
     import torch
@@ -97,7 +99,6 @@ def main():
                 "Requested contact response did not reach the compiled scene model")
             print("ROBOLAB_COMPILED_CONTACT_TIMECONSTS=" + json.dumps(sorted(set(imported_times))), flush=True)
         print("ROBOLAB_SMOKE_RESET_BEGIN", flush=True)
-        faulthandler.dump_traceback_later(60, repeat=True)
         env.reset()
         print("ROBOLAB_SMOKE_RESET_DONE", flush=True)
         if args.drop_object:
@@ -184,7 +185,6 @@ def main():
                 print(f"ROBOLAB_SMOKE_STEP={step + 1}", flush=True)
                 report_state(step + 1)
                 geometric_contacts(step + 1)
-        faulthandler.cancel_dump_traceback_later()
         cameras = get_cameras(env.scene)
         assert len(cameras) == 3, list(cameras)
         for name, camera in cameras.items():

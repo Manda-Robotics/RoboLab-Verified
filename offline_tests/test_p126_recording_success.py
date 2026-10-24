@@ -85,3 +85,13 @@ def test_no_active_episodes_does_not_record():
     rec.record_pre_reset(None)
     assert rec.recorded == {}
     assert not hasattr(rec, "upstream_ids")
+
+
+@pytest.mark.parametrize("ids,expected", [(slice(None), [0, 2]), (slice(1, 3), [2])])
+def test_ga_slice_reset_preserves_success_and_frozen_episodes(ids, expected):
+    rec = _recorder([True, True, False], [True, True, True], active=[0, 2])
+    rec.recorded[1] = True
+    rec.record_pre_reset(ids)
+    assert rec.upstream_ids == expected
+    assert rec.recorded[1] is True
+    assert rec.recorded[2] is False

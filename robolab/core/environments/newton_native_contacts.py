@@ -52,8 +52,12 @@ def native_contact_storage():
     global _active
     if _active:
         raise RuntimeError("Concurrent/nested native contact storage contexts are unsupported")
-    if importlib.metadata.version("newton") != "1.5.2":
-        raise RuntimeError("Re-audit native contact storage before changing Newton 1.5.2")
+    version = importlib.metadata.version("newton")
+    if version not in ("1.5.2", "1.6.1"):
+        raise RuntimeError("Re-audit native contact storage for this Newton version")
+    # 1.6.1 filters same-body pairs in broadphase and no longer
+    # materializes them in add_shape. Only EA needs the lazy filter adapter.
+    legacy_same_body_filters = version == "1.5.2"
     from newton import CollisionPipeline, ModelBuilder
     from newton.solvers import SolverMuJoCo
 
@@ -116,11 +120,13 @@ def native_contact_storage():
 
     _active = True
     try:
-        ModelBuilder.add_shape = add_shape
+        if legacy_same_body_filters:
+            ModelBuilder.add_shape = add_shape
         ModelBuilder._find_shape_contact_pairs = find_pairs
         SolverMuJoCo.__init__ = initialize_solver
-        SolverMuJoCo._compile_newton_collision_masks = staticmethod(compile_masks)
-        SolverMuJoCo._color_collision_shapes = staticmethod(color_shapes)
+        if legacy_same_body_filters:
+            SolverMuJoCo._compile_newton_collision_masks = staticmethod(compile_masks)
+            SolverMuJoCo._color_collision_shapes = staticmethod(color_shapes)
         CollisionPipeline.__init__ = initialize_pipeline
         yield
     finally:
