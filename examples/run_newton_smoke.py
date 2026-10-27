@@ -1,4 +1,7 @@
-"""DROID Newton/RTX smoke test without a policy server. Run on a CUDA host."""
+"""DROID Newton/RTX smoke test without a policy server. Run on a CUDA host.
+
+--renderer ovrtx runs Kit-less: no AppLauncher, OVRTX cameras, Newton physics.
+"""
 
 import argparse
 import faulthandler
@@ -20,6 +23,8 @@ def main():
     faulthandler.enable()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--physics", choices=["physx", "newton_mjwarp"], default="newton_mjwarp")
+    parser.add_argument("--renderer", choices=["isaacrtx", "ovrtx"], default="isaacrtx",
+                        help="Camera renderer; ovrtx needs a Kit-less install (--renderer-runtime ovrtx)")
     parser.add_argument("--task", default="RubiksCubeThenBananaTask")
     parser.add_argument("--steps", type=int, default=60)
     parser.add_argument("--num-envs", type=int, default=2)
@@ -42,6 +47,8 @@ def main():
             or args.max_object_displacement <= 0
             or not math.isfinite(args.max_initial_object_radius) or args.max_initial_object_radius <= 0):
         parser.error("--steps, --num-envs and --max-object-displacement must be positive")
+    if args.renderer == "ovrtx" and args.physics != "newton_mjwarp":
+        parser.error("--renderer ovrtx requires --physics newton_mjwarp")
     if bool(args.drop_object) != bool(args.into_object):
         parser.error("Use --drop-object and --into-object together")
     if args.contact_timeconst is not None and (not math.isfinite(args.contact_timeconst) or args.contact_timeconst <= 0):
@@ -49,9 +56,12 @@ def main():
     if Path(args.output).exists() and any(Path(args.output).iterdir()):
         parser.error("Use a fresh output directory; a previous pass marker must not survive a failed rerun")
     args.enable_cameras = True
-    print("ROBOLAB_SMOKE_LAUNCH_BEGIN", flush=True)
-    launcher = AppLauncher(args)
-    print("ROBOLAB_SMOKE_LAUNCH_DONE", flush=True)
+    # Kit-less: managed_env's launch_simulation starts the runtime the cfg needs.
+    launcher = None
+    if args.renderer == "isaacrtx":
+        print("ROBOLAB_SMOKE_LAUNCH_BEGIN", flush=True)
+        launcher = AppLauncher(args)
+        print("ROBOLAB_SMOKE_LAUNCH_DONE", flush=True)
 
     import torch
     from robolab.constants import set_output_dir
@@ -88,7 +98,14 @@ def main():
     set_output_dir(args.output)
     auto_register_droid_envs(task=[args.task])
     task = get_envs(task=args.task)[0]
-    with managed_env(task, physics=args.physics, launcher_args=args,
+    scene = task
+    if args.renderer == "ovrtx":
+        from robolab.core.environments.camera_renderer import configure_camera_renderer
+        from robolab.core.environments.config import parse_env_cfg
+        scene = configure_camera_renderer(
+            parse_env_cfg(task, device=args.device, num_envs=args.num_envs, seed=0),
+            args.renderer, log_dir=args.output)
+    with managed_env(scene, physics=args.physics, launcher_args=args,
                      device=args.device, num_envs=args.num_envs, seed=0) as (env, cfg):
         if args.contact_timeconst is not None:
             import xml.etree.ElementTree as ET
@@ -211,7 +228,10 @@ def main():
         if args.drop_object:
             assert world.in_contact(args.drop_object, args.into_object, env_id=None).all(), (
                 "Dropped object did not retain destination contact; inspect geometry and the diagnostic")
-        result = {"physics": args.physics, "task": task, "steps": args.steps,
+        kit_loaded = "omni.kit.app" in sys.modules
+        assert args.renderer == "isaacrtx" or not kit_loaded, "Kit was loaded in a Kit-less run"
+        result = {"physics": args.physics, "renderer": args.renderer, "kit_loaded": kit_loaded,
+                  "task": task, "steps": args.steps,
                   "num_envs": args.num_envs, "contacts": contacts, "cameras": list(cameras),
                   "newton_contacts": args.newton_contacts,
                   "decomposition_threshold": args.decomposition_threshold,
@@ -224,7 +244,8 @@ def main():
         Path(args.output, "smoke_result.json").write_text(json.dumps(result, indent=2) + "\n")
         print("ROBOLAB_SMOKE_PASS=" + json.dumps(result), flush=True)
     # Kit close can exit(0); only close after every assertion and export passed.
-    launcher.app.close()
+    if launcher is not None:
+        launcher.app.close()
 
 
 if __name__ == "__main__":
