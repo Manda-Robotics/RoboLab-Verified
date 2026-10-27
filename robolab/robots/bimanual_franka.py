@@ -43,11 +43,11 @@ from isaaclab.utils.math import subtract_frame_transforms
 
 from robolab.constants import ASSET_DIR, ROBOTS_DIR
 from robolab.core.environments.scene_fixture import TableFixtureCfg
+from robolab.core.utils.isaaclab_compat import as_torch, quat_isaaclab_to_wxyz
 from robolab.robots.droid import (
     EEF_OFFSET_POS,
     EEF_OFFSET_ROT,
     BinaryJointPositionZeroToOneActionCfg,
-    _to_torch,
 )
 
 ARMS = ("left_arm", "right_arm")
@@ -229,26 +229,27 @@ contact_gripper = {
 def _arm_joint_pos(env: ManagerBasedRLEnv, arm: str, asset_name: str = "robot"):
     robot = env.scene[asset_name]
     indices = [robot.data.joint_names.index(name) for name in ARM_JOINT_NAMES[arm]]
-    return _to_torch(robot.data.joint_pos)[:, indices]
+    return as_torch(robot.data.joint_pos)[:, indices]
 
 
 def _gripper_pos(env: ManagerBasedRLEnv, arm: str, asset_name: str = "robot"):
     """0 = open, 1 = closed, like DROID's ``gripper_pos``."""
     robot = env.scene[asset_name]
     index = robot.data.joint_names.index(GRIPPER_JOINT_NAME[arm])
-    return _to_torch(robot.data.joint_pos)[:, index : index + 1] / GRIPPER_CLOSED_RAD
+    return as_torch(robot.data.joint_pos)[:, index : index + 1] / GRIPPER_CLOSED_RAD
 
 
 def _ee_pose(env: ManagerBasedRLEnv, arm: str, asset_name: str = "robot"):
     """Gripper base pose in the robot-root frame (docs/frames.md)."""
     robot = env.scene[asset_name]
     body_idx = robot.data.body_names.index(EE_BODY_NAME[arm])
-    return subtract_frame_transforms(
-        _to_torch(robot.data.root_pos_w),
-        _to_torch(robot.data.root_quat_w),
-        _to_torch(robot.data.body_pos_w)[:, body_idx, :],
-        _to_torch(robot.data.body_quat_w)[:, body_idx, :],
+    pos, quat = subtract_frame_transforms(
+        as_torch(robot.data.root_pos_w),
+        as_torch(robot.data.root_quat_w),
+        as_torch(robot.data.body_pos_w)[:, body_idx, :],
+        as_torch(robot.data.body_quat_w)[:, body_idx, :],
     )
+    return pos, quat_isaaclab_to_wxyz(quat)
 
 
 def left_arm_joint_pos(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")):

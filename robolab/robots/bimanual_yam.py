@@ -41,7 +41,7 @@ from isaaclab.utils.math import subtract_frame_transforms
 from robolab.constants import ROBOTS_DIR
 from robolab.core.environments.scene_fixture import FRANKA_TABLE_FIXTURE
 from robolab.core.sensors.body_attached_camera import BodyAttachedTiledCameraCfg
-from robolab.robots.droid import _to_torch
+from robolab.core.utils.isaaclab_compat import as_torch, quat_isaaclab_to_wxyz
 
 ARMS = ("left", "right")
 ARM_JOINT_NAMES = {side: [f"{side}_joint{i}" for i in range(1, 7)] for side in ARMS}
@@ -272,7 +272,7 @@ contact_gripper = {
 def _joint_pos(env, names, asset_name="robot"):
     robot = env.scene[asset_name]
     idx = [robot.data.joint_names.index(n) for n in names]
-    return _to_torch(robot.data.joint_pos)[:, idx]
+    return as_torch(robot.data.joint_pos)[:, idx]
 
 
 def _gripper_open(env, side, asset_name="robot"):
@@ -284,10 +284,11 @@ def _gripper_open(env, side, asset_name="robot"):
 def _ee_pose(env, side, asset_name="robot"):
     robot = env.scene[asset_name]
     body_idx = robot.data.body_names.index(EE_BODY_NAME[side])
-    return subtract_frame_transforms(
-        _to_torch(robot.data.root_pos_w), _to_torch(robot.data.root_quat_w),
-        _to_torch(robot.data.body_pos_w)[:, body_idx, :], _to_torch(robot.data.body_quat_w)[:, body_idx, :],
+    pos, quat = subtract_frame_transforms(
+        as_torch(robot.data.root_pos_w), as_torch(robot.data.root_quat_w),
+        as_torch(robot.data.body_pos_w)[:, body_idx, :], as_torch(robot.data.body_quat_w)[:, body_idx, :],
     )
+    return pos, quat_isaaclab_to_wxyz(quat)
 
 
 def left_arm_joint_pos(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")):

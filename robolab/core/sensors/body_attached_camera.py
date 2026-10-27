@@ -24,7 +24,9 @@ from collections.abc import Sequence
 import torch
 from isaaclab.sensors import TiledCamera, TiledCameraCfg
 from isaaclab.utils import configclass
-from isaaclab.utils.math import convert_quat, quat_apply, quat_mul
+from isaaclab.utils.math import quat_apply, quat_mul
+
+from robolab.core.utils.isaaclab_compat import as_torch, quat_isaaclab_to_wxyz, quat_wxyz_to_isaaclab
 
 
 class BodyAttachedTiledCamera(TiledCamera):
@@ -69,13 +71,16 @@ class BodyAttachedTiledCamera(TiledCamera):
                                          device=self._device).repeat(self._view.count, 1)
 
     def _follow_body(self, env_ids: Sequence[int]):
-        tf = self._art_physx_view.get_link_transforms().view(self._view.count, -1, 7)[:, self._link_idx]
+        # Isaac Lab 3 returns a Warp array here; Isaac Lab 2 a torch tensor.
+        tf = as_torch(self._art_physx_view.get_link_transforms()).view(self._view.count, -1, 7)[:, self._link_idx]
         body_pos = tf[:, :3]
-        body_quat = convert_quat(tf[:, 3:7], to="wxyz")
+        # PhysX stores XYZW on every stack. The math below and cfg.offset.rot (converted by
+        # prepare_env_cfg) use the installed Isaac Lab's convention: WXYZ on 2.x, XYZW on 3.x.
+        body_quat = quat_wxyz_to_isaaclab(quat_isaaclab_to_wxyz(tf[:, 3:7], uses_xyzw=True))
         cam_pos = body_pos + quat_apply(body_quat, self._offset_pos)
         cam_quat = quat_mul(body_quat, self._offset_quat)
         self.set_world_poses(cam_pos, cam_quat, env_ids=None, convention=self.cfg.offset.convention)
-        self._data.pos_w[:] = cam_pos                       # keep pos_w truthful (cfg flag is off)
+        as_torch(self._data.pos_w)[:] = cam_pos             # keep pos_w truthful (cfg flag is off)
         if not getattr(self, "_follow_logged", False):
             self._follow_logged = True
             print(f"[BodyAttachedTiledCamera] {self.cfg.prim_path}: link '{self.cfg.body_name}' at "
