@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import numpy as np
-import omni.usd
 import torch
 from isaaclab.markers import FRAME_MARKER_CFG, VisualizationMarkers
 from pxr import Gf, UsdGeom
 
 from robolab.constants import DEVICE
+from robolab.core.utils.usd_utils import stage_utils
 
 COLORS = {'red': Gf.Vec3f(1, 0, 0),
           'green': Gf.Vec3f(0, 1, 0),
@@ -41,7 +41,7 @@ def visualize_bbox(corners, object_name: str, color: str='red'):
     """
 
     # Get current USD stage
-    stage = omni.usd.get_context().get_stage()
+    stage = stage_utils.get_current_stage()
 
     # Create parent prim for bounding boxes
     bbox_parent = "/Visuals/BoundingBoxes"
@@ -92,7 +92,7 @@ def delete_visual_axes(name: str = None, axes_parent: str = "/Visuals/Axes"):
         name: Optional name of the specific object axes to delete. If None, deletes all axes.
         axes_parent: Parent directory containing the visual axes.
     """
-    stage = omni.usd.get_context().get_stage()
+    stage = stage_utils.get_current_stage()
 
     if name is not None:
         # Delete specific axes for the given object name
@@ -127,7 +127,7 @@ def visualize_axes(pos: torch.Tensor | np.ndarray | list,
         axis_length: float, length of each axis line
     """
     # Get USD stage
-    stage = omni.usd.get_context().get_stage()
+    stage = stage_utils.get_current_stage()
     if not stage.GetPrimAtPath(axes_parent):
         UsdGeom.Xform.Define(stage, axes_parent)
 

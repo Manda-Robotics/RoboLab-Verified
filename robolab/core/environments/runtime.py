@@ -12,10 +12,8 @@ import json
 import logging
 import os
 
-import carb
 import gymnasium as gym
 import numpy as np
-import omni.usd
 from isaaclab.envs import ManagerBasedEnv, ManagerBasedEnvCfg, ManagerBasedRLEnv
 
 import robolab.constants
@@ -28,6 +26,19 @@ from robolab.core.task.task import resolve_instruction
 from robolab.core.utils.isaaclab_compat import env_cfg_to_recording_dict, prepare_env_cfg
 
 logger = logging.getLogger(__name__)
+
+
+def _create_stage(cfg):
+    """Experimental Kit-less path; the existing evaluation path remains the default."""
+    if getattr(cfg, "experimental_kitless", False):
+        from isaaclab.sim.utils import create_new_stage
+        create_new_stage()
+    else:
+        import carb
+        import omni.usd
+        omni.usd.get_context().new_stage()
+        carb.settings.get_settings().set_bool("/isaaclab/render/rtx_sensors", False)
+
 
 def check_scene_valid(env: ManagerBasedEnv) -> bool:
     """
@@ -114,9 +125,7 @@ def create_env(scene: str | ManagerBasedEnvCfg,
 
     if isinstance(scene, str):
         # create a new stage
-        omni.usd.get_context().new_stage()
-        # reset the rtx sensors carb setting to False
-        carb.settings.get_settings().set_bool("/isaaclab/render/rtx_sensors", False)
+        _create_stage(None)
 
         try:
             # Initialize the env for current scene
@@ -163,9 +172,7 @@ def create_env(scene: str | ManagerBasedEnvCfg,
 
     elif isinstance(scene, ManagerBasedEnvCfg):
         # create a new stage
-        omni.usd.get_context().new_stage()
-        # reset the rtx sensors carb setting to False
-        carb.settings.get_settings().set_bool("/isaaclab/render/rtx_sensors", False)
+        _create_stage(scene)
         env_cfg = scene
 
         env_cfg._instruction_variants = env_cfg.instruction

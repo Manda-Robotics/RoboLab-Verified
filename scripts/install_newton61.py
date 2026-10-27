@@ -24,7 +24,7 @@ def run(*args, **kwargs):
     return subprocess.run(args, check=True, text=True, **kwargs)
 
 
-def prepare_requirements(lab, robolab):
+def prepare_requirements(lab, robolab, renderer_runtime="isaacrtx"):
     """Use upstream's workspace and overrides, not the obsolete beta2 wheel."""
     cfg = tomllib.loads((lab / "pyproject.toml").read_text())
     sources = cfg["tool"]["uv"]["sources"]
@@ -35,7 +35,11 @@ def prepare_requirements(lab, robolab):
             requirements.append(f'-e {lab / source["path"]}')
         else:
             requirements.append(requirement)
-    requirements.extend(cfg["project"]["optional-dependencies"]["isaacsim"])
+    if renderer_runtime not in {"isaacrtx", "ovrtx", "newton-warp"}:
+        raise ValueError(f"Unknown renderer runtime: {renderer_runtime}")
+    if renderer_runtime != "newton-warp":
+        extra = "isaacsim" if renderer_runtime == "isaacrtx" else "ovrtx"
+        requirements.extend(cfg["project"]["optional-dependencies"][extra])
     # usd-exchange already supplies pxr. RoboLab's offline [test] extra also
     # installs usd-core, which would overwrite the same USD Python files.
     requirements.extend([f"-e {robolab}", "pytest"])
@@ -83,6 +87,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--isaaclab-root", type=Path, required=True)
     parser.add_argument("--install", action="store_true")
+    parser.add_argument("--renderer-runtime", choices=("isaacrtx", "ovrtx", "newton-warp"),
+                        default="isaacrtx", help="Experimental Kit-less installs require a fresh venv")
     parser.add_argument("--replace-isaacsim", action="store_true")
     args = parser.parse_args()
     if (sys.version_info[:2] != (3, 12) or sys.prefix == sys.base_prefix
@@ -101,10 +107,10 @@ def main():
     # Fresh, durable logs beside the environment, never in episode result folders.
     import tempfile
     record = Path(tempfile.mkdtemp(prefix="newton61-install-", dir=robolab))
-    requirements, overrides = prepare_requirements(lab, robolab)
+    requirements, overrides = prepare_requirements(lab, robolab, args.renderer_runtime)
     (record / "requirements.in").write_text("\n".join(requirements) + "\n")
     (record / "overrides.txt").write_text("\n".join(overrides) + "\n")
-    (record / "stack.json").write_text(json.dumps({"isaaclab_ref": ISAACLAB_REF, "isaaclab_commit": head, "python": sys.executable}, indent=2))
+    (record / "stack.json").write_text(json.dumps({"isaaclab_ref": ISAACLAB_REF, "isaaclab_commit": head, "python": sys.executable, "renderer_runtime": args.renderer_runtime}, indent=2))
     (record / "before.txt").write_text(run("uv", "pip", "freeze", "--python", sys.executable,
                                            capture_output=True).stdout)
     common = ["--python", sys.executable, "--index-strategy", "unsafe-best-match", "--prerelease", "allow",

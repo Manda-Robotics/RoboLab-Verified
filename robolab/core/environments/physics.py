@@ -184,9 +184,9 @@ def physics_context(cfg, backend="physx", launcher_args=None):
     launch_args = Namespace(**vars(launcher_args)) if launcher_args is not None else Namespace(
         headless=True, enable_cameras=True, device=cfg.sim.device)
     launch_args.physics = None
-    # RoboLab uses Kit/USD services and calibrated Isaac RTX cameras even when
-    # physics is Newton; do not let automatic renderer selection switch to OVRTX.
-    launch_args.require_kit = True
+    # Keep calibrated Isaac RTX cameras for normal evaluation. The isolated
+    # renderer spike explicitly supplies Kit-less camera configs before launch.
+    launch_args.require_kit = not getattr(cfg, "experimental_kitless", False)
     contacts = nullcontext()
     if native_mesh_import and hasattr(cfg, "newton_contact_settings"):
         if cfg.sim.physics.use_cuda_graph:
@@ -233,8 +233,9 @@ def physics_context(cfg, backend="physx", launcher_args=None):
 def managed_env(scene, *, physics="physx", launcher_args=None, **kwargs):
     """Create and close a RoboLab environment within its backend runtime.
 
-    Call after AppLauncher, as with create_env. Keep this context open while
-    stepping and exporting episodes. The existing application owns Kit shutdown.
+    The normal evaluation path may supply an existing AppLauncher. Experimental
+    Kit-less configs let launch_simulation own the runtime instead. Keep this
+    context open while stepping and exporting episodes.
     """
     from robolab.core.environments.config import parse_env_cfg
     from robolab.core.environments.runtime import create_env
