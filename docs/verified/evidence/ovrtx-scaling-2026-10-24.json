@@ -1,0 +1,3020 @@
+{
+  "updated_at": "2026-10-25T00:05:59.838179+00:00",
+  "instance_id": 57565659,
+  "gpu": "RTX PRO 4000 Blackwell",
+  "gpu_memory_mib": 24467,
+  "driver": "595.58.03",
+  "source_base_sha": "51437f3ce85503fefe5cf04da32bb196f423a479",
+  "branch": "codex/ovrtx-rendering-spike",
+  "isaaclab_sha": "e3f7d9ff1f5d7f8280de3ece9000b7117f66bcf4",
+  "fixture_sha256": "244143df3f28268e02805055595bfc7174f90f8d1c7a1eae2ee45eb35cf5dcee",
+  "boundaries": {
+    "isaacrtx": {
+      "max_verified": 12,
+      "first_allocation_failure": 13,
+      "note": "Scene-specific full runtime capacity; review failure logs before attributing limit to renderer"
+    },
+    "ovrtx": {
+      "max_verified": 16,
+      "first_allocation_failure": 17,
+      "note": "Scene-specific full runtime capacity; review failure logs before attributing limit to renderer"
+    }
+  },
+  "rendering": {
+    "version": "v3",
+    "cases": [
+      {
+        "case": "isaacrtx-scaling-v3-n1",
+        "backend": "isaacrtx",
+        "num_envs": 1,
+        "samples": 345,
+        "mean_batch_ms": 43.30900498274444,
+        "p95_batch_ms": 49.34709398075938,
+        "per_environment_fps": 23.08988628111934,
+        "aggregate_environment_camera_sets_s": 23.08988628111934,
+        "aggregate_camera_images_s": 69.26965884335802,
+        "restore_plus_capture_environment_sets_s": 18.33570117870753,
+        "sampled_peak_gpu_mib": 4084.0,
+        "external_memory_samples": 79,
+        "steady_gpu_mib_median": 3963.0,
+        "sampled_state_error_max": 0.0,
+        "thumbnail_count": 3
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n12",
+        "backend": "isaacrtx",
+        "num_envs": 12,
+        "samples": 345,
+        "mean_batch_ms": 224.5211839976221,
+        "p95_batch_ms": 230.98576003685594,
+        "per_environment_fps": 4.453922708739105,
+        "aggregate_environment_camera_sets_s": 53.447072504869254,
+        "aggregate_camera_images_s": 160.34121751460776,
+        "restore_plus_capture_environment_sets_s": 50.54331133864007,
+        "sampled_peak_gpu_mib": 20857.0,
+        "external_memory_samples": 164,
+        "steady_gpu_mib_median": 20766.0,
+        "sampled_state_error_max": 4.76837158203125e-07,
+        "thumbnail_count": 36
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n2",
+        "backend": "isaacrtx",
+        "num_envs": 2,
+        "samples": 345,
+        "mean_batch_ms": 63.198585175247736,
+        "p95_batch_ms": 67.29872990399599,
+        "per_environment_fps": 15.82313903431589,
+        "aggregate_environment_camera_sets_s": 31.64627806863178,
+        "aggregate_camera_images_s": 94.93883420589535,
+        "restore_plus_capture_environment_sets_s": 26.1996735099132,
+        "sampled_peak_gpu_mib": 5649.0,
+        "external_memory_samples": 92,
+        "steady_gpu_mib_median": 5515.0,
+        "sampled_state_error_max": 2.384185791015625e-07,
+        "thumbnail_count": 6
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n4",
+        "backend": "isaacrtx",
+        "num_envs": 4,
+        "samples": 345,
+        "mean_batch_ms": 93.33027880807555,
+        "p95_batch_ms": 98.57010582927614,
+        "per_environment_fps": 10.714636372793878,
+        "aggregate_environment_camera_sets_s": 42.85854549117551,
+        "aggregate_camera_images_s": 128.57563647352654,
+        "restore_plus_capture_environment_sets_s": 37.6445472978095,
+        "sampled_peak_gpu_mib": 8705.0,
+        "external_memory_samples": 104,
+        "steady_gpu_mib_median": 8576.0,
+        "sampled_state_error_max": 2.384185791015625e-07,
+        "thumbnail_count": 12
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n8",
+        "backend": "isaacrtx",
+        "num_envs": 8,
+        "samples": 345,
+        "mean_batch_ms": 165.66287632356736,
+        "p95_batch_ms": 170.22623061202466,
+        "per_environment_fps": 6.036355411618185,
+        "aggregate_environment_camera_sets_s": 48.29084329294548,
+        "aggregate_camera_images_s": 144.87252987883645,
+        "restore_plus_capture_environment_sets_s": 44.661564200860475,
+        "sampled_peak_gpu_mib": 15545.0,
+        "external_memory_samples": 137,
+        "steady_gpu_mib_median": 15454.0,
+        "sampled_state_error_max": 4.76837158203125e-07,
+        "thumbnail_count": 24
+      },
+      {
+        "case": "ovrtx-scaling-v3-n1",
+        "backend": "ovrtx",
+        "num_envs": 1,
+        "samples": 345,
+        "mean_batch_ms": 42.877777590267904,
+        "p95_batch_ms": 44.494898966513574,
+        "per_environment_fps": 23.322104274055775,
+        "aggregate_environment_camera_sets_s": 23.322104274055775,
+        "aggregate_camera_images_s": 69.96631282216732,
+        "restore_plus_capture_environment_sets_s": 21.21432405804913,
+        "sampled_peak_gpu_mib": 4806.0,
+        "external_memory_samples": 78,
+        "steady_gpu_mib_median": 4389.0,
+        "sampled_state_error_max": 0.0,
+        "thumbnail_count": 3
+      },
+      {
+        "case": "ovrtx-scaling-v3-n16",
+        "backend": "ovrtx",
+        "num_envs": 16,
+        "samples": 345,
+        "mean_batch_ms": 150.23391822494727,
+        "p95_batch_ms": 151.8717681756243,
+        "per_environment_fps": 6.656286488532413,
+        "aggregate_environment_camera_sets_s": 106.50058381651861,
+        "aggregate_camera_images_s": 319.5017514495558,
+        "restore_plus_capture_environment_sets_s": 103.4826131773265,
+        "sampled_peak_gpu_mib": 22899.0,
+        "external_memory_samples": 164,
+        "steady_gpu_mib_median": 20751.0,
+        "sampled_state_error_max": 4.76837158203125e-07,
+        "thumbnail_count": 48
+      },
+      {
+        "case": "ovrtx-scaling-v3-n2",
+        "backend": "ovrtx",
+        "num_envs": 2,
+        "samples": 345,
+        "mean_batch_ms": 69.69887254509968,
+        "p95_batch_ms": 70.68034715484828,
+        "per_environment_fps": 14.34743437711902,
+        "aggregate_environment_camera_sets_s": 28.69486875423804,
+        "aggregate_camera_images_s": 86.08460626271412,
+        "restore_plus_capture_environment_sets_s": 26.87437544058945,
+        "sampled_peak_gpu_mib": 7206.0,
+        "external_memory_samples": 95,
+        "steady_gpu_mib_median": 6353.0,
+        "sampled_state_error_max": 2.384185791015625e-07,
+        "thumbnail_count": 6
+      },
+      {
+        "case": "ovrtx-scaling-v3-n4",
+        "backend": "ovrtx",
+        "num_envs": 4,
+        "samples": 345,
+        "mean_batch_ms": 66.02146427747726,
+        "p95_batch_ms": 67.5323301460594,
+        "per_environment_fps": 15.146589233422116,
+        "aggregate_environment_camera_sets_s": 60.586356933688464,
+        "aggregate_camera_images_s": 181.7590708010654,
+        "restore_plus_capture_environment_sets_s": 56.89118112246726,
+        "sampled_peak_gpu_mib": 8926.0,
+        "external_memory_samples": 94,
+        "steady_gpu_mib_median": 8043.0,
+        "sampled_state_error_max": 2.384185791015625e-07,
+        "thumbnail_count": 12
+      },
+      {
+        "case": "ovrtx-scaling-v3-n8",
+        "backend": "ovrtx",
+        "num_envs": 8,
+        "samples": 345,
+        "mean_batch_ms": 87.16929191925928,
+        "p95_batch_ms": 88.17742397077382,
+        "per_environment_fps": 11.471929827378338,
+        "aggregate_environment_camera_sets_s": 91.7754386190267,
+        "aggregate_camera_images_s": 275.3263158570801,
+        "restore_plus_capture_environment_sets_s": 87.14386832205106,
+        "sampled_peak_gpu_mib": 13772.0,
+        "external_memory_samples": 121,
+        "steady_gpu_mib_median": 12396.0,
+        "sampled_state_error_max": 4.76837158203125e-07,
+        "thumbnail_count": 24
+      }
+    ],
+    "paired_comparisons": [
+      {
+        "num_envs": 1,
+        "max_camera_metadata_difference": 0,
+        "matching_configuration": true
+      },
+      {
+        "num_envs": 2,
+        "max_camera_metadata_difference": 0,
+        "matching_configuration": true
+      },
+      {
+        "num_envs": 4,
+        "max_camera_metadata_difference": 0,
+        "matching_configuration": true
+      },
+      {
+        "num_envs": 8,
+        "max_camera_metadata_difference": 0,
+        "matching_configuration": true
+      }
+    ],
+    "independent_trajectory_camera_checks": [
+      {
+        "case": "isaacrtx-scaling-v3-n1",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 0.0
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n1",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 0.0
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n1",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 0.0
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n12",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 2.115964889526367e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n12",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 1.5497207641601562e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n12",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 2.5033950805664062e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n2",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 8.940696716308594e-07
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n2",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 5.960464477539062e-07
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n2",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 5.960464477539062e-07
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n4",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 1.3709068298339844e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n4",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 1.0728836059570312e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n4",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 1.0728836059570312e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n8",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 1.8775463104248047e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n8",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 1.6391277313232422e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v3-n8",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 2.5033950805664062e-06
+      },
+      {
+        "case": "ovrtx-scaling-v3-n1",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 0.0
+      },
+      {
+        "case": "ovrtx-scaling-v3-n1",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 0.0
+      },
+      {
+        "case": "ovrtx-scaling-v3-n1",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 0.0
+      },
+      {
+        "case": "ovrtx-scaling-v3-n16",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 2.682209014892578e-06
+      },
+      {
+        "case": "ovrtx-scaling-v3-n16",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 2.592802047729492e-06
+      },
+      {
+        "case": "ovrtx-scaling-v3-n16",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 2.2351741790771484e-06
+      },
+      {
+        "case": "ovrtx-scaling-v3-n2",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 8.940696716308594e-07
+      },
+      {
+        "case": "ovrtx-scaling-v3-n2",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 5.960464477539062e-07
+      },
+      {
+        "case": "ovrtx-scaling-v3-n2",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 5.960464477539062e-07
+      },
+      {
+        "case": "ovrtx-scaling-v3-n4",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 1.3709068298339844e-06
+      },
+      {
+        "case": "ovrtx-scaling-v3-n4",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 1.0728836059570312e-06
+      },
+      {
+        "case": "ovrtx-scaling-v3-n4",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 1.0728836059570312e-06
+      },
+      {
+        "case": "ovrtx-scaling-v3-n8",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 1.8775463104248047e-06
+      },
+      {
+        "case": "ovrtx-scaling-v3-n8",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 1.6391277313232422e-06
+      },
+      {
+        "case": "ovrtx-scaling-v3-n8",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 2.5033950805664062e-06
+      }
+    ],
+    "note": "Only completed cases. Capacity failures require log review; sampled memory is not exact peak. No physics or policy throughput claim."
+  },
+  "repeated_rendering": {
+    "version": "v4",
+    "cases": [
+      {
+        "case": "isaacrtx-scaling-v4-n12",
+        "backend": "isaacrtx",
+        "num_envs": 12,
+        "samples": 345,
+        "mean_batch_ms": 224.77477750491244,
+        "p95_batch_ms": 233.03114960435778,
+        "per_environment_fps": 4.44889774155441,
+        "aggregate_environment_camera_sets_s": 53.38677289865293,
+        "aggregate_camera_images_s": 160.16031869595878,
+        "restore_plus_capture_environment_sets_s": 50.40421492011352,
+        "sampled_peak_gpu_mib": 20857.0,
+        "external_memory_samples": 165,
+        "steady_gpu_mib_median": 20766.0,
+        "sampled_state_error_max": 4.76837158203125e-07,
+        "thumbnail_count": 36
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n2",
+        "backend": "isaacrtx",
+        "num_envs": 2,
+        "samples": 345,
+        "mean_batch_ms": 63.870827147089265,
+        "p95_batch_ms": 67.32860303018242,
+        "per_environment_fps": 15.656600120381755,
+        "aggregate_environment_camera_sets_s": 31.31320024076351,
+        "aggregate_camera_images_s": 93.93960072229054,
+        "restore_plus_capture_environment_sets_s": 25.90312391883433,
+        "sampled_peak_gpu_mib": 5651.0,
+        "external_memory_samples": 90,
+        "steady_gpu_mib_median": 5515.0,
+        "sampled_state_error_max": 2.384185791015625e-07,
+        "thumbnail_count": 6
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n4",
+        "backend": "isaacrtx",
+        "num_envs": 4,
+        "samples": 345,
+        "mean_batch_ms": 93.9224534654531,
+        "p95_batch_ms": 99.3913275655359,
+        "per_environment_fps": 10.647081321910141,
+        "aggregate_environment_camera_sets_s": 42.588325287640565,
+        "aggregate_camera_images_s": 127.76497586292169,
+        "restore_plus_capture_environment_sets_s": 37.39206305052781,
+        "sampled_peak_gpu_mib": 8705.0,
+        "external_memory_samples": 104,
+        "steady_gpu_mib_median": 8576.0,
+        "sampled_state_error_max": 2.384185791015625e-07,
+        "thumbnail_count": 12
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n9",
+        "backend": "isaacrtx",
+        "num_envs": 9,
+        "samples": 345,
+        "mean_batch_ms": 175.56144263986766,
+        "p95_batch_ms": 183.89093345031142,
+        "per_environment_fps": 5.6960115214553,
+        "aggregate_environment_camera_sets_s": 51.264103693097695,
+        "aggregate_camera_images_s": 153.79231107929309,
+        "restore_plus_capture_environment_sets_s": 47.73018724894942,
+        "sampled_peak_gpu_mib": 16289.0,
+        "external_memory_samples": 143,
+        "steady_gpu_mib_median": 16200.0,
+        "sampled_state_error_max": 4.76837158203125e-07,
+        "thumbnail_count": 27
+      },
+      {
+        "case": "ovrtx-scaling-v4-n16",
+        "backend": "ovrtx",
+        "num_envs": 16,
+        "samples": 345,
+        "mean_batch_ms": 151.8884419200375,
+        "p95_batch_ms": 153.98614220321178,
+        "per_environment_fps": 6.583779432844899,
+        "aggregate_environment_camera_sets_s": 105.34047092551839,
+        "aggregate_camera_images_s": 316.02141277655517,
+        "restore_plus_capture_environment_sets_s": 102.14745259642223,
+        "sampled_peak_gpu_mib": 23017.0,
+        "external_memory_samples": 160,
+        "steady_gpu_mib_median": 20879.0,
+        "sampled_state_error_max": 4.76837158203125e-07,
+        "thumbnail_count": 48
+      },
+      {
+        "case": "ovrtx-scaling-v4-n2",
+        "backend": "ovrtx",
+        "num_envs": 2,
+        "samples": 345,
+        "mean_batch_ms": 69.43824620633994,
+        "p95_batch_ms": 70.77155902516097,
+        "per_environment_fps": 14.401285381379587,
+        "aggregate_environment_camera_sets_s": 28.802570762759174,
+        "aggregate_camera_images_s": 86.40771228827752,
+        "restore_plus_capture_environment_sets_s": 26.963854145002625,
+        "sampled_peak_gpu_mib": 7206.0,
+        "external_memory_samples": 91,
+        "steady_gpu_mib_median": 6353.0,
+        "sampled_state_error_max": 2.384185791015625e-07,
+        "thumbnail_count": 6
+      },
+      {
+        "case": "ovrtx-scaling-v4-n4",
+        "backend": "ovrtx",
+        "num_envs": 4,
+        "samples": 345,
+        "mean_batch_ms": 66.19711513361096,
+        "p95_batch_ms": 67.54408094566315,
+        "per_environment_fps": 15.106398488538654,
+        "aggregate_environment_camera_sets_s": 60.425593954154614,
+        "aggregate_camera_images_s": 181.27678186246385,
+        "restore_plus_capture_environment_sets_s": 56.64257285727479,
+        "sampled_peak_gpu_mib": 9246.0,
+        "external_memory_samples": 91,
+        "steady_gpu_mib_median": 8363.0,
+        "sampled_state_error_max": 2.384185791015625e-07,
+        "thumbnail_count": 12
+      },
+      {
+        "case": "ovrtx-scaling-v4-n9",
+        "backend": "ovrtx",
+        "num_envs": 9,
+        "samples": 345,
+        "mean_batch_ms": 92.17814626712081,
+        "p95_batch_ms": 94.5533899590373,
+        "per_environment_fps": 10.848558367643067,
+        "aggregate_environment_camera_sets_s": 97.6370253087876,
+        "aggregate_camera_images_s": 292.9110759263628,
+        "restore_plus_capture_environment_sets_s": 92.826783558248,
+        "sampled_peak_gpu_mib": 14490.0,
+        "external_memory_samples": 134,
+        "steady_gpu_mib_median": 13114.0,
+        "sampled_state_error_max": 4.76837158203125e-07,
+        "thumbnail_count": 27
+      }
+    ],
+    "paired_comparisons": [
+      {
+        "num_envs": 2,
+        "max_camera_metadata_difference": 0,
+        "matching_configuration": true
+      },
+      {
+        "num_envs": 4,
+        "max_camera_metadata_difference": 0,
+        "matching_configuration": true
+      },
+      {
+        "num_envs": 9,
+        "max_camera_metadata_difference": 0,
+        "matching_configuration": true
+      }
+    ],
+    "independent_trajectory_camera_checks": [
+      {
+        "case": "isaacrtx-scaling-v4-n12",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 2.115964889526367e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n12",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 1.5497207641601562e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n12",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 2.5033950805664062e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n2",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 8.940696716308594e-07
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n2",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 5.960464477539062e-07
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n2",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 5.960464477539062e-07
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n4",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 1.3709068298339844e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n4",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 1.0728836059570312e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n4",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 1.0728836059570312e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n9",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 2.115964889526367e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n9",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 2.9653310775756836e-06
+      },
+      {
+        "case": "isaacrtx-scaling-v4-n9",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 2.592802047729492e-06
+      },
+      {
+        "case": "ovrtx-scaling-v4-n16",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 2.682209014892578e-06
+      },
+      {
+        "case": "ovrtx-scaling-v4-n16",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 2.592802047729492e-06
+      },
+      {
+        "case": "ovrtx-scaling-v4-n16",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 2.2351741790771484e-06
+      },
+      {
+        "case": "ovrtx-scaling-v4-n2",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 8.940696716308594e-07
+      },
+      {
+        "case": "ovrtx-scaling-v4-n2",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 5.960464477539062e-07
+      },
+      {
+        "case": "ovrtx-scaling-v4-n2",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 5.960464477539062e-07
+      },
+      {
+        "case": "ovrtx-scaling-v4-n4",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 1.3709068298339844e-06
+      },
+      {
+        "case": "ovrtx-scaling-v4-n4",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 1.0728836059570312e-06
+      },
+      {
+        "case": "ovrtx-scaling-v4-n4",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 1.0728836059570312e-06
+      },
+      {
+        "case": "ovrtx-scaling-v4-n9",
+        "pass_index": 0,
+        "index": 0,
+        "max_camera_error": 2.115964889526367e-06
+      },
+      {
+        "case": "ovrtx-scaling-v4-n9",
+        "pass_index": 0,
+        "index": 172,
+        "max_camera_error": 2.9653310775756836e-06
+      },
+      {
+        "case": "ovrtx-scaling-v4-n9",
+        "pass_index": 0,
+        "index": 344,
+        "max_camera_error": 2.592802047729492e-06
+      }
+    ],
+    "note": "Only completed cases. Capacity failures require log review; sampled memory is not exact peak. No physics or policy throughput claim."
+  },
+  "physics": {
+    "timed_core_ast_identical": true,
+    "harness_hashes": {
+      "run_renderer_physics_scaling-v5-preserved.py": "ba4f2f4f2509eb02c0dbd923bf5c668030de36b3440dbb2436f69efabb75a646",
+      "run_renderer_physics_scaling_v7.py": "477a47afbfce6ca43818d705562838d89f79a72f43175bd4a0d703585696ec12",
+      "run_renderer_physics_scaling_v8.py": "019b5944f9acef3a00184296bb7c29e26d5edb5165f979a0c729994a01316c34"
+    },
+    "cases": [
+      {
+        "script_sha256": "ba4f2f4f2509eb02c0dbd923bf5c668030de36b3440dbb2436f69efabb75a646",
+        "measurement_qualified": true,
+        "native_shape_count": 637,
+        "collision_candidate_summaries": [
+          {
+            "contact_capacity": 65536,
+            "candidate_capacity": 65536,
+            "peak_candidates": 7887,
+            "growth_events": 0
+          }
+        ],
+        "case": "isaacrtx-scaling-v5-n1",
+        "backend": "isaacrtx",
+        "num_envs": 1,
+        "steps": 345,
+        "mean_step_ms": 1273.316561040617,
+        "p95_step_ms": 1325.9790348121896,
+        "mean_rgb_readback_ms": 1.6870865368864676,
+        "mean_step_with_readback_ms": 1275.0036475775034,
+        "per_environment_control_hz": 0.7853506587417278,
+        "aggregate_env_steps_s": 0.7853506587417278,
+        "aggregate_env_steps_with_rgb_cpu_s": 0.7843114816965362,
+        "aggregate_sim_seconds_per_wall_second": 0.05235671058278185,
+        "camera_frame_increments": [
+          1
+        ],
+        "sampled_peak_gpu_mib": 4084.0,
+        "hdf5_demos": 1,
+        "hdf5_initial_state_and_camera_max_error": 5.364418029785156e-07,
+        "videos": {},
+        "timing_recovered_after_export_failure": true
+      },
+      {
+        "script_sha256": "477a47afbfce6ca43818d705562838d89f79a72f43175bd4a0d703585696ec12",
+        "measurement_qualified": true,
+        "native_shape_count": 2581,
+        "collision_candidate_summaries": [
+          {
+            "contact_capacity": 262144,
+            "candidate_capacity": 262144,
+            "peak_candidates": 32459,
+            "growth_events": 0
+          }
+        ],
+        "case": "isaacrtx-scaling-v7-n4",
+        "backend": "isaacrtx",
+        "num_envs": 4,
+        "steps": 345,
+        "mean_step_ms": 1430.8364110948194,
+        "p95_step_ms": 1496.2822330417112,
+        "mean_rgb_readback_ms": 6.13139334026778,
+        "mean_step_with_readback_ms": 1436.9678044350871,
+        "per_environment_control_hz": 0.6988919154180873,
+        "aggregate_env_steps_s": 2.795567661672349,
+        "aggregate_env_steps_with_rgb_cpu_s": 2.7836392629356883,
+        "aggregate_sim_seconds_per_wall_second": 0.18637117744482326,
+        "camera_frame_increments": [
+          1
+        ],
+        "sampled_peak_gpu_mib": 8707.0,
+        "hdf5_demos": 4,
+        "hdf5_initial_state_and_camera_max_error": 5.364418029785156e-07,
+        "videos": {
+          "egocentric_mirrored_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "over_shoulder_left_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "wrist_cam": {
+            "frames": 115,
+            "fps": 5.0
+          }
+        },
+        "timing_recovered_after_export_failure": false
+      },
+      {
+        "script_sha256": "477a47afbfce6ca43818d705562838d89f79a72f43175bd4a0d703585696ec12",
+        "measurement_qualified": true,
+        "native_shape_count": 5129,
+        "collision_candidate_summaries": [
+          {
+            "contact_capacity": 524288,
+            "candidate_capacity": 524288,
+            "peak_candidates": 63828,
+            "growth_events": 0
+          }
+        ],
+        "case": "isaacrtx-scaling-v7-n8",
+        "backend": "isaacrtx",
+        "num_envs": 8,
+        "steps": 345,
+        "mean_step_ms": 1612.8409885551673,
+        "p95_step_ms": 1672.970933234319,
+        "mean_rgb_readback_ms": 13.13439806808542,
+        "mean_step_with_readback_ms": 1625.9753866232527,
+        "per_environment_control_hz": 0.620023924922587,
+        "aggregate_env_steps_s": 4.960191399380696,
+        "aggregate_env_steps_with_rgb_cpu_s": 4.92012367826429,
+        "aggregate_sim_seconds_per_wall_second": 0.3306794266253797,
+        "camera_frame_increments": [
+          1
+        ],
+        "sampled_peak_gpu_mib": 15545.0,
+        "hdf5_demos": 8,
+        "hdf5_initial_state_and_camera_max_error": 1.253560185432434e-06,
+        "videos": {
+          "egocentric_mirrored_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "over_shoulder_left_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "wrist_cam": {
+            "frames": 115,
+            "fps": 5.0
+          }
+        },
+        "timing_recovered_after_export_failure": false
+      },
+      {
+        "script_sha256": "019b5944f9acef3a00184296bb7c29e26d5edb5165f979a0c729994a01316c34",
+        "measurement_qualified": true,
+        "native_shape_count": 7681,
+        "collision_candidate_summaries": [
+          {
+            "contact_capacity": 786432,
+            "candidate_capacity": 786432,
+            "peak_candidates": 95459,
+            "growth_events": 0
+          }
+        ],
+        "case": "isaacrtx-scaling-v8-n12",
+        "backend": "isaacrtx",
+        "num_envs": 12,
+        "steps": 345,
+        "mean_step_ms": 1742.9673470202429,
+        "p95_step_ms": 1831.3075922429562,
+        "mean_rgb_readback_ms": 19.104221623147957,
+        "mean_step_with_readback_ms": 1762.0715686433907,
+        "per_environment_control_hz": 0.5737342135006651,
+        "aggregate_env_steps_s": 6.884810562007982,
+        "aggregate_env_steps_with_rgb_cpu_s": 6.810166064502552,
+        "aggregate_sim_seconds_per_wall_second": 0.45898737080053215,
+        "camera_frame_increments": [
+          1
+        ],
+        "sampled_peak_gpu_mib": 20857.0,
+        "hdf5_demos": 12,
+        "hdf5_initial_state_and_camera_max_error": 1.253560185432434e-06,
+        "videos": {
+          "egocentric_mirrored_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "over_shoulder_left_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "wrist_cam": {
+            "frames": 115,
+            "fps": 5.0
+          }
+        },
+        "timing_recovered_after_export_failure": false
+      },
+      {
+        "script_sha256": "477a47afbfce6ca43818d705562838d89f79a72f43175bd4a0d703585696ec12",
+        "measurement_qualified": true,
+        "native_shape_count": 642,
+        "collision_candidate_summaries": [
+          {
+            "contact_capacity": 65536,
+            "candidate_capacity": 65536,
+            "peak_candidates": 8024,
+            "growth_events": 0
+          }
+        ],
+        "case": "ovrtx-scaling-v7-n1",
+        "backend": "ovrtx",
+        "num_envs": 1,
+        "steps": 345,
+        "mean_step_ms": 837.9069527287198,
+        "p95_step_ms": 860.9430661657825,
+        "mean_rgb_readback_ms": 2.029611795897717,
+        "mean_step_with_readback_ms": 839.9365645246176,
+        "per_environment_control_hz": 1.1934499370645029,
+        "aggregate_env_steps_s": 1.1934499370645029,
+        "aggregate_env_steps_with_rgb_cpu_s": 1.1905661001506396,
+        "aggregate_sim_seconds_per_wall_second": 0.07956332913763352,
+        "camera_frame_increments": [
+          1
+        ],
+        "sampled_peak_gpu_mib": 5062.0,
+        "hdf5_demos": 1,
+        "hdf5_initial_state_and_camera_max_error": 5.364418029785156e-07,
+        "videos": {
+          "egocentric_mirrored_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "over_shoulder_left_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "wrist_cam": {
+            "frames": 115,
+            "fps": 5.0
+          }
+        },
+        "timing_recovered_after_export_failure": false
+      },
+      {
+        "script_sha256": "477a47afbfce6ca43818d705562838d89f79a72f43175bd4a0d703585696ec12",
+        "measurement_qualified": true,
+        "native_shape_count": 2565,
+        "collision_candidate_summaries": [
+          {
+            "contact_capacity": 262144,
+            "candidate_capacity": 262144,
+            "peak_candidates": 31648,
+            "growth_events": 0
+          }
+        ],
+        "case": "ovrtx-scaling-v7-n4",
+        "backend": "ovrtx",
+        "num_envs": 4,
+        "steps": 345,
+        "mean_step_ms": 983.3462971016306,
+        "p95_step_ms": 1015.6649073585868,
+        "mean_rgb_readback_ms": 8.347329004006326,
+        "mean_step_with_readback_ms": 991.6936261056369,
+        "per_environment_control_hz": 1.0169357457769002,
+        "aggregate_env_steps_s": 4.067742983107601,
+        "aggregate_env_steps_with_rgb_cpu_s": 4.033503790588963,
+        "aggregate_sim_seconds_per_wall_second": 0.27118286554050675,
+        "camera_frame_increments": [
+          1
+        ],
+        "sampled_peak_gpu_mib": 8990.0,
+        "hdf5_demos": 4,
+        "hdf5_initial_state_and_camera_max_error": 5.364418029785156e-07,
+        "videos": {
+          "egocentric_mirrored_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "over_shoulder_left_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "wrist_cam": {
+            "frames": 115,
+            "fps": 5.0
+          }
+        },
+        "timing_recovered_after_export_failure": false
+      },
+      {
+        "script_sha256": "019b5944f9acef3a00184296bb7c29e26d5edb5165f979a0c729994a01316c34",
+        "measurement_qualified": true,
+        "native_shape_count": 10257,
+        "collision_candidate_summaries": [
+          {
+            "contact_capacity": 1048576,
+            "candidate_capacity": 1048576,
+            "peak_candidates": 123390,
+            "growth_events": 0
+          }
+        ],
+        "case": "ovrtx-scaling-v8-n16",
+        "backend": "ovrtx",
+        "num_envs": 16,
+        "steps": 345,
+        "mean_step_ms": 1381.321453211991,
+        "p95_step_ms": 1414.6577897947282,
+        "mean_rgb_readback_ms": 67.66244879910263,
+        "mean_step_with_readback_ms": 1448.9839020110937,
+        "per_environment_control_hz": 0.7239444502036053,
+        "aggregate_env_steps_s": 11.583111203257685,
+        "aggregate_env_steps_with_rgb_cpu_s": 11.042220674634866,
+        "aggregate_sim_seconds_per_wall_second": 0.7722074135505124,
+        "camera_frame_increments": [
+          1
+        ],
+        "sampled_peak_gpu_mib": 22963.0,
+        "hdf5_demos": 16,
+        "hdf5_initial_state_and_camera_max_error": 1.253560185432434e-06,
+        "videos": {
+          "egocentric_mirrored_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "over_shoulder_left_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "wrist_cam": {
+            "frames": 115,
+            "fps": 5.0
+          }
+        },
+        "timing_recovered_after_export_failure": false
+      },
+      {
+        "script_sha256": "019b5944f9acef3a00184296bb7c29e26d5edb5165f979a0c729994a01316c34",
+        "measurement_qualified": true,
+        "native_shape_count": 5129,
+        "collision_candidate_summaries": [
+          {
+            "contact_capacity": 524288,
+            "candidate_capacity": 524288,
+            "peak_candidates": 60149,
+            "growth_events": 0
+          }
+        ],
+        "case": "ovrtx-scaling-v9-n8",
+        "backend": "ovrtx",
+        "num_envs": 8,
+        "steps": 345,
+        "mean_step_ms": 1096.2551646541967,
+        "p95_step_ms": 1121.8724311795086,
+        "mean_rgb_readback_ms": 16.048387567971606,
+        "mean_step_with_readback_ms": 1112.3035522221683,
+        "per_environment_control_hz": 0.9121963866099008,
+        "aggregate_env_steps_s": 7.297571092879206,
+        "aggregate_env_steps_with_rgb_cpu_s": 7.192281265323248,
+        "aggregate_sim_seconds_per_wall_second": 0.4865047395252804,
+        "camera_frame_increments": [
+          1
+        ],
+        "sampled_peak_gpu_mib": 13820.0,
+        "hdf5_demos": 8,
+        "hdf5_initial_state_and_camera_max_error": 1.253560185432434e-06,
+        "videos": {
+          "egocentric_mirrored_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "over_shoulder_left_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "wrist_cam": {
+            "frames": 115,
+            "fps": 5.0
+          }
+        },
+        "timing_recovered_after_export_failure": false
+      }
+    ],
+    "diagnostic_repeats": [
+      {
+        "script_sha256": "019b5944f9acef3a00184296bb7c29e26d5edb5165f979a0c729994a01316c34",
+        "measurement_qualified": false,
+        "native_shape_count": 5129,
+        "collision_candidate_summaries": [
+          {
+            "contact_capacity": 524288,
+            "candidate_capacity": 524288,
+            "peak_candidates": 64073,
+            "growth_events": 0
+          }
+        ],
+        "case": "ovrtx-scaling-v8-n8",
+        "backend": "ovrtx",
+        "num_envs": 8,
+        "steps": 345,
+        "mean_step_ms": 1101.4643753072303,
+        "p95_step_ms": 1148.2901475857943,
+        "mean_rgb_readback_ms": 16.54866551136787,
+        "mean_step_with_readback_ms": 1118.013040818598,
+        "per_environment_control_hz": 0.9078822905380586,
+        "aggregate_env_steps_s": 7.263058324304469,
+        "aggregate_env_steps_with_rgb_cpu_s": 7.155551597271603,
+        "aggregate_sim_seconds_per_wall_second": 0.4842038882869646,
+        "camera_frame_increments": [
+          1
+        ],
+        "sampled_peak_gpu_mib": 13772.0,
+        "hdf5_demos": 8,
+        "hdf5_initial_state_and_camera_max_error": 1.253560185432434e-06,
+        "videos": {
+          "egocentric_mirrored_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "over_shoulder_left_camera": {
+            "frames": 115,
+            "fps": 5.0
+          },
+          "wrist_cam": {
+            "frames": 115,
+            "fps": 5.0
+          }
+        },
+        "timing_recovered_after_export_failure": false,
+        "excluded_from_throughput_comparison": "Additional per-step physical-state readbacks outside timed section"
+      }
+    ],
+    "paired_configuration_checks": [
+      1,
+      4,
+      8
+    ],
+    "note": "Production env.step including default recorder terms and observations; separate native RGB CPU transfer. No policy inference, networking, or final video/HDF5 export in step timing. Open-loop trajectories may diverge."
+  },
+  "physics_export_failure": {
+    "created_at": "2026-10-24T22:39:40.853958+00:00",
+    "case": "isaacrtx-scaling-v5-n1",
+    "failure": "OpenCV VideoWriter isOpened false after all 345 timed actions and HDF export",
+    "measurement_complete": true,
+    "recovered_timings": true,
+    "video_missing": true,
+    "trajectory_finite": true,
+    "actions_exact": true,
+    "repair": "Use system ffmpeg libx264 only after timing; no changes to timed stepping loop",
+    "old_script_sha256": "ba4f2f4f2509eb02c0dbd923bf5c668030de36b3440dbb2436f69efabb75a646",
+    "new_script_sha256": "477a47afbfce6ca43818d705562838d89f79a72f43175bd4a0d703585696ec12",
+    "preservation": "isaacrtx-scaling-v5-n1-download.json"
+  },
+  "physics_nonfinite_failure": {
+    "case": "ovrtx-scaling-v7-n8",
+    "phase": "physics_timing_start",
+    "state_check_index": 172,
+    "control_step": 173,
+    "simulated_seconds": 11.533333333333333,
+    "cause": "At least one returned physical-state component is non-finite; exact affected component was not persisted before the original assertion.",
+    "capacity": {
+      "contact_capacity": 524288,
+      "candidate_capacity": 524288,
+      "peak_candidates": 56171,
+      "growth_events": 0
+    },
+    "not_gpu_oom": true,
+    "original_hdf_groups": 0,
+    "measurement_accepted": false,
+    "preservation": "ovrtx-scaling-v7-n8-download.json",
+    "followup": "One full8-env repeat with per-step finite checks and failure-state/HDF/video persistence; diagnostic excluded from comparable timing. Independent12Isaac/16OVRTX cases keep original checkpoint frequency and production physics. No engine-only cause established.",
+    "created_at": "2026-10-24T23:24:09.044059+00:00"
+  },
+  "physics_diagnostic_review": {
+    "case": "ovrtx-scaling-v8-n8",
+    "completed_steps": 345,
+    "environments": 8,
+    "all_recorded_numeric_states_finite": true,
+    "per_step_live_state_gate_passed": true,
+    "source_actions_exact": true,
+    "initial_state_and_camera_max_error": 1.253560185432434e-06,
+    "shape_count": 5129,
+    "same_shape_count_as_failed_attempt": true,
+    "geometry_hash_identity_not_established": true,
+    "root_cause": "Unresolved; original non-finite component was not saved and the failure did not reproduce in this independent compile/run.",
+    "measurement_qualified": false,
+    "notes": "Per-step extra state readbacks are outside timed env.step but the diagnostic is kept separate from primary throughput. No physics/asset/contact changes.",
+    "created_at": "2026-10-24T23:34:01.704274+00:00"
+  },
+  "native_image_audit": {
+    "cases": 8,
+    "images_verified": 174,
+    "env0_source_frame": 204,
+    "comparisons": [
+      {
+        "backend": "isaacrtx",
+        "reference_envs": 2,
+        "compared_envs": 12,
+        "camera": "egocentric_mirrored_camera",
+        "mean_absolute_rgb_error": 1.7676400141460906,
+        "p95_absolute_rgb_error": 6.0
+      },
+      {
+        "backend": "isaacrtx",
+        "reference_envs": 2,
+        "compared_envs": 12,
+        "camera": "over_shoulder_left_camera",
+        "mean_absolute_rgb_error": 1.7790892650462964,
+        "p95_absolute_rgb_error": 7.0
+      },
+      {
+        "backend": "isaacrtx",
+        "reference_envs": 2,
+        "compared_envs": 12,
+        "camera": "wrist_cam",
+        "mean_absolute_rgb_error": 3.1664453125,
+        "p95_absolute_rgb_error": 10.0
+      },
+      {
+        "backend": "isaacrtx",
+        "reference_envs": 2,
+        "compared_envs": 4,
+        "camera": "egocentric_mirrored_camera",
+        "mean_absolute_rgb_error": 0.8111392425411522,
+        "p95_absolute_rgb_error": 3.0
+      },
+      {
+        "backend": "isaacrtx",
+        "reference_envs": 2,
+        "compared_envs": 4,
+        "camera": "over_shoulder_left_camera",
+        "mean_absolute_rgb_error": 0.6943786168981482,
+        "p95_absolute_rgb_error": 3.0
+      },
+      {
+        "backend": "isaacrtx",
+        "reference_envs": 2,
+        "compared_envs": 4,
+        "camera": "wrist_cam",
+        "mean_absolute_rgb_error": 1.058572410300926,
+        "p95_absolute_rgb_error": 3.0
+      },
+      {
+        "backend": "isaacrtx",
+        "reference_envs": 2,
+        "compared_envs": 9,
+        "camera": "egocentric_mirrored_camera",
+        "mean_absolute_rgb_error": 1.556178465792181,
+        "p95_absolute_rgb_error": 5.0
+      },
+      {
+        "backend": "isaacrtx",
+        "reference_envs": 2,
+        "compared_envs": 9,
+        "camera": "over_shoulder_left_camera",
+        "mean_absolute_rgb_error": 1.4548003472222222,
+        "p95_absolute_rgb_error": 6.0
+      },
+      {
+        "backend": "isaacrtx",
+        "reference_envs": 2,
+        "compared_envs": 9,
+        "camera": "wrist_cam",
+        "mean_absolute_rgb_error": 2.529234302662037,
+        "p95_absolute_rgb_error": 8.0
+      },
+      {
+        "backend": "ovrtx",
+        "reference_envs": 2,
+        "compared_envs": 16,
+        "camera": "egocentric_mirrored_camera",
+        "mean_absolute_rgb_error": 2.326859889403292,
+        "p95_absolute_rgb_error": 9.0
+      },
+      {
+        "backend": "ovrtx",
+        "reference_envs": 2,
+        "compared_envs": 16,
+        "camera": "over_shoulder_left_camera",
+        "mean_absolute_rgb_error": 1.4964586950231482,
+        "p95_absolute_rgb_error": 6.0
+      },
+      {
+        "backend": "ovrtx",
+        "reference_envs": 2,
+        "compared_envs": 16,
+        "camera": "wrist_cam",
+        "mean_absolute_rgb_error": 2.222419704861111,
+        "p95_absolute_rgb_error": 7.0
+      },
+      {
+        "backend": "ovrtx",
+        "reference_envs": 2,
+        "compared_envs": 4,
+        "camera": "egocentric_mirrored_camera",
+        "mean_absolute_rgb_error": 4.208108281893004,
+        "p95_absolute_rgb_error": 17.0
+      },
+      {
+        "backend": "ovrtx",
+        "reference_envs": 2,
+        "compared_envs": 4,
+        "camera": "over_shoulder_left_camera",
+        "mean_absolute_rgb_error": 2.3238487413194444,
+        "p95_absolute_rgb_error": 8.0
+      },
+      {
+        "backend": "ovrtx",
+        "reference_envs": 2,
+        "compared_envs": 4,
+        "camera": "wrist_cam",
+        "mean_absolute_rgb_error": 3.778010344328704,
+        "p95_absolute_rgb_error": 14.0
+      },
+      {
+        "backend": "ovrtx",
+        "reference_envs": 2,
+        "compared_envs": 9,
+        "camera": "egocentric_mirrored_camera",
+        "mean_absolute_rgb_error": 1.897021283436214,
+        "p95_absolute_rgb_error": 7.0
+      },
+      {
+        "backend": "ovrtx",
+        "reference_envs": 2,
+        "compared_envs": 9,
+        "camera": "over_shoulder_left_camera",
+        "mean_absolute_rgb_error": 1.4255848524305557,
+        "p95_absolute_rgb_error": 6.0
+      },
+      {
+        "backend": "ovrtx",
+        "reference_envs": 2,
+        "compared_envs": 9,
+        "camera": "wrist_cam",
+        "mean_absolute_rgb_error": 2.1505537471064815,
+        "p95_absolute_rgb_error": 7.0
+      }
+    ],
+    "caveat": "Same-state native-resolution samples; pixel differences do not establish policy or rendering-quality equivalence."
+  },
+  "allocation_failures": [
+    {
+      "case": "isaacrtx-scaling-v3-n13",
+      "failed_allocation_bytes": 490733568,
+      "classification": "CUDA allocation failure during first Newton step in MuJoCo-Warp convex collision scratch allocation",
+      "stack": [
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "264",
+          "<module>"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "165",
+          "main"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/env.py",
+          "80",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/envs/manager_based_rl_env.py",
+          "219",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/sim/simulation_context.py",
+          "746",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "757",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1785",
+          "_simulate_physics_only"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1703",
+          "_run_solver_substeps"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1535",
+          "_step_solver"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4176",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/newton_contacts.py",
+          "149",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4153",
+          "_mujoco_warp_step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1371",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1349",
+          "forward"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "666",
+          "fwd_position"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "933",
+          "collision"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "877",
+          "_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/collision_convex.py",
+          "1332",
+          "convex_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/warp/_src/context.py",
+          "9869",
+          "empty"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/warp/_src/types.py",
+          "3418",
+          "__init__"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/warp/_src/types.py",
+          "3901",
+          "_init_new"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/warp/_src/context.py",
+          "5046",
+          "allocate"
+        ]
+      ]
+    },
+    {
+      "case": "isaacrtx-scaling-v3-n14",
+      "failed_allocation_bytes": 528482304,
+      "classification": "CUDA allocation failure during first Newton step in MuJoCo-Warp convex collision scratch allocation",
+      "stack": [
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "264",
+          "<module>"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "165",
+          "main"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/env.py",
+          "80",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/envs/manager_based_rl_env.py",
+          "219",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/sim/simulation_context.py",
+          "746",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "757",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1785",
+          "_simulate_physics_only"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1703",
+          "_run_solver_substeps"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1535",
+          "_step_solver"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4176",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/newton_contacts.py",
+          "149",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4153",
+          "_mujoco_warp_step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1371",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1349",
+          "forward"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "666",
+          "fwd_position"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "933",
+          "collision"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "877",
+          "_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/collision_convex.py",
+          "1330",
+          "convex_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/warp/_src/context.py",
+          "9869",
+          "empty"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/warp/_src/types.py",
+          "3418",
+          "__init__"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/warp/_src/types.py",
+          "3901",
+          "_init_new"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/warp/_src/context.py",
+          "5046",
+          "allocate"
+        ]
+      ]
+    },
+    {
+      "case": "isaacrtx-scaling-v3-n16",
+      "failed_allocation_bytes": 603979776,
+      "classification": "CUDA allocation failure during first Newton step in MuJoCo-Warp convex collision scratch allocation",
+      "stack": [
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "264",
+          "<module>"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "165",
+          "main"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/env.py",
+          "80",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/envs/manager_based_rl_env.py",
+          "219",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/sim/simulation_context.py",
+          "746",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "757",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1785",
+          "_simulate_physics_only"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1703",
+          "_run_solver_substeps"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1535",
+          "_step_solver"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4176",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/newton_contacts.py",
+          "149",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4153",
+          "_mujoco_warp_step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1371",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1349",
+          "forward"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "666",
+          "fwd_position"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "933",
+          "collision"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "877",
+          "_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/mujoco_warp/_src/collision_convex.py",
+          "1316",
+          "convex_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/warp/_src/context.py",
+          "9869",
+          "empty"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/warp/_src/types.py",
+          "3418",
+          "__init__"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/warp/_src/types.py",
+          "3901",
+          "_init_new"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-isaacrtx/lib/python3.12/site-packages/warp/_src/context.py",
+          "5046",
+          "allocate"
+        ]
+      ]
+    },
+    {
+      "case": "ovrtx-scaling-v3-n17",
+      "failed_allocation_bytes": 294125568,
+      "classification": "CUDA allocation failure during first Newton step in MuJoCo-Warp convex collision scratch allocation",
+      "stack": [
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "264",
+          "<module>"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "165",
+          "main"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/env.py",
+          "80",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/envs/manager_based_rl_env.py",
+          "219",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/sim/simulation_context.py",
+          "746",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "757",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1785",
+          "_simulate_physics_only"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1703",
+          "_run_solver_substeps"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1535",
+          "_step_solver"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4176",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/newton_contacts.py",
+          "149",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4153",
+          "_mujoco_warp_step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1371",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1349",
+          "forward"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "666",
+          "fwd_position"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "933",
+          "collision"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "877",
+          "_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_convex.py",
+          "1324",
+          "convex_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/context.py",
+          "9869",
+          "empty"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/types.py",
+          "3418",
+          "__init__"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/types.py",
+          "3901",
+          "_init_new"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/context.py",
+          "5046",
+          "allocate"
+        ]
+      ]
+    },
+    {
+      "case": "ovrtx-scaling-v3-n18",
+      "failed_allocation_bytes": 226492416,
+      "classification": "CUDA allocation failure during first Newton step in MuJoCo-Warp convex collision scratch allocation",
+      "stack": [
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "264",
+          "<module>"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "165",
+          "main"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/env.py",
+          "80",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/envs/manager_based_rl_env.py",
+          "219",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/sim/simulation_context.py",
+          "746",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "757",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1785",
+          "_simulate_physics_only"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1703",
+          "_run_solver_substeps"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1535",
+          "_step_solver"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4176",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/newton_contacts.py",
+          "149",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4153",
+          "_mujoco_warp_step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1371",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1349",
+          "forward"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "666",
+          "fwd_position"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "933",
+          "collision"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "877",
+          "_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_convex.py",
+          "1318",
+          "convex_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/context.py",
+          "9869",
+          "empty"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/types.py",
+          "3418",
+          "__init__"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/types.py",
+          "3901",
+          "_init_new"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/context.py",
+          "5046",
+          "allocate"
+        ]
+      ]
+    },
+    {
+      "case": "ovrtx-scaling-v3-n20",
+      "failed_allocation_bytes": 754974720,
+      "classification": "CUDA allocation failure during first Newton step in MuJoCo-Warp convex collision scratch allocation",
+      "stack": [
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "264",
+          "<module>"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "165",
+          "main"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/env.py",
+          "80",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/envs/manager_based_rl_env.py",
+          "219",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/sim/simulation_context.py",
+          "746",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "757",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1785",
+          "_simulate_physics_only"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1703",
+          "_run_solver_substeps"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1535",
+          "_step_solver"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4176",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/newton_contacts.py",
+          "149",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4153",
+          "_mujoco_warp_step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1371",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1349",
+          "forward"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "666",
+          "fwd_position"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "933",
+          "collision"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "877",
+          "_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_convex.py",
+          "1330",
+          "convex_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/context.py",
+          "9869",
+          "empty"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/types.py",
+          "3418",
+          "__init__"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/types.py",
+          "3901",
+          "_init_new"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/context.py",
+          "5046",
+          "allocate"
+        ]
+      ]
+    },
+    {
+      "case": "ovrtx-scaling-v3-n24",
+      "failed_allocation_bytes": 1811939328,
+      "classification": "CUDA allocation failure during first Newton step in MuJoCo-Warp convex collision scratch allocation",
+      "stack": [
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "264",
+          "<module>"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "165",
+          "main"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/env.py",
+          "80",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/envs/manager_based_rl_env.py",
+          "219",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/sim/simulation_context.py",
+          "746",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "757",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1785",
+          "_simulate_physics_only"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1703",
+          "_run_solver_substeps"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1535",
+          "_step_solver"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4176",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/newton_contacts.py",
+          "149",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4153",
+          "_mujoco_warp_step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1371",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1349",
+          "forward"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "666",
+          "fwd_position"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "933",
+          "collision"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "877",
+          "_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_convex.py",
+          "1312",
+          "convex_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/context.py",
+          "9869",
+          "empty"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/types.py",
+          "3418",
+          "__init__"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/types.py",
+          "3901",
+          "_init_new"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/context.py",
+          "5046",
+          "allocate"
+        ]
+      ]
+    },
+    {
+      "case": "ovrtx-scaling-v3-n32",
+      "failed_allocation_bytes": 4555014144,
+      "classification": "CUDA allocation failure during first Newton step in MuJoCo-Warp convex collision scratch allocation",
+      "stack": [
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "264",
+          "<module>"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/examples/run_renderer_scaling.py",
+          "165",
+          "main"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/env.py",
+          "80",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/envs/manager_based_rl_env.py",
+          "219",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab/isaaclab/sim/simulation_context.py",
+          "746",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "757",
+          "step"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1785",
+          "_simulate_physics_only"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1703",
+          "_run_solver_substeps"
+        ],
+        [
+          "/workspace/repos/IsaacLab-v3.0.0/source/isaaclab_newton/isaaclab_newton/physics/newton_manager.py",
+          "1535",
+          "_step_solver"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4176",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/robolab/core/environments/newton_contacts.py",
+          "149",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/utils/benchmark.py",
+          "138",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/newton/_src/solvers/mujoco/solver_mujoco.py",
+          "4153",
+          "_mujoco_warp_step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1371",
+          "step"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "1349",
+          "forward"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/forward.py",
+          "666",
+          "fwd_position"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "933",
+          "collision"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_driver.py",
+          "877",
+          "_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/warp_util.py",
+          "97",
+          "wrapper"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/mujoco_warp/_src/collision_convex.py",
+          "1217",
+          "convex_narrowphase"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/context.py",
+          "9869",
+          "empty"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/types.py",
+          "3418",
+          "__init__"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/types.py",
+          "3901",
+          "_init_new"
+        ],
+        [
+          "/workspace/repos/RoboLab-Verified/.venv-kitless/lib/python3.12/site-packages/warp/_src/context.py",
+          "5046",
+          "allocate"
+        ]
+      ]
+    }
+  ],
+  "manual_review": {
+    "reviewed_at": "2026-10-24T22:09:05.877769+00:00",
+    "reviews": [
+      {
+        "artifact": "contact-sheet-n1.jpg",
+        "version": "v2",
+        "environments": [
+          0
+        ],
+        "finding": "Both backends show matching scene/robot placement and expected textures. Prior heavy OVRTX noise absent in this sample."
+      },
+      {
+        "artifact": "contact-sheet-n2.jpg",
+        "version": "v3",
+        "environments": [
+          0,
+          1
+        ],
+        "finding": "Both distinct trajectory phases appear in all three camera views, matching between backends. No duplicate views, blank frames or visible neighboring-environment interference in these samples."
+      },
+      {
+        "artifact": "contact-sheet-n4.jpg",
+        "version": "v3",
+        "environments": [
+          0,
+          2,
+          3
+        ],
+        "finding": "Distinct trajectory phases in all three cameras, matching scene/robot placement across renderers. No blank, visibly duplicated or neighboring-environment views in the sampled thumbnails."
+      },
+      {
+        "artifact": "contact-sheet-n8.jpg",
+        "version": "v3",
+        "environments": [
+          0,
+          4,
+          7
+        ],
+        "finding": "Distinct trajectory phases in all three cameras, matching scene/robot placement across renderers. No blank, visibly duplicated or neighboring-environment views in the sampled thumbnails."
+      },
+      {
+        "artifact": "capacity-samples.jpg",
+        "version": "v3",
+        "cases": {
+          "isaacrtx_n12": [
+            0,
+            6,
+            11
+          ],
+          "ovrtx_n16": [
+            0,
+            8,
+            15
+          ]
+        },
+        "finding": "All sampled views show expected textures, distinct trajectory poses and coherent robot/camera motion. No blank or neighboring-environment interference seen. These counts have different phase offsets and are not pairwise pixel-equivalence checks."
+      },
+      {
+        "artifact": "native-detail-samples.png",
+        "cases": [
+          "isaacrtx-scaling-v4-n2",
+          "ovrtx-scaling-v4-n2",
+          "isaacrtx-scaling-v4-n4"
+        ],
+        "source_frame": 204,
+        "method": "Native pixel crops, no resizing",
+        "finding": "Wood grain, bagel textures, plate speckles and robot lettering are visible. No obvious resolution loss in Isaac RTX N2 to N4. Lighting/reflections differ slightly across renderers. Await OVRTX N4 and larger counts before judging its batch transition."
+      },
+      {
+        "artifact": "native-detail-samples.png",
+        "cases": [
+          "isaacrtx-scaling-v4-n2",
+          "ovrtx-scaling-v4-n2",
+          "isaacrtx-scaling-v4-n4",
+          "ovrtx-scaling-v4-n4"
+        ],
+        "source_frame": 204,
+        "method": "Native pixel crops, no resizing",
+        "finding": "OVRTX N4 preserves visible wood grain, plate speckles, bagel sesame detail and robot lettering compared with N2. No obvious resolution loss, blank/stale geometry or strong noise increase in these samples. Its N4 throughput gain repeats (~60.4 versus60.6 camera sets/s). Internal sample-count/AA equivalence and policy equivalence are not established."
+      },
+      {
+        "artifact": "capacity-native-detail.png",
+        "cases": [
+          "isaacrtx-scaling-v4-n12",
+          "ovrtx-scaling-v4-n16"
+        ],
+        "source_frame": 204,
+        "method": "Native pixel crops, no resizing",
+        "finding": "At each largest passing batch, visible grain, bagel/plate textures and robot lettering remain clear. No obvious resolution loss or strong noise increase. Existing small lighting/reflection differences remain. Same-state comparison, not proof of equal internal ray budgets or policy scores."
+      }
+    ],
+    "method": "Sampled visual comparison plus independent physical/camera audits and image screening against the previously validated trajectory. Not policy-equivalence validation.",
+    "physics_review": [
+      {
+        "case": "isaacrtx-scaling-v5-n1",
+        "frames": [
+          0,
+          172,
+          344
+        ],
+        "cameras": "all three native images",
+        "observation": "Robot and wrist-camera motion visible; bagel grasp/contact at step172 and released/displaced bagel by step344. Scene geometry, table texture and background rendered normally. Sampled images only because final video export failed.",
+        "sheet": "/Users/metz/Documents/manda/state-of-robot-aug-2026/output/ovrtx-spike-20261024/scaling-replacement/isaacrtx-scaling-v5-n1-visual-review.jpg"
+      },
+      {
+        "case": "ovrtx-scaling-v7-n1",
+        "video_frames": [
+          0,
+          30,
+          60,
+          90,
+          114
+        ],
+        "cameras": "all three",
+        "observation": "Sampled videos show robot approaching, bagel contact/loading, lifting and release on the plate. Wrist-camera motion and scene rendering update throughout. Trajectory differs from the independent Isaac RTX run, so these videos are not pixel-matched renderer comparisons.",
+        "sheet": "/Users/metz/Documents/manda/state-of-robot-aug-2026/output/ovrtx-spike-20261024/scaling-replacement/ovrtx-scaling-v7-n1-visual-review.jpg"
+      },
+      {
+        "case": "isaacrtx-scaling-v7-n4",
+        "video_frames": [
+          0,
+          30,
+          60,
+          90,
+          114
+        ],
+        "cameras": "all three",
+        "observation": "Sampled environment0 videos show approach and bagel contact/loading, followed by withdrawal. Bagel remains on table in this independent rollout. RGB, background and moving wrist camera remain normal. This is an unscored fixed-action throughput run.",
+        "sheet": "/Users/metz/Documents/manda/state-of-robot-aug-2026/output/ovrtx-spike-20261024/scaling-replacement/isaacrtx-scaling-v7-n4-visual-review.jpg"
+      },
+      {
+        "case": "ovrtx-scaling-v7-n4",
+        "video_frames": [
+          0,
+          30,
+          60,
+          90,
+          114
+        ],
+        "cameras": "all three",
+        "observation": "Environment0 shows approach, bagel contact/loading and withdrawal, with bagel remaining on the table. Scene and moving wrist-camera rendering remain consistent with expected geometry. No blank/stale-camera appearance in sampled frames.",
+        "sheet": "/Users/metz/Documents/manda/state-of-robot-aug-2026/output/ovrtx-spike-20261024/scaling-replacement/ovrtx-scaling-v7-n4-visual-review.jpg"
+      },
+      {
+        "case": "isaacrtx-scaling-v7-n8",
+        "video_frames": [
+          0,
+          30,
+          60,
+          90,
+          114
+        ],
+        "cameras": "all three",
+        "observation": "Environment0 videos show robot approach, bagel loading and withdrawal with stable scene/camera rendering. Native environment0/7 checkpoints also show updated wrist views and object motion.",
+        "sheet": "/Users/metz/Documents/manda/state-of-robot-aug-2026/output/ovrtx-spike-20261024/scaling-replacement/isaacrtx-scaling-v7-n8-visual-review.jpg"
+      },
+      {
+        "case": "ovrtx-scaling-v8-n8",
+        "video_frames": [
+          0,
+          30,
+          60,
+          90,
+          114
+        ],
+        "cameras": "all three",
+        "observation": "The diagnostic repeat shows normal scene/camera motion, bagel contact and withdrawal; first/last environment checkpoints also render correctly. No visually blank or frozen stream in the reviewed samples. It did not reproduce the non-finite-state failure."
+      },
+      {
+        "case": "isaacrtx-scaling-v8-n12",
+        "video_frames": [
+          0,
+          30,
+          60,
+          90,
+          114
+        ],
+        "cameras": "all three",
+        "observation": "Environment0 shows approach, grasp/contact, transfer attempt and withdrawal. Native environment0/11 checkpoint views show the correct scene, moving wrist camera and robot. No obvious camera freeze or missing geometry in sampled views."
+      },
+      {
+        "case": "ovrtx-scaling-v8-n16",
+        "video_frames": [
+          0,
+          30,
+          60,
+          90,
+          114
+        ],
+        "cameras": "all three",
+        "observation": "Environment0 shows approach, bagel grasp/transfer and withdrawal. First/last environment0/15 native checkpoints show moving robot and wrist views, expected scene geometry and textures. All16 trajectories passed the numeric/recording audits."
+      },
+      {
+        "case": "ovrtx-scaling-v9-n8",
+        "video_frames": [
+          0,
+          30,
+          60,
+          90,
+          114
+        ],
+        "cameras": "all three",
+        "native_envs": [
+          0,
+          7
+        ],
+        "native_steps": [
+          0,
+          172,
+          344
+        ],
+        "finding": "Approach, bagel contact and withdrawal are visible; sampled camera images update with expected textures and geometry. These are unscored fixed-action rollouts, not policy-success measurements."
+      }
+    ],
+    "physics_parallel_native_review": [
+      {
+        "cases": [
+          "isaacrtx-scaling-v7-n4",
+          "ovrtx-scaling-v7-n4"
+        ],
+        "envs": [
+          0,
+          3
+        ],
+        "frames": [
+          0,
+          172,
+          344
+        ],
+        "cameras": [
+          "egocentric_mirrored_camera",
+          "wrist_cam"
+        ],
+        "observation": "Both endpoint environments show robot/contact motion and updated wrist views. Corresponding environment slots have matching framing across the renderers; no blank images or obvious resolution loss in sampled captures."
+      },
+      {
+        "cases": [
+          "isaacrtx-scaling-v7-n8"
+        ],
+        "envs": [
+          0,
+          7
+        ],
+        "frames": [
+          0,
+          172,
+          344
+        ],
+        "cameras": [
+          "egocentric_mirrored_camera",
+          "wrist_cam"
+        ],
+        "observation": "Both endpoint environments render the correct scene and moving robot; no blank/stale samples or obvious resolution loss."
+      }
+    ],
+    "physics_comparison_video": {
+      "path": "/Users/metz/Documents/manda/state-of-robot-aug-2026/output/ovrtx-spike-20261024/scaling-replacement/physics-renderer-comparison-n4.mp4",
+      "decoded_frames": 115,
+      "fps": 5,
+      "shape": [
+        1280,
+        808
+      ],
+      "preview_reviewed": true,
+      "playback": "equal simulation time, not wall-clock speed"
+    },
+    "physics_comparison_video_cpu": {
+      "path": "/Users/metz/Documents/manda/state-of-robot-aug-2026/output/ovrtx-spike-20261024/scaling-replacement/physics-renderer-comparison-n4-cpu.mp4",
+      "rate_basis": "env.step plus native RGB CPU readback",
+      "frames": 115,
+      "fps": 5,
+      "playback": "equal simulation time",
+      "decoded_frames": 115,
+      "preview_reviewed": true,
+      "frame_size": [
+        1280,
+        808
+      ]
+    },
+    "updated_at": "2026-10-25T00:05:38.399358+00:00"
+  },
+  "physics_standard_repeat": {
+    "case": "ovrtx-scaling-v9-n8",
+    "created_at": "2026-10-25T00:05:38.399358+00:00",
+    "passed": true,
+    "summary": "A final ordinary eight-environment repeat completed all 345 actions with all eight HDF5 trajectories finite, matching source actions and initial state/camera metadata. It delivered 7.19 aggregate control steps/s including native RGB transfer to CPU, versus 4.92 for Isaac RTX. All three environment-0 videos decoded completely; sampled videos and first/last-environment native images show normal camera/robot motion. This passing ordinary repeat and the passing extra-checking diagnostic do not explain or repair the original non-finite-state failure. No production physics settings were changed.",
+    "audit": {
+      "script_sha256": "019b5944f9acef3a00184296bb7c29e26d5edb5165f979a0c729994a01316c34",
+      "measurement_qualified": true,
+      "native_shape_count": 5129,
+      "collision_candidate_summaries": [
+        {
+          "contact_capacity": 524288,
+          "candidate_capacity": 524288,
+          "peak_candidates": 60149,
+          "growth_events": 0
+        }
+      ],
+      "case": "ovrtx-scaling-v9-n8",
+      "backend": "ovrtx",
+      "num_envs": 8,
+      "steps": 345,
+      "mean_step_ms": 1096.2551646541967,
+      "p95_step_ms": 1121.8724311795086,
+      "mean_rgb_readback_ms": 16.048387567971606,
+      "mean_step_with_readback_ms": 1112.3035522221683,
+      "per_environment_control_hz": 0.9121963866099008,
+      "aggregate_env_steps_s": 7.297571092879206,
+      "aggregate_env_steps_with_rgb_cpu_s": 7.192281265323248,
+      "aggregate_sim_seconds_per_wall_second": 0.4865047395252804,
+      "camera_frame_increments": [
+        1
+      ],
+      "sampled_peak_gpu_mib": 13820.0,
+      "hdf5_demos": 8,
+      "hdf5_initial_state_and_camera_max_error": 1.253560185432434e-06,
+      "videos": {
+        "egocentric_mirrored_camera": {
+          "frames": 115,
+          "fps": 5.0
+        },
+        "over_shoulder_left_camera": {
+          "frames": 115,
+          "fps": 5.0
+        },
+        "wrist_cam": {
+          "frames": 115,
+          "fps": 5.0
+        }
+      },
+      "timing_recovered_after_export_failure": false
+    },
+    "original_failure_remains_unresolved": true,
+    "visual_review": {
+      "video_frames": [
+        0,
+        30,
+        60,
+        90,
+        114
+      ],
+      "cameras": "all three",
+      "native_envs": [
+        0,
+        7
+      ],
+      "native_steps": [
+        0,
+        172,
+        344
+      ],
+      "finding": "Approach, bagel contact and withdrawal are visible; sampled camera images update with expected textures and geometry. These are unscored fixed-action rollouts, not policy-success measurements."
+    }
+  },
+  "comparison_video_audit": {
+    "file": "/Users/metz/Documents/manda/state-of-robot-aug-2026/output/ovrtx-spike-20261024/scaling-replacement/physics-renderer-comparison-n4-cpu.mp4",
+    "decoded_frames": 115,
+    "fps": 5.0,
+    "duration_s": 23.0,
+    "shape": [
+      808,
+      1280,
+      3
+    ],
+    "passed": true
+  },
+  "node_status": {
+    "id": 57565659,
+    "actual_status": "exited",
+    "cur_state": "stopped",
+    "intended_status": "stopped",
+    "checked_at": "2026-10-25T00:05:14.637550+00:00"
+  },
+  "raw_evidence_directory": "/Users/metz/Documents/manda/state-of-robot-aug-2026/output/ovrtx-spike-20261024/scaling-replacement",
+  "runtime_provenance": {
+    "isaacrtx": {
+      "versions": {
+        "mujoco-warp": "3.12.0",
+        "warp-lang": "1.17.0",
+        "isaacsim": "6.2.0.0",
+        "usd-exchange": "3.0.1",
+        "newton": "1.6.1",
+        "isaaclab": "28.0.0",
+        "mujoco": "3.12.0",
+        "ovstage": "0.2.1.385922",
+        "torch": "2.11.0+cu130"
+      },
+      "main_script_sha256": "fa852c81d5142eaed355a1bc9cc36df960941f670acc79a3448904f76d8a8c51",
+      "physics_timing": {
+        "requested_sim_rate_hz": null,
+        "requested_newton_substeps": null,
+        "sim_rate_hz": 120.0,
+        "physics_dt_s": 0.008333333333333333,
+        "control_rate_hz": 15.0,
+        "decimation": 8,
+        "render_interval": 8,
+        "render_rate_hz": 15.0,
+        "newton_substeps": 4,
+        "solver_dt_s": 0.0020833333333333333
+      },
+      "contact_settings": {
+        "cone": "elliptic",
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      }
+    },
+    "ovrtx": {
+      "versions": {
+        "isaaclab": "28.0.0",
+        "mujoco-warp": "3.12.0",
+        "mujoco": "3.12.0",
+        "warp-lang": "1.17.0",
+        "usd-exchange": "3.0.1",
+        "ovstage": "0.2.1.385922",
+        "newton": "1.6.1",
+        "ovrtx": "0.5.1.385782",
+        "torch": "2.11.0+cu130"
+      },
+      "main_script_sha256": "fa852c81d5142eaed355a1bc9cc36df960941f670acc79a3448904f76d8a8c51",
+      "physics_timing": {
+        "requested_sim_rate_hz": null,
+        "requested_newton_substeps": null,
+        "sim_rate_hz": 120.0,
+        "physics_dt_s": 0.008333333333333333,
+        "control_rate_hz": 15.0,
+        "decimation": 8,
+        "render_interval": 8,
+        "render_rate_hz": 15.0,
+        "newton_substeps": 4,
+        "solver_dt_s": 0.0020833333333333333
+      },
+      "contact_settings": {
+        "cone": "elliptic",
+        "enable_multiccd": true,
+        "compact_keyboard_colliders": true,
+        "compact_shelf_colliders": true,
+        "compact_contact_storage": true,
+        "mesh_compatibility": true,
+        "single_hull_fingertips": true,
+        "filter_immovable_contacts": true,
+        "support_rolling_friction": 0.001,
+        "timeconst": 0.0045,
+        "impedance": [
+          0.99,
+          0.999
+        ],
+        "contact_capacity": 65536,
+        "constraint_capacity": 131072,
+        "gripper_stiffness": 10.0,
+        "gripper_damping": 0.5,
+        "gripper_target_velocity": 3.141592653589793
+      }
+    }
+  },
+  "repeat_script_sha256": "a6c961aec24915a585779101144b3698a3be1ec5b9affedeed0a166b4ce89c44",
+  "physics_script_sha256": "019b5944f9acef3a00184296bb7c29e26d5edb5165f979a0c729994a01316c34"
+}

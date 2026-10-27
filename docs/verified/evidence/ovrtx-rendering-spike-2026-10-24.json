@@ -1,0 +1,355 @@
+{
+  "date": "2026-10-24",
+  "branch": "codex/ovrtx-rendering-spike",
+  "base_commit": "51437f3ce85503fefe5cf04da32bb196f423a479",
+  "isaaclab_commit": "e3f7d9ff1f5d7f8280de3ece9000b7117f66bcf4",
+  "hardware": {
+    "gpu": "RTX PRO 4000 Blackwell",
+    "vram_gb": 24,
+    "driver": "595.58.03"
+  },
+  "node": {
+    "id": 57554439,
+    "actual_status": "exited",
+    "cur_state": "stopped",
+    "intended_status": "stopped"
+  },
+  "status": "Completed rendering feasibility spike; no production renderer switch or policy-score equivalence claim.",
+  "source_sha256": {
+    "scripts/install_newton61.py": "22a0fd634a507f3151636a0437747b6132cc34bb0a756545a58f3d88d81b61ba",
+    "robolab/core/environments/runtime.py": "17faa6781ddfa1d195acc4478b96afd1c71fb56e711a93d6f0c25909e9d5efd7",
+    "robolab/core/environments/physics.py": "994b3d6c0f38efd7eccf9eec877a2827397ede9a0bfbb3fdc2d00a9b5d70183e",
+    "robolab/core/utils/vis_utils.py": "d15ddee3b4c297403bccc51624f75c57c33606f9a15f719df26948633fec0fd3",
+    "examples/run_renderer_spike.py": "67086a89414392a1aa3db3592637e4c9aeb20fab9594263de35e23ace8ce235e"
+  },
+  "fixture_sha256": "29b537c8bd6b92bb80504ae62034df82207c821056f7e841111d6468816e3ec8",
+  "size": {
+    "installed_bytes": {
+      "ovrtx": 10821847543,
+      "isaacrtx": 26371931804
+    },
+    "zstd_level_3_tar_bytes": {
+      "ovrtx": 4828575333,
+      "isaacrtx": 11117593912
+    },
+    "notes": [
+      "Fresh complete upstream workspace dependencies plus editable RoboLab and pytest.",
+      "Environment sizes exclude assets, upstream source checkout, OS libraries, driver libraries and caches.",
+      "Compressed measurements stream tar through zstd -3 with four threads. These are not container image measurements."
+    ],
+    "installed_reduction_fraction": 0.5896452477039023,
+    "compressed_reduction_fraction": 0.5656816239898653
+  },
+  "physics_timing": {
+    "requested_sim_rate_hz": null,
+    "requested_newton_substeps": null,
+    "sim_rate_hz": 120.0,
+    "physics_dt_s": 0.008333333333333333,
+    "control_rate_hz": 15.0,
+    "decimation": 8,
+    "render_interval": 8,
+    "render_rate_hz": 15.0,
+    "newton_substeps": 4,
+    "solver_dt_s": 0.0020833333333333333
+  },
+  "final_runs": {
+    "isaacrtx": {
+      "case": "isaacrtx-v4",
+      "result_sha256": "dd3740ac8a8b2debac52494cfc534cafdd3c8bf7b3b4d32b4845b1c8cc2915f1",
+      "timings_s": {
+        "argument_imports": 1.6699214889667928,
+        "application_ready": 6.499236886855215,
+        "configured": 17.57043014280498,
+        "environment_ready": 40.03644878277555,
+        "reset_ready": 40.104774141684175,
+        "first_newton_action": 42.96441465197131,
+        "capture_initial": 44.24281688593328,
+        "capture_step_120": 45.67224156064913
+      },
+      "max_rss_kib": 9148612,
+      "kit_app_loaded": true,
+      "median_three_camera_capture_loop_s": {
+        "initial": 0.027137290686368942,
+        "step_120": 0.03704734519124031
+      }
+    },
+    "ovrtx": {
+      "case": "ovrtx-v4",
+      "result_sha256": "400d61e16c748abf15263be77c03e6ea8406430db4de37d8304c56eafac1c394",
+      "timings_s": {
+        "argument_imports": 1.4727806523442268,
+        "configured": 10.838037244044244,
+        "environment_ready": 48.91815032111481,
+        "reset_ready": 49.087561069987714,
+        "first_newton_action": 51.2113144393079,
+        "capture_initial": 55.18464650819078,
+        "capture_step_120": 59.07222873624414
+      },
+      "max_rss_kib": 7917600,
+      "kit_app_loaded": false,
+      "median_three_camera_capture_loop_s": {
+        "initial": 0.11037718690931797,
+        "step_120": 0.10693117370828986
+      }
+    }
+  },
+  "comparison": {
+    "captures": {
+      "initial": {
+        "max_state_difference": 0.0,
+        "cameras": {
+          "egocentric_mirrored_camera": {
+            "pose_calibration_max_difference": {
+              "/position": 0.0,
+              "/orientation": 0.0,
+              "/intrinsics": 0.0
+            },
+            "rgb_mae_255": 2.6134315522119342,
+            "left_mean_rgb": [
+              180.15787037037038,
+              159.5935016396605,
+              135.70598476080247
+            ],
+            "right_mean_rgb": [
+              179.2901957947531,
+              158.23991608796297,
+              134.24110725308643
+            ]
+          },
+          "over_shoulder_left_camera": {
+            "pose_calibration_max_difference": {
+              "/position": 0.0,
+              "/orientation": 0.0,
+              "/intrinsics": 0.0
+            },
+            "rgb_mae_255": 1.2641843894675926,
+            "left_mean_rgb": [
+              124.10771484375,
+              115.55714409722222,
+              107.61088975694445
+            ],
+            "right_mean_rgb": [
+              123.78611653645834,
+              115.11701714409722,
+              107.26527235243056
+            ]
+          },
+          "wrist_cam": {
+            "pose_calibration_max_difference": {
+              "/position": 0.0,
+              "/orientation": 0.0,
+              "/intrinsics": 0.0
+            },
+            "rgb_mae_255": 3.1414156539351854,
+            "left_mean_rgb": [
+              179.11752604166668,
+              151.00527886284723,
+              118.538642578125
+            ],
+            "right_mean_rgb": [
+              177.718837890625,
+              149.05228841145833,
+              116.74661241319444
+            ]
+          }
+        }
+      },
+      "step_120": {
+        "max_state_difference": 0.0,
+        "cameras": {
+          "egocentric_mirrored_camera": {
+            "pose_calibration_max_difference": {
+              "/position": 0.0,
+              "/orientation": 0.0,
+              "/intrinsics": 0.0
+            },
+            "rgb_mae_255": 2.6823109567901233,
+            "left_mean_rgb": [
+              178.14929832175926,
+              157.6868682484568,
+              134.56439043209878
+            ],
+            "right_mean_rgb": [
+              177.08560233410495,
+              156.1462143132716,
+              132.9219714506173
+            ]
+          },
+          "over_shoulder_left_camera": {
+            "pose_calibration_max_difference": {
+              "/position": 0.0,
+              "/orientation": 0.0,
+              "/intrinsics": 0.0
+            },
+            "rgb_mae_255": 1.2728294994212963,
+            "left_mean_rgb": [
+              130.70118815104166,
+              122.61906141493056,
+              115.47662868923611
+            ],
+            "right_mean_rgb": [
+              130.35629340277777,
+              122.14411566840278,
+              115.10906792534722
+            ]
+          },
+          "wrist_cam": {
+            "pose_calibration_max_difference": {
+              "/position": 0.0,
+              "/orientation": 0.0,
+              "/intrinsics": 0.0
+            },
+            "rgb_mae_255": 2.496685836226852,
+            "left_mean_rgb": [
+              166.99112413194445,
+              134.5523611111111,
+              95.95940863715278
+            ],
+            "right_mean_rgb": [
+              166.0272634548611,
+              133.11328016493056,
+              94.65273111979167
+            ]
+          }
+        }
+      }
+    },
+    "left_timings_s": {
+      "argument_imports": 1.6699214889667928,
+      "application_ready": 6.499236886855215,
+      "configured": 17.57043014280498,
+      "environment_ready": 40.03644878277555,
+      "reset_ready": 40.104774141684175,
+      "first_newton_action": 42.96441465197131,
+      "capture_initial": 44.24281688593328,
+      "capture_step_120": 45.67224156064913
+    },
+    "right_timings_s": {
+      "argument_imports": 1.4727806523442268,
+      "configured": 10.838037244044244,
+      "environment_ready": 48.91815032111481,
+      "reset_ready": 49.087561069987714,
+      "first_newton_action": 51.2113144393079,
+      "capture_initial": 55.18464650819078,
+      "capture_step_120": 59.07222873624414
+    }
+  },
+  "first_saved_frames": {
+    "initial": {
+      "egocentric_mirrored_camera": {
+        "first_saved_frame_rgb_mae_255": 3.136916473765432
+      },
+      "over_shoulder_left_camera": {
+        "first_saved_frame_rgb_mae_255": 1.7973285590277779
+      },
+      "wrist_cam": {
+        "first_saved_frame_rgb_mae_255": 3.9379969618055557
+      }
+    },
+    "step_120": {
+      "egocentric_mirrored_camera": {
+        "first_saved_frame_rgb_mae_255": 2.9091861175411524
+      },
+      "over_shoulder_left_camera": {
+        "first_saved_frame_rgb_mae_255": 1.6927014612268518
+      },
+      "wrist_cam": {
+        "first_saved_frame_rgb_mae_255": 5.015618489583333
+      }
+    }
+  },
+  "download_verifications": {
+    "isaacrtx-v1-download": {
+      "archive_sha256": "8ad5c44a7297bfcaa7d3d5b0db75bb86aa3ec961a82ec303982735931f20addc",
+      "files_verified": 3,
+      "archive_bytes": 13028
+    },
+    "isaacrtx-v2-download": {
+      "archive_sha256": "a486f941e032ffe83027804d4cbc5f25063a2bb108ffd3e5ee56c98fa898cd06",
+      "files_verified": 21,
+      "archive_bytes": 14517944
+    },
+    "ovrtx-v4-download": {
+      "archive_sha256": "53d0986cd3ebb0accf61129eca861bf077fcc50cb97ddd3443bb8aba35fb47cf",
+      "files_verified": 22,
+      "archive_bytes": 15228104
+    },
+    "ovrtx-v3-download": {
+      "archive_sha256": "b8c23964aa641b3be523c761feeb6a0023b61601fde608de49453816aadc736c",
+      "files_verified": 22,
+      "archive_bytes": 15209475
+    },
+    "ovrtx-v2-download": {
+      "archive_sha256": "1d42541ab4229223feaa21fc2740aa82a0ed1041b2f162ec4d3ed16018b704fe",
+      "files_verified": 22,
+      "archive_bytes": 15209486
+    },
+    "support-download": {
+      "files_verified": 84,
+      "archive_sha256": "a0e365104411566d7d416ea3afcd5445c0a0db3f9ef372ca89ac6d38f94448db",
+      "archive_bytes": 142468
+    },
+    "ovrtx-v1-download": {
+      "archive_sha256": "2984636c06a732b07133deb540aa442a91fef6ced927d72ad9f11dc1f8f8eb27",
+      "files_verified": 22,
+      "archive_bytes": 22398424
+    },
+    "isaacrtx-v3-download": {
+      "archive_sha256": "cf4b05875842187f0b313f75c86c13dce3944cc36c1451ecef929f4174ec13ba",
+      "files_verified": 21,
+      "archive_bytes": 14519605
+    },
+    "isaacrtx-v4-download": {
+      "archive_sha256": "dc87389e63fccdbe6ee0b73c0303e3ae1ecfc1821cbd3c0c9cb72e197c5c36d7",
+      "files_verified": 21,
+      "archive_bytes": 14516911
+    }
+  },
+  "image_sha256": {
+    "comparison-v4/step_120-over_shoulder_left_camera.jpg": "eafebe97524379917b07037e34355823470fc2c38b89e7c85ac0df6b5c3ee958",
+    "comparison-v4/step_120-wrist_cam.jpg": "8759158a58d3e6c5485f9e86be536bf384aa75eac2cb77ef80f9337ff7a1bb0b",
+    "comparison-v4/overview.jpg": "a18d775574e21b7f310caaf50615c90363037c82059e9ef37d9dc2fa9994ca4c",
+    "comparison-v4/initial-wrist_cam.jpg": "29063fd9bc1c7538ed2f09585b66a986b9306b46ad5388da54f6f1bf146d3b0b",
+    "comparison-v4/step_120-egocentric_mirrored_camera.jpg": "63054c408eb5a546763211c7173bbd91f65661d5b9a83fe896c7e0cee06a2a13",
+    "comparison-v4/initial-egocentric_mirrored_camera.jpg": "7551a1b05124fd045aff90442829414dc6bc897af1a2325d5f4ce99db3f37de2",
+    "comparison-v4/initial-over_shoulder_left_camera.jpg": "baf50c5eca101162d168a385ee129bb0ab4c3238b701da11ef787433feb0d65d",
+    "comparison-v4/step_120-wrist_cam-first.jpg": "7105bfde87c05f2e95daf24c2f4524b289def76616d750d725d662f563818d86"
+  },
+  "validation": {
+    "installer_tests_passed": 6,
+    "installer_modes_checked": [
+      "isaacrtx",
+      "ovrtx",
+      "newton-warp"
+    ],
+    "installed_and_rendered": [
+      "isaacrtx",
+      "ovrtx"
+    ],
+    "physics_actions_per_final_run": 1,
+    "restored_states_per_final_run": 2,
+    "rgb_cameras": 3,
+    "frozen_render_updates_per_capture": 32,
+    "visual_review": "All six final settled image pairs and the first saved moved-wrist pair reviewed; matching framing/materials/reflections with small lighting/denoising differences.",
+    "finite_images": true,
+    "frozen_physical_states_unchanged": true,
+    "live_pose_calibration_and_physical_states_identical_across_renderers": true,
+    "python_compile": "passed",
+    "git_diff_check": "passed"
+  },
+  "repairs": [
+    "Matching driver userspace libraries and OptiX/NGX SONAME aliases inside container only.",
+    "Start Kit before RoboLab/USD imports in baseline process.",
+    "Enable public camera.update_latest_camera_pose in both arms; stale metadata otherwise hides OVRTX attached-camera viewpoint mismatch."
+  ],
+  "limitations": [
+    "One scene, two restored states; no continuous policy evaluation or full task coverage.",
+    "First saved frame is not necessarily the first internal render after restoration.",
+    "Warm startup slower for OVRTX in this spike; cold starts were not fairly controlled.",
+    "Sequential diagnostic camera loop is not a tuned batched renderer throughput benchmark.",
+    "Installed/compressed venv sizes exclude assets, source checkout, OS/driver libraries and caches; not container image sizes.",
+    "v2/v3 moved-wrist image comparisons are invalid because actual viewpoints differed despite equal stale metadata.",
+    "Newton Warp renderer option was not GPU-tested.",
+    "Generated bulky debug USD stages remain on stopped node; their hashes are archived locally."
+  ]
+}

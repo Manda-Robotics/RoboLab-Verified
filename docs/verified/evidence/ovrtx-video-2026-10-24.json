@@ -1,0 +1,260 @@
+{
+  "date": "2026-10-24",
+  "branch": "codex/ovrtx-rendering-spike",
+  "base_commit": "51437f3ce85503fefe5cf04da32bb196f423a479",
+  "gpu": "RTX PRO 4000 Blackwell 24GB",
+  "driver": "595.58.03",
+  "source_sha256": "36d51daf714abdbbf7ea6cf12d6719228f18321545ae02490708ade789f73bfa",
+  "motion_fixture_sha256": "244143df3f28268e02805055595bfc7174f90f8d1c7a1eae2ee45eb35cf5dcee",
+  "node_status": {
+    "id": 57554439,
+    "actual_status": "exited",
+    "cur_state": "stopped",
+    "intended_status": "stopped"
+  },
+  "audit": {
+    "frames": 345,
+    "fps": 15.0,
+    "duration_s": 23.0,
+    "camera_resolutions": {
+      "egocentric_mirrored_camera": [
+        864,
+        480
+      ],
+      "over_shoulder_left_camera": [
+        1280,
+        720
+      ],
+      "wrist_cam": [
+        1280,
+        720
+      ]
+    },
+    "passes": {
+      "timing_0": {
+        "count_per_backend": 345,
+        "max_camera_pose_calibration_difference": 0,
+        "max_state_error": 0.0
+      },
+      "timing_1": {
+        "count_per_backend": 345,
+        "max_camera_pose_calibration_difference": 0,
+        "max_state_error": 0.0
+      },
+      "timing_2": {
+        "count_per_backend": 345,
+        "max_camera_pose_calibration_difference": 0,
+        "max_state_error": 0.0
+      },
+      "video": {
+        "count_per_backend": 345,
+        "max_camera_pose_calibration_difference": 0,
+        "max_state_error": 0.0
+      }
+    },
+    "speed": {
+      "isaacrtx": {
+        "samples": 990,
+        "discard_first_frames_per_pass": 15,
+        "mean_ms": 35.38877162894215,
+        "median_ms": 34.13433046080172,
+        "p95_ms": 45.25512023828924,
+        "three_camera_sets_per_s": 28.257550459371288,
+        "camera_images_per_s": 84.77265137811386,
+        "per_pass": [
+          {
+            "mean_s": 0.03592127460393716,
+            "median_s": 0.035195508040487766,
+            "p95_s": 0.04599581393413246,
+            "camera_sets_per_s": 27.8386558112388,
+            "camera_images_per_s": 83.5159674337164
+          },
+          {
+            "mean_s": 0.035771617359679306,
+            "median_s": 0.03472585207782686,
+            "p95_s": 0.045528162037953734,
+            "camera_sets_per_s": 27.955124028782944,
+            "camera_images_per_s": 83.86537208634883
+          },
+          {
+            "mean_s": 0.03447342292320999,
+            "median_s": 0.032637698110193014,
+            "p95_s": 0.04395962220150977,
+            "camera_sets_per_s": 29.007853447785365,
+            "camera_images_per_s": 87.0235603433561
+          }
+        ]
+      },
+      "ovrtx": {
+        "samples": 990,
+        "discard_first_frames_per_pass": 15,
+        "mean_ms": 39.12588306232308,
+        "median_ms": 39.63886899873614,
+        "p95_ms": 41.96230296511203,
+        "three_camera_sets_per_s": 25.558528568086594,
+        "camera_images_per_s": 76.67558570425979,
+        "per_pass": [
+          {
+            "mean_s": 0.039332305177143125,
+            "median_s": 0.03983865398913622,
+            "p95_s": 0.04231173458974809,
+            "camera_sets_per_s": 25.424393396121676,
+            "camera_images_per_s": 76.27318018836502
+          },
+          {
+            "mean_s": 0.04016568880020217,
+            "median_s": 0.04022786021232605,
+            "p95_s": 0.041969675966538486,
+            "camera_sets_per_s": 24.89687168006357,
+            "camera_images_per_s": 74.6906150401907
+          },
+          {
+            "mean_s": 0.037879655209623955,
+            "median_s": 0.037291233660653234,
+            "p95_s": 0.041166112199425696,
+            "camera_sets_per_s": 26.399395518941613,
+            "camera_images_per_s": 79.19818655682484
+          }
+        ]
+      }
+    },
+    "video": {
+      "egocentric_mirrored_camera": {
+        "files": {
+          "isaacrtx": {
+            "frames": 345,
+            "fps": 15.0,
+            "width": 864,
+            "height": 480,
+            "sha256": "bf0454a54779a588da4e2ef3458f3a94b5fb7a58ec107d5045d6102fff47a9e4",
+            "bytes": 1314727
+          },
+          "ovrtx": {
+            "frames": 345,
+            "fps": 15.0,
+            "width": 864,
+            "height": 480,
+            "sha256": "65d63e41e3a16afba517b510ee01c0d9a7acfd6547cb6ebf14c0d9d5818ed5f8",
+            "bytes": 1399730
+          }
+        },
+        "decoded_downsampled_mae_255_mean": 2.06998872756958,
+        "decoded_downsampled_mae_255_p95": 2.1400771141052246,
+        "temporal_lag_mae_255": {
+          "-2": 2.6864261627197266,
+          "-1": 2.408465623855591,
+          "0": 2.069988965988159,
+          "1": 2.423301935195923,
+          "2": 2.7098119258880615
+        }
+      },
+      "over_shoulder_left_camera": {
+        "files": {
+          "isaacrtx": {
+            "frames": 345,
+            "fps": 15.0,
+            "width": 1280,
+            "height": 720,
+            "sha256": "df8e07f99fc14b12f9eceec5c35c2547708dcdb49379cd0879409578455e8c25",
+            "bytes": 3202994
+          },
+          "ovrtx": {
+            "frames": 345,
+            "fps": 15.0,
+            "width": 1280,
+            "height": 720,
+            "sha256": "1917c048f7e6b95d91d2333d9be0ab9f17a1bd3f0d38f26eb32c2c549c6ac731",
+            "bytes": 3290777
+          }
+        },
+        "decoded_downsampled_mae_255_mean": 0.9605820775032043,
+        "decoded_downsampled_mae_255_p95": 1.0175347328186035,
+        "temporal_lag_mae_255": {
+          "-2": 2.835569381713867,
+          "-1": 1.9901143312454224,
+          "0": 0.9605820775032043,
+          "1": 2.0208323001861572,
+          "2": 2.8740792274475098
+        }
+      },
+      "wrist_cam": {
+        "files": {
+          "isaacrtx": {
+            "frames": 345,
+            "fps": 15.0,
+            "width": 1280,
+            "height": 720,
+            "sha256": "2708c4f90b7eb6f604682019dd1837e7e5d1403cf2c0e2775c126b1e4b47164f",
+            "bytes": 14703954
+          },
+          "ovrtx": {
+            "frames": 345,
+            "fps": 15.0,
+            "width": 1280,
+            "height": 720,
+            "sha256": "a4bf1d914f09bb57beecd3c394ae162a3207015c4c5a2d397f9fb0d4fc2f5ed8",
+            "bytes": 15587818
+          }
+        },
+        "decoded_downsampled_mae_255_mean": 1.9200084209442139,
+        "decoded_downsampled_mae_255_p95": 2.5670411586761475,
+        "temporal_lag_mae_255": {
+          "-2": 12.042034149169922,
+          "-1": 9.404499053955078,
+          "0": 1.9200083017349243,
+          "1": 9.421173095703125,
+          "2": 12.069923400878906
+        }
+      }
+    },
+    "files": {},
+    "ovrtx_capture_time_ratio": 1.105601614901055,
+    "notes": [
+      "Three cameras captured together in one environment at native resolution.",
+      "Timing-only passes precede video encoding; pose restoration, CPU readback, validation, and video encoding are outside capture timer.",
+      "Timer includes scene/camera publication, sim.render, batched sensor capture, and CUDA completion synchronization.",
+      "These are recorded-state replays; no policy or physics rollout speed claim.",
+      "Lag check uses decoded downsampled images and is a screen; inspect native video and checkpoint images visually."
+    ]
+  },
+  "downloads": {
+    "isaacrtx": {
+      "archive_sha256": "56ebedcb561cbaf464b500a7aec898096508da144b797fdc94c4b3314c227907",
+      "files_verified": 38,
+      "archive_bytes": 44716367
+    },
+    "ovrtx": {
+      "archive_sha256": "62ea06b20ace7ae8450d4afaec2f6478964cedd062560df36eb287697173e44e",
+      "files_verified": 39,
+      "archive_bytes": 46478289
+    }
+  },
+  "artifacts": {
+    "video-comparison/isaacrtx-vs-ovrtx.mp4": {
+      "sha256": "8474de090269eaa5a892a7da9762785f7f04d40bac5a66f8297112da11f8a500",
+      "bytes": 10291773,
+      "video_stream": {
+        "width": 1280,
+        "height": 856,
+        "r_frame_rate": "15/1",
+        "nb_frames": "345"
+      }
+    },
+    "video-comparison/wrist-native-side-by-side.mp4": {
+      "sha256": "4f3b01369f46278051957c5813a8b62238d9590a5038e1273212a787f4b1462c",
+      "bytes": 27130722,
+      "video_stream": {
+        "width": 2560,
+        "height": 760,
+        "r_frame_rate": "15/1",
+        "nb_frames": "345"
+      }
+    }
+  },
+  "review": "Sampled comparison frames across approach, grasp, motion and withdrawal align; wrist camera follows motion. Original heavy noise is absent from reviewed samples. Not an exhaustive visual inspection of every video frame.",
+  "tests": "Both CUDA runs complete; 345 frames in each of three timing-only passes and one video pass per backend. Independent metadata and full video decoding audits pass. Python parse and compile pass. No production defaults changed.",
+  "result_sha256": {
+    "isaacrtx": "6fc854535c31be1c9135afbbdf07a66fc4582ade1f3aa5789d3b345406bfb8fe",
+    "ovrtx": "41aa1dd9e36dc2779e0c103351169a698d63935909285b0f00287797469dc49e"
+  }
+}
